@@ -24,8 +24,8 @@ repos:
   - repo: local
     hooks:
       - id: toxlint
-        name: tox -e lint
-        entry: tox -e lint
+        name: tox
+        entry: tox -c django
         pass_filenames: true
         language: system
         types: [python]
