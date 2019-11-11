@@ -1,1 +1,5 @@
 django
+djangorestframework
+django-storages
+psycopg2
+boto3
