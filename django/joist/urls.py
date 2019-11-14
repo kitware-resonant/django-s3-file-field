@@ -29,7 +29,7 @@ router.register(r'blob', views.BlobViewSet)
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
-    path('api/file-upload-url/<str:name>', views.file_upload_url),
+    path('api/file-upload-url', views.file_upload_url),
     path('api/finalize-upload', views.finalize_upload),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('api/auth/', authviews.obtain_auth_token),

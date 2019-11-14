@@ -35,9 +35,9 @@ def finalize_upload(request: Request) -> HttpResponseBase:
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
-def file_upload_url(request: Request, name: str) -> HttpResponseBase:
+def file_upload_url(request: Request) -> HttpResponseBase:
     bucket_arn = f'arn:aws:s3:::{settings.AWS_STORAGE_BUCKET_NAME}'
-    object_key = f'{uuid.uuid4()}/{name}'
+    object_key = f'{uuid.uuid4()}/{request.GET.get("name")}'
     upload_policy = {
         'Version': '2012-10-17',
         'Statement': [
