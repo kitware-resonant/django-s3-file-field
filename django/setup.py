@@ -8,6 +8,7 @@ setup(
         'boto3',
         'django',
         'django-cors-headers',
+        'django-dotenv',
         'djangorestframework',
         'django-storages',
         'psycopg2',

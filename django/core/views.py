@@ -54,6 +54,7 @@ def file_upload_url(request: Request) -> HttpResponseBase:
     # the credentials when the machine assumes the upload role.
     resp = boto3.client(
         'sts',
+        region_name=settings.AWS_REGION,
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
     ).assume_role(
