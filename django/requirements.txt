@@ -1,4 +1,5 @@
 django
+django-cors-headers
 djangorestframework
 django-storages
 psycopg2
