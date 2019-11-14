@@ -7,8 +7,11 @@ from django.conf import settings
 from django.http import JsonResponse
 from django.http.response import HttpResponseBase
 from rest_framework import viewsets
-from rest_framework.decorators import api_view
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
+from rest_framework.response import Response
 
 
 from core.models import Blob
@@ -20,7 +23,18 @@ class BlobViewSet(viewsets.ModelViewSet):
     serializer_class = BlobSerializer
 
 
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def finalize_upload(request: Request) -> HttpResponseBase:
+    blob = Blob(creator=request.user, resource=request.GET.get('name'))
+    blob.save()
+    return Response(BlobSerializer(blob).data)
+
+
 @api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def file_upload_url(request: Request, name: str) -> HttpResponseBase:
     bucket_arn = f'arn:aws:s3:::{settings.AWS_STORAGE_BUCKET_NAME}'
     object_key = f'{uuid.uuid4()}/{name}'
