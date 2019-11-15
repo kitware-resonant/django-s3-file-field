@@ -5,7 +5,7 @@ from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
 
-import core.models
+from core.models import CollisionSafeFileField
 
 
 class Migration(migrations.Migration):
@@ -27,9 +27,9 @@ class Migration(migrations.Migration):
                 ('created', models.DateTimeField(default=django.utils.timezone.now)),
                 (
                     'resource',
-                    core.models.CollisionSafeFileField(
+                    CollisionSafeFileField(
                         max_length=200,
-                        upload_to=core.models.CollisionSafeFileField.uuid_prefix_filename,
+                        upload_to=CollisionSafeFileField.uuid_prefix_filename,
                     ),
                 ),
                 (

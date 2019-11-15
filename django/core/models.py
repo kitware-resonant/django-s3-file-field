@@ -1,8 +1,6 @@
 from uuid import uuid4
 
-from django.contrib.auth import get_user_model
 from django.db import models
-from django.utils import timezone
 
 
 class CollisionSafeFileField(models.FileField):
@@ -16,9 +14,3 @@ class CollisionSafeFileField(models.FileField):
     @staticmethod
     def uuid_prefix_filename(instance, filename):
         return f'{uuid4()}/{filename}'
-
-
-class Blob(models.Model):
-    created = models.DateTimeField(default=timezone.now)
-    creator = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
-    resource = CollisionSafeFileField()

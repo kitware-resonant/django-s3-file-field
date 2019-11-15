@@ -4,22 +4,11 @@ import uuid
 
 import boto3
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.http.response import HttpResponseBase
-from rest_framework import viewsets
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import JSONParser
 from rest_framework.request import Request
-from rest_framework.response import Response
-
-from core.models import Blob
-from core.serializers import BlobSerializer
-
-
-class BlobViewSet(viewsets.ModelViewSet):
-    queryset = Blob.objects.all()
-    serializer_class = BlobSerializer
 
 
 # @authentication_classes([TokenAuthentication])
@@ -27,10 +16,10 @@ class BlobViewSet(viewsets.ModelViewSet):
 @api_view(['POST'])
 @parser_classes([JSONParser])
 def finalize_upload(request: Request) -> HttpResponseBase:
-    creator = request.user if not request.user.is_anonymous else User.objects.first()
-    blob = Blob(creator=creator, resource=request.data['name'])
-    blob.save()
-    return Response(BlobSerializer(blob).data)
+    name = request.data['name']
+    return JsonResponse({
+        'name': name
+    })
 
 
 # @authentication_classes([TokenAuthentication])
@@ -60,7 +49,7 @@ def file_upload_url(request: Request) -> HttpResponseBase:
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
     ).assume_role(
         RoleArn=settings.UPLOAD_STS_ARN,
-        RoleSessionName='file-upload-%d' % int(time.time()),
+        RoleSessionName=f'file-upload-{int(time.time())}',
         Policy=json.dumps(upload_policy),
         DurationSeconds=3600,
     )
