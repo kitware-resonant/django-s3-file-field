@@ -70,7 +70,7 @@ export default class JoistUpload extends Vue {
   }
 
   private setFiles() {
-    this.files = [...this.fileInput.files!];
+    this.files = Array.from(this.fileInput.files || []);
   }
 
   private async uploadFile(file: File) {

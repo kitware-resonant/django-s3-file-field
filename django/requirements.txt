@@ -3,5 +3,5 @@ django-cors-headers
 django-dotenv
 djangorestframework
 django-storages
-psycopg2
+psycopg2-binary
 boto3
