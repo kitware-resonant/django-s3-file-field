@@ -54,6 +54,10 @@ interface IFileInfo {
   progress: number;
 }
 
+interface IFinalizeResponse {
+  name: string;
+}
+
 @Component
 export default class JoistUpload extends Vue {
   @Prop(String)
@@ -110,17 +114,17 @@ export default class JoistUpload extends Vue {
       })
       .promise();
 
-    await http.request({
+    const finalized = (await http.request({
       method: 'post',
       url: 'joist/finalize-upload/',
       data: {
         name: initUpload.objectKey,
       },
-    });
+    })).data as IFinalizeResponse;
 
     onProgress(1);
 
-    return initUpload.objectKey;
+    return finalized.name;
   }
 
   public reset() {
