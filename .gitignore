@@ -9,3 +9,4 @@
 *.sln
 *.sw?
 .mypy_cache
+Pipfile*
