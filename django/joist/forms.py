@@ -6,4 +6,4 @@ from .models import Blob
 class BlobForm(ModelForm):
     class Meta:
         model = Blob
-        fields = ['resource', 'creator', 'created']
+        fields = ['creator', 'created', 'resource']

@@ -6,10 +6,11 @@ from rest_framework.parsers import JSONParser
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from django.shortcuts import render
+from django.shortcuts import render, HttpResponseRedirect
 from django.views import generic
 
 from .models import Blob
+from .forms import BlobForm
 from .serializers import BlobSerializer
 
 
@@ -46,5 +47,13 @@ class DetailView(generic.DetailView):
 
 
 def newBlob(request: Request) -> HttpResponseBase:
-    context = {}
-    return render(request, 'blob/new.html', context)
+    form = BlobForm(request.POST, request.FILES) if request.method == 'POST' else BlobForm()
+    if request.method == 'POST':
+        # check whether it's valid:
+        if form.is_valid():
+            form.save()
+            # process the data in form.cleaned_data as required
+            # ...
+            # redirect to a new URL:
+            return HttpResponseRedirect('/blob/')
+    return render(request, 'blob/new.html', {'form': form})
