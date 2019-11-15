@@ -4,13 +4,17 @@ from rest_framework import routers
 from rest_framework.authtoken import views as authviews
 
 from core import views as cviews
-from .views import BlobViewSet, save_blob
+from .views import BlobViewSet, save_blob, IndexView, DetailView, newBlob
 
 router = routers.DefaultRouter()
 router.register(r'blob', BlobViewSet)
 
 
 urlpatterns = [
+    path('blob/', IndexView.as_view(), name='index'),
+    path('blob/new/', newBlob, name='new'),
+    path('blob/<int:pk>/', DetailView.as_view(), name='detail'),
+
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
     path('api/save-blob/', save_blob),

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %} Blob {{ object.id }}{% endblock %}
+{% block content %}
+
+<table>
+<thead>
+  <tr>
+    <th>Key</th>
+    <th>Value</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <th>ID</th>
+    <td>{{ blob.id }}</td>
+  </tr>
+  <tr>
+    <th>created</th>
+    <td>{{ blob.created }}</td>
+  </tr>
+  <tr>
+    <th>creator</th>
+    <td>{{ blob.creator }}</td>
+  </tr>
+  <tr>
+    <th>resource</th>
+    <td>{{ blob.resource }}</td>
+  </tr>
+</tbody>
+</table>
+
+{% endblock %}

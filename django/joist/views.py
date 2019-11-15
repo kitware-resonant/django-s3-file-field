@@ -6,6 +6,9 @@ from rest_framework.parsers import JSONParser
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from django.shortcuts import render
+from django.views import generic
+
 from .models import Blob
 from .serializers import BlobSerializer
 
@@ -28,3 +31,20 @@ def save_blob(request: Request) -> HttpResponseBase:
         blob.save()
         out.append(BlobSerializer(blob).data)
     return Response(out)
+
+
+class IndexView(generic.ListView):
+    template_name = 'blob/index.html'
+
+    def get_queryset(self):
+        return Blob.objects.all()
+
+
+class DetailView(generic.DetailView):
+    model = Blob
+    template_name = 'blob/detail.html'
+
+
+def newBlob(request: Request) -> HttpResponseBase:
+    context = {}
+    return render(request, 'blob/new.html', context)

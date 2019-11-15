@@ -9,3 +9,6 @@ class Blob(models.Model):
     created = models.DateTimeField(default=timezone.now)
     creator = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     resource = CollisionSafeFileField()
+
+    def __str__(self):
+        return str(self.resource)

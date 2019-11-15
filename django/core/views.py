@@ -17,6 +17,7 @@ from rest_framework.request import Request
 @parser_classes([JSONParser])
 def finalize_upload(request: Request) -> HttpResponseBase:
     name = request.data['name']
+    # TODO move file to where it belongs and return the new name
     return JsonResponse({
         'name': name
     })
@@ -42,12 +43,13 @@ def file_upload_url(request: Request) -> HttpResponseBase:
     # Get temporary security credentials with permission to upload into the
     # object in the S3 bucket. The AWS Security Token Service (STS) provides
     # the credentials when the machine assumes the upload role.
-    resp = boto3.client(
+    client = boto3.client(
         'sts',
         region_name=settings.AWS_REGION,
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-    ).assume_role(
+    )
+    resp = client.assume_role(
         RoleArn=settings.UPLOAD_STS_ARN,
         RoleSessionName=f'file-upload-{int(time.time())}',
         Policy=json.dumps(upload_policy),
