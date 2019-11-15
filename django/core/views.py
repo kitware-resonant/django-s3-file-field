@@ -8,7 +8,8 @@ from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.http.response import HttpResponseBase
 from rest_framework import viewsets
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, parser_classes
+from rest_framework.parsers import JSONParser
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -24,9 +25,10 @@ class BlobViewSet(viewsets.ModelViewSet):
 # @authentication_classes([TokenAuthentication])
 # @permission_classes([IsAuthenticated])
 @api_view(['POST'])
+@parser_classes([JSONParser])
 def finalize_upload(request: Request) -> HttpResponseBase:
     creator = request.user if not request.user.is_anonymous else User.objects.first()
-    blob = Blob(creator=creator, resource=request.GET.get('name'))
+    blob = Blob(creator=creator, resource=request.data['name'])
     blob.save()
     return Response(BlobSerializer(blob).data)
 
