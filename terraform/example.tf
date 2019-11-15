@@ -5,16 +5,22 @@ provider "aws" {
 terraform {
   backend "s3" {
     bucket = "joist-remote-state"
-    key    = "example"
+    key    = "dev"
     region = "us-east-1"
   }
 }
 
+# This is a hacky way of requiring a non-default workspace be used. It uses the file function
+# on a non-existent path to trigger an error.
+# See: https://github.com/hashicorp/terraform/issues/15469
+locals {
+  assert_not_default_workspace = terraform.workspace == "default" ? file("ERROR: default workspace not allowed") : null
+}
 data "aws_region" "joist" {}
 
 module "storage" {
   source      = "./modules/storage"
-  environment = "example"
+  environment = "${terraform.workspace}"
 }
 
 output "AWS_REGION" {

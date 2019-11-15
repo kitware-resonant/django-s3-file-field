@@ -4,12 +4,14 @@ import uuid
 
 import boto3
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.http.response import HttpResponseBase
 from rest_framework import viewsets
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, parser_classes
+from rest_framework.parsers import JSONParser
 from rest_framework.request import Request
-
+from rest_framework.response import Response
 
 from core.models import Blob
 from core.serializers import BlobSerializer
@@ -20,10 +22,23 @@ class BlobViewSet(viewsets.ModelViewSet):
     serializer_class = BlobSerializer
 
 
+# @authentication_classes([TokenAuthentication])
+# @permission_classes([IsAuthenticated])
+@api_view(['POST'])
+@parser_classes([JSONParser])
+def finalize_upload(request: Request) -> HttpResponseBase:
+    creator = request.user if not request.user.is_anonymous else User.objects.first()
+    blob = Blob(creator=creator, resource=request.data['name'])
+    blob.save()
+    return Response(BlobSerializer(blob).data)
+
+
+# @authentication_classes([TokenAuthentication])
+# @permission_classes([IsAuthenticated])
 @api_view(['GET'])
-def file_upload_url(request: Request, name: str) -> HttpResponseBase:
+def file_upload_url(request: Request) -> HttpResponseBase:
     bucket_arn = f'arn:aws:s3:::{settings.AWS_STORAGE_BUCKET_NAME}'
-    object_key = f'{uuid.uuid4()}/{name}'
+    object_key = f'{uuid.uuid4()}/{request.GET.get("name")}'
     upload_policy = {
         'Version': '2012-10-17',
         'Statement': [
@@ -40,6 +55,7 @@ def file_upload_url(request: Request, name: str) -> HttpResponseBase:
     # the credentials when the machine assumes the upload role.
     resp = boto3.client(
         'sts',
+        region_name=settings.AWS_REGION,
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
     ).assume_role(
