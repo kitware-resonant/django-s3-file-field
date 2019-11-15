@@ -19,5 +19,5 @@ urlpatterns = [
     path('api/auth/', authviews.obtain_auth_token),
 
     path('api/joist/file-upload-url/', cviews.file_upload_url),
-    path('api/joistfinalize-upload/', cviews.finalize_upload),
+    path('api/joist/finalize-upload/', cviews.finalize_upload),
 ]

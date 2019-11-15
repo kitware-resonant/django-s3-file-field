@@ -21,6 +21,10 @@ class BlobViewSet(viewsets.ModelViewSet):
 @parser_classes([JSONParser])
 def save_blob(request: Request) -> HttpResponseBase:
     creator = request.user if not request.user.is_anonymous else User.objects.first()
-    blob = Blob(creator=creator, resource=request.data['name'])
-    blob.save()
-    return Response(BlobSerializer(blob).data)
+    names = request.data.get('names', [])
+    out = []
+    for name in names:
+        blob = Blob(creator=creator, resource=name)
+        blob.save()
+        out.append(BlobSerializer(blob).data)
+    return Response(out)
