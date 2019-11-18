@@ -31,7 +31,7 @@ export interface IUploadOptions {
 const OVERHEAD_PERCENT = 0.05;
 
 
-export async function uploadFile(file: File, options: Partial<IUploadOptions> = {}) {
+export async function uploadFile(file: File, options: Partial<IUploadOptions> = {}): Promise<IUploadResult> {
   const { onProgress, baseUrl, abortSignal } = Object.assign({
     onProgress: () => undefined,
     baseUrl: DEFAULT_BASE_URL,

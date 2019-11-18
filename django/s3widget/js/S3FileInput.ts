@@ -1,6 +1,6 @@
 import './style.scss';
 import { DEFAULT_BASE_URL } from './constants';
-import { uploadFile } from './uploader';
+import { uploadFile, IUploadResult } from './uploader';
 
 function cssClass(clazz: string) {
   return `s3fileinput-${clazz}`;
@@ -17,6 +17,14 @@ function sized(val: number) {
   return `${Math.round(v * 100) / 100}${units[0]}`;
 }
 
+function fileInfo(result: IUploadResult, file: File) {
+  return JSON.stringify({
+    name: result.name,
+    size: file.size,
+    type: file.type
+  });
+}
+
 export default class S3FileInput {
   private readonly node: HTMLElement;
   private readonly input: HTMLInputElement;
@@ -26,23 +34,35 @@ export default class S3FileInput {
 
   private readonly baseUrl: string;
 
-  constructor(node: HTMLElement) {
-    this.node = node;
-    this.input = node.querySelector('input')!;
-    this.uploadButton = node.querySelector<HTMLButtonElement>(`.${cssClass('upload')}`)!;
-    this.uploadButton.insertAdjacentHTML('afterend', `<button type="button" class="s3fileinput-abort">Abort</button>`);
-    this.abortButton = node.querySelector<HTMLButtonElement>(`.${cssClass('abort')}`)!;
-    this.abortButton.insertAdjacentHTML('afterend', `<div class="${cssClass('spinner-wrapper')}">
+  constructor(input: HTMLInputElement) {
+    this.input = input;
+    this.node = input.ownerDocument!.createElement('div');
+    this.node.classList.add(cssClass('wrapper'));
+    this.node.innerHTML = `<div class="s3fileinput-inner">
+    <button type="button" class="s3fileinput-upload" disabled>Upload to S3</button>
+    <button type="button" class="s3fileinput-abort">Abort</button>
+    <div class="${cssClass('spinner-wrapper')}">
       <div class="${cssClass('spinner')}"><div></div><div></div><div></div><div></div>
-    </div>`);
-    this.spinnerWrapper = node.querySelector<HTMLElement>(`.${cssClass('spinner-wrapper')}`)!;
+    </div>
+  </div>`;
+    this.input.parentElement!.replaceChild(this.node, this.input);
+    this.uploadButton = this.node.querySelector<HTMLButtonElement>(`.${cssClass('upload')}`)!;
+    this.uploadButton.insertAdjacentElement('beforebegin', this.input);
+    this.abortButton = this.node.querySelector<HTMLButtonElement>(`.${cssClass('abort')}`)!;
+    this.spinnerWrapper = this.node.querySelector<HTMLElement>(`.${cssClass('spinner-wrapper')}`)!;
 
-    this.baseUrl = this.node.dataset.baseurl || DEFAULT_BASE_URL;
+    this.baseUrl = this.input.dataset.s3fileinput || DEFAULT_BASE_URL;
 
     this.input.onchange = (evt) => {
       evt.preventDefault();
-      const files = Array.from(this.input.files || []);
-      this.handleFiles(files);
+      if (this.input.type === 'file') {
+        const files = Array.from(this.input.files || []);
+        this.handleFiles(files);
+      } else if (this.input.value === '') {
+        // already processed but user resetted it -> convert bak
+        this.input.type = 'file';
+        this.node.classList.remove(cssClass('set'));
+      }
     };
 
     this.uploadButton.onclick = (evt) => {
@@ -58,7 +78,7 @@ export default class S3FileInput {
     this.input.setCustomValidity(files.length > 0 ? 'Press Upload Button to upload directly' : '');
   }
 
-  private uploadFile(file: File) {
+  private uploadFile(file: File): Promise<IUploadResult> {
     const progress = this.node.ownerDocument!.createElement('div');
     progress.classList.add(cssClass('progress'));
     const indicator = this.node.ownerDocument!.createElement('div');
@@ -136,11 +156,27 @@ export default class S3FileInput {
     this.input.setCustomValidity('Uploading files, wait till finished');
     this.input.value = ''; // reset file selection
 
+    if (files.length === 1) {
+      const file = files[0];
+      return this.uploadFile(file).then((result) => {
+        this.node.classList.remove(cssClass('uploading'));
+        this.node.classList.add(cssClass('set'));
+        if (result.state === 'successful') {
+          this.input.setCustomValidity(''); // no error
+          this.input.type = 'text';
+          this.input.value = fileInfo(result, file);
+        }
+      })
+    }
+
+    // TODO support multi file upload -> is that possible with django anyhow?
+    return null;
     // prepare n progress bars
     // one by or or multi??
-    Promise.all(files.map((f) => this.uploadFile(f))).then(() => {
-      this.node.classList.remove(cssClass('uploading'));
-      this.input.setCustomValidity('');
-    });
+    // return Promise.all(files.map((f) => this.uploadFile(f))).then((results) => {
+    //   this.node.classList.remove(cssClass('uploading'));
+
+    //   this.input.setCustomValidity('');
+    // });
   }
 }

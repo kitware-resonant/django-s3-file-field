@@ -27,6 +27,7 @@ $css_prefix: s3fileinput;
   width: unset;
   height: 5px;
   position: relative;
+  border-bottom: 1px solid transparent;
 
   > div {
     position: absolute;
@@ -135,7 +136,14 @@ $dot-width: 0.5em;
   .#{$css_prefix}-abort {
     display: unset;
   }
+
   .#{$css_prefix}-spinner-wrapper {
     display: flex;
+  }
+}
+
+.#{$css_prefix}-set {
+  .#{$css_prefix}-upload {
+    display: none;
   }
 }

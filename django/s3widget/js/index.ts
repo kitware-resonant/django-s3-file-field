@@ -9,6 +9,6 @@ import S3FileInput from "./S3FileInput";
   }
 })(function () {
   // auto init
-  const wrappers = Array.from(document.querySelectorAll<HTMLElement>('.s3fileinput-wrapper'));
+  const wrappers = Array.from(document.querySelectorAll<HTMLInputElement>('input[data-s3fileinput]'));
   wrappers.forEach((w) => new S3FileInput(w));
 });

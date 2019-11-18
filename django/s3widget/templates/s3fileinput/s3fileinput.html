@@ -1,6 +1,1 @@
-<div class="s3fileinput-wrapper" data-baseurl="{{ widget.baseurl }}">
-  <div class="s3fileinput-inner">
-    <input type="file" name="{{ widget.name }}" {% include "django/forms/widgets/attrs.html" %}>
-    <button type="button" class="s3fileinput-upload" disabled>Upload to S3</button>
-  </div>
-</div>
+<input type="file" name="{{ widget.name }}" {% include "django/forms/widgets/attrs.html" %} data-s3fileinput="{{ widget.baseurl }}">
