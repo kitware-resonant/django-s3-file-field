@@ -23,10 +23,12 @@ def finalize_upload(request: Request) -> HttpResponseBase:
 
 # @authentication_classes([TokenAuthentication])
 # @permission_classes([IsAuthenticated])
-@api_view(['GET'])
-def file_upload_url(request: Request) -> HttpResponseBase:
+@api_view(['POST'])
+@parser_classes([JSONParser])
+def prepare_upload(request: Request) -> HttpResponseBase:
     bucket_arn = f'arn:aws:s3:::{settings.AWS_STORAGE_BUCKET_NAME}'
-    object_key = f'{uuid.uuid4()}/{request.GET.get("name")}'
+    name = request.data['name']
+    object_key = f'{uuid.uuid4()}/{name}'
     upload_policy = {
         'Version': '2012-10-17',
         'Statement': [
@@ -51,7 +53,7 @@ def file_upload_url(request: Request) -> HttpResponseBase:
         RoleArn=settings.UPLOAD_STS_ARN,
         RoleSessionName=f'file-upload-{int(time.time())}',
         Policy=json.dumps(upload_policy),
-        DurationSeconds=3600,
+        DurationSeconds=settings.S3_WIDGET_UPLOAD_DURATION,
     )
 
     credentials = resp['Credentials']
