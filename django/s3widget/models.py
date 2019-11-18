@@ -1,8 +1,9 @@
 from uuid import uuid4
 
+from django.contrib.admin.widgets import AdminFileWidget
 from django.db.models import FileField
 
-from .widgets import S3FormFileField
+from .widgets import S3AdminFileInput, S3FormFileField
 
 
 class S3FileField(FileField):
@@ -19,9 +20,13 @@ class S3FileField(FileField):
         return f'{uuid4()}/{filename}'
 
     def formfield(self, **kwargs):
-        return super().formfield(
-            **{'form_class': S3FormFileField, 'max_length': self.max_length, **kwargs}
-        )
+        print(kwargs, kwargs.get('widget') == AdminFileWidget)
+        copy = kwargs.copy()
+        if copy.get('widget') == AdminFileWidget:
+            # replace for admin
+            copy['widget'] = S3AdminFileInput
+        copy.setdefault('form_class', S3FormFileField)
+        return super().formfield(**copy)
 
     def save(self, name, content, save=True):
         return super().save(name, content, save)

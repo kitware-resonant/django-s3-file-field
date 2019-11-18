@@ -32,6 +32,10 @@ class S3FileInput(FileInput):
         return name not in files
 
 
+class S3AdminFileInput(S3FileInput):
+    template_name = 's3fileinput/s3adminfileinput.html'
+
+
 class S3FormFileField(FileField):
     widget = cast(Widget, S3FileInput)
 
