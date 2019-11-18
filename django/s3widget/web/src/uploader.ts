@@ -10,6 +10,7 @@ interface IPrepareResponse {
 }
 
 interface IFinalizeResponse {
+  id?: string;
   name: string;
 }
 
@@ -63,6 +64,7 @@ export async function uploadFile(file: File, options: Partial<IUploadOptions> = 
     progress('uploading', OVERHEAD_PERCENT / 2);
   } catch (err) {
     return {
+      id: undefined,
       name: file.name,
       state: 'error',
       msg: 'Failed to prepare upload token',
@@ -95,6 +97,7 @@ export async function uploadFile(file: File, options: Partial<IUploadOptions> = 
       method: 'POST',
       body: JSON.stringify({
         name: file.name,
+        id: initUpload.objectKey,
         status,
         upload: initUpload,
       }),

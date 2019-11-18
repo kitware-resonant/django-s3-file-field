@@ -1,12 +1,27 @@
 from uuid import uuid4
 
 from django.contrib.admin.widgets import AdminFileWidget
-from django.db.models import FileField
+from django.db.models.fields.files import FieldFile, FileField
 
-from .widgets import S3AdminFileInput, S3FormFileField
+from .widgets import S3AdminFileInput, S3FakeFile, S3FormFileField
+
+
+class S3FieldFile(FieldFile):
+    def save(self, name, content, save=True):
+        if not isinstance(content, S3FakeFile):
+            return super().save(name, content, save)
+
+        self.name = content.name
+        setattr(self.instance, self.field.name, self.name)
+        self._committed = True
+
+        # Save the object because it has changed, unless save is False
+        if save:
+            self.instance.save()
 
 
 class S3FileField(FileField):
+    attr_class = S3FieldFile
     description = 'A file field which is uploaded to <randomuuid>/filename.'
 
     def __init__(self, *args, **kwargs):
@@ -16,11 +31,9 @@ class S3FileField(FileField):
 
     @staticmethod
     def uuid_prefix_filename(instance, filename):
-        print(instance)
         return f'{uuid4()}/{filename}'
 
     def formfield(self, **kwargs):
-        print(kwargs, kwargs.get('widget') == AdminFileWidget)
         copy = kwargs.copy()
         if copy.get('widget') == AdminFileWidget:
             # replace for admin
@@ -28,13 +41,8 @@ class S3FileField(FileField):
         copy.setdefault('form_class', S3FormFileField)
         return super().formfield(**copy)
 
-    def save(self, name, content, save=True):
-        return super().save(name, content, save)
-        # name = self.field.generate_filename(self.instance, name)
-        # self.name = self.storage.save(name, content, max_length=self.field.max_length)
-        # setattr(self.instance, self.field.name, self.name)
-        # self._committed = True
+    def pre_save(self, model_instance, add):
+        return super().pre_save(model_instance, add)
 
-        # # Save the object because it has changed, unless save is False
-        # if save:
-        #     self.instance.save()
+    def save_form_data(self, instance, data):
+        return super().save_form_data(instance, data)

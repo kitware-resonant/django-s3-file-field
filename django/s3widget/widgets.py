@@ -1,6 +1,20 @@
-from typing import cast, Optional
+import json
+from typing import Any, cast, Dict, Optional
 
 from django.forms import FileField, FileInput, Widget
+
+
+class S3FakeFile:
+    def __init__(self, info: Dict[str, Any]):
+        super().__init__()
+
+        self.name: str = info['id']
+        self.original_name: str = info['name']
+        self.size: int = info['size']
+        self._committed = True
+
+    def __str__(self):
+        return self.name
 
 
 class S3FileInput(FileInput):
@@ -22,14 +36,16 @@ class S3FileInput(FileInput):
         return context
 
     def value_from_datadict(self, data, files, name):
-        # File widgets take data from FILES, not POST
-        # TODO
+        if name in files:
+            return files[name]
+        if data.get(name):
+            # JSON fake file
+            return S3FakeFile(json.loads(data[name]))
         upload = files.get(name)
         return upload
 
     def value_omitted_from_data(self, data, files, name):
-        # TODO
-        return name not in files
+        return name not in files and not data.get(name)
 
 
 class S3AdminFileInput(S3FileInput):

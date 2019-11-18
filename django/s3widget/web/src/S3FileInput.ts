@@ -21,7 +21,7 @@ function fileInfo(result: IUploadResult, file: File) {
   return JSON.stringify({
     name: result.name,
     size: file.size,
-    type: file.type
+    id: result.id
   });
 }
 
