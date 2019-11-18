@@ -3,12 +3,35 @@ $css_prefix: s3fileinput;
 
 .#{$css_prefix}-wrapper {
   display: flex;
+  flex-direction: column;
 
-  > input {
+  > div {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex: 1 1 0;
+  }
+
+  input {
     flex: 1 1 0;
   }
 }
 
 .#{$css_prefix}-uploading {
 
+}
+
+
+.#{$css_prefix}-progress  {
+  width: unset;
+  height: 5px;
+  border: none;
+
+  &[data-state=error] {
+    background: red;
+  }
+
+  &[data-state=aborted] {
+    background: yellow;
+  }
 }
