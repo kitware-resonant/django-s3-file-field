@@ -10,6 +10,7 @@ $css_prefix: s3fileinput;
     padding: 0;
     display: flex;
     flex: 1 1 0;
+    position: relative;
   }
 
   input {
@@ -17,8 +18,8 @@ $css_prefix: s3fileinput;
   }
 }
 
-.#{$css_prefix}-uploading {
-
+.#{$css_prefix}-abort {
+  display: none;
 }
 
 
@@ -33,5 +34,94 @@ $css_prefix: s3fileinput;
 
   &[data-state=aborted] {
     background: yellow;
+  }
+}
+
+
+// spinner based on loading.io
+
+$dot-width: 0.5em;
+
+.#{$css_prefix}-spinner-wrapper {
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: rgba(255, 255, 255, 0.75);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.#{$css_prefix}-spinner {
+  display: inline-block;
+  position: relative;
+  width: $dot-width * 8;
+  height: $dot-width;
+
+  > div {
+    position: absolute;
+    top: 0;
+    width: $dot-width;
+    height: $dot-width;
+    border-radius: 50%;
+    background: rgb(168, 168, 168);
+    animation-timing-function: cubic-bezier(0, 1, 1, 0);
+
+    &:nth-child(1) {
+      animation: #{$css_prefix}-in 0.6s infinite;
+    }
+
+    &:nth-child(2) {
+      animation: #{$css_prefix}-move 0.6s infinite;
+    }
+
+    &:nth-child(3) {
+      left: $dot-width * 2;
+      animation: #{$css_prefix}-move 0.6s infinite;
+    }
+
+    &:nth-child(4) {
+      left: $dot-width * 4;
+      animation: #{$css_prefix}-out 0.6s infinite;
+    }
+  }
+}
+
+@keyframes #{$css_prefix}-in {
+  0% {
+    transform: scale(0);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes #{$css_prefix}-out {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0);
+  }
+}
+@keyframes #{$css_prefix}-move {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: #{translate($dot-width * 2, 0)};
+  }
+}
+
+.#{$css_prefix}-uploading {
+  .#{$css_prefix}-upload {
+    display: none;
+  }
+
+  .#{$css_prefix}-abort {
+    display: unset;
+  }
+  .#{$css_prefix}-spinner-wrapper {
+    display: flex;
   }
 }

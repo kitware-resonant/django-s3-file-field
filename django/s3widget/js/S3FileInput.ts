@@ -21,13 +21,21 @@ export default class S3FileInput {
   private readonly node: HTMLElement;
   private readonly input: HTMLInputElement;
   private readonly uploadButton: HTMLButtonElement;
+  private readonly abortButton: HTMLButtonElement;
+  private readonly spinnerWrapper: HTMLElement;
 
   private readonly baseUrl: string;
 
   constructor(node: HTMLElement) {
     this.node = node;
     this.input = node.querySelector('input')!;
-    this.uploadButton = node.querySelector('button')!;
+    this.uploadButton = node.querySelector<HTMLButtonElement>(`.${cssClass('upload')}`)!;
+    this.uploadButton.insertAdjacentHTML('afterend', `<button type="button" class="s3fileinput-abort" style="display: none">Abort</button>`);
+    this.abortButton = node.querySelector<HTMLButtonElement>(`.${cssClass('abort')}`)!;
+    this.abortButton.insertAdjacentHTML('afterend', `<div class="${cssClass('spinner-wrapper')}">
+      <div class="${cssClass('spinner')}"><div></div><div></div><div></div><div></div>
+    </div>`);
+    this.spinnerWrapper = node.querySelector<HTMLElement>(`.${cssClass('spinner-wrapper')}`)!;
 
     this.baseUrl = this.node.dataset.baseurl || DEFAULT_BASE_URL;
 
@@ -56,9 +64,11 @@ export default class S3FileInput {
     progress.classList.add(cssClass('progress'));
     this.node.appendChild(progress);
 
+    let abortHandler: null | ((evt: MouseEvent) => void) = null;
+
     return uploadFile(file, {
       baseUrl: this.baseUrl,
-      onProgress: ((p) => {
+      onProgress: (p) => {
         progress.dataset.state = p.state;
         progress.value = Math.round(p.percentage * 100);
         switch (p.state) {
@@ -81,8 +91,18 @@ export default class S3FileInput {
             progress.title = `${file.name}: Done (${sized(p.total)})`;
             break;
         }
-      })
+      },
+      abortSignal: (onAbort) => {
+        abortHandler = (evt) => {
+          evt.preventDefault();
+          onAbort();
+        };
+        this.abortButton.addEventListener('click', abortHandler);
+      }
     }).then((r) => {
+      if (abortHandler) {
+        this.abortButton.removeEventListener('click', abortHandler);
+      }
       // progress.remove();
       return r;
     });
@@ -93,6 +113,11 @@ export default class S3FileInput {
     if (files.length === 0) {
       return;
     }
+
+    const bb = this.input.getBoundingClientRect();
+    this.spinnerWrapper.style.width = `${bb.width}px`;
+    this.spinnerWrapper.style.height = `${bb.height}px`;
+
     this.node.classList.add(cssClass('uploading'));
     this.uploadButton.disabled = true;
     this.input.setCustomValidity('Uploading files, wait till finished');
