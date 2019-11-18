@@ -1,15 +1,11 @@
 from typing import cast
 
-from django.conf import settings
 from django.forms import FileField, FileInput, Widget
 
 
 class S3FileInput(FileInput):
     class Media:
-        if settings.DEBUG:
-            js = ['s3fileinput/s3fileinput.js', 's3fileinput/aws-sdk-2.566.0.js']
-        else:
-            js = ['s3fileinput/s3fileinput.js', 's3fileinput/aws-sdk-2.566.0.min.js']
+        js = ['s3fileinput/s3fileinput.js']
 
     template_name = 's3fileinput/s3fileinput.html'
 
