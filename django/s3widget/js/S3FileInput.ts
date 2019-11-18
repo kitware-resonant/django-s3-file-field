@@ -35,22 +35,23 @@ export default class S3FileInput {
 
   private handleFiles(files: File[]) {
     this.uploadButton.disabled = files.length === 0;
+
+    this.input.setCustomValidity(files.length > 0 ? 'Press Upload Button to upload directly' : '');
   }
 
-  private async uploadFile(file: File) {
+  private uploadFile(file: File) {
     const progress = this.node.ownerDocument!.createElement('progress');
     this.node.appendChild(progress);
 
-    try {
-      return await uploadFile(file, {
-        baseUrl: this.baseUrl,
-        onProgress: (({ percentage }) => {
-          progress.value = Math.round(percentage * 100)
-        })
-      });
-    } finally {
+    return uploadFile(file, {
+      baseUrl: this.baseUrl,
+      onProgress: (({ percentage }) => {
+        progress.value = Math.round(percentage * 100)
+      })
+    }).then((r) => {
       progress.remove();
-    }
+      return r;
+    });
   }
 
   private uploadFiles(files: File[]) {
@@ -63,6 +64,7 @@ export default class S3FileInput {
     // one by or or multi??
     Promise.all(files.map((f) => this.uploadFile(f))).then(() => {
       this.node.classList.remove(cssClass('uploading'));
+      this.input.setCustomValidity('');
     });
   }
 }

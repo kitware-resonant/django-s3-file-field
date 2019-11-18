@@ -6,6 +6,7 @@
       "dom",
       "es2015"
     ],
+    "sourceMap": true,
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
