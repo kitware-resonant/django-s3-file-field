@@ -9750,7 +9750,7 @@ _xamzrequire = function e(t, n, r) {
                 throw new Error(number + " is too large (or, if negative, too small) to represent as an Int64");
             }
             var bytes = new Uint8Array(8);
-            for (var i = 7, remaining = Math.abs(Math.round(number)); i > -1 && remaining > 0; i--, 
+            for (var i = 7, remaining = Math.abs(Math.round(number)); i > -1 && remaining > 0; i--,
             remaining /= 256) {
                 bytes[i] = remaining;
             }

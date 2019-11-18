@@ -4,8 +4,7 @@ from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
-
-from core.models import CollisionSafeFileField
+from s3widget.models import S3FileField
 
 
 class Migration(migrations.Migration):
@@ -27,10 +26,7 @@ class Migration(migrations.Migration):
                 ('created', models.DateTimeField(default=django.utils.timezone.now)),
                 (
                     'resource',
-                    CollisionSafeFileField(
-                        max_length=200,
-                        upload_to=CollisionSafeFileField.uuid_prefix_filename,
-                    ),
+                    S3FileField(max_length=200, upload_to=S3FileField.uuid_prefix_filename,),
                 ),
                 (
                     'creator',
