@@ -31,13 +31,20 @@ terraform output > ../django/.env
 ```
 Note: edit the `.env` file and remove the whitespaces around the `=` characters
 
-### Init Django
+### Init Django and Python Repo
 ```sh
 pipenv --python=3
 cd django
 pip install -r requirements.txt
 ./manage.py migrate
 ./manage.py createsuperuser
+```
+
+### Init Repo Pre Commits
+```sh
+pipenv shell
+pip install pre-commit
+pre-commit install
 ```
 
 ### Init Client
