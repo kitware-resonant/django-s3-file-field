@@ -82,12 +82,8 @@ WSGI_APPLICATION = 'joist.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'joist',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
-        'HOST': os.environ.get('POSTGRES_HOST', '127.0.0.1'),
-        'PORT': '5432',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'db.sqlite3',
     }
 }
 
