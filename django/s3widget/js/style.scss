@@ -4,14 +4,14 @@ $css_prefix: s3fileinput;
 .#{$css_prefix}-wrapper {
   display: flex;
   flex-direction: column;
+}
 
-  > div {
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex: 1 1 0;
-    position: relative;
-  }
+.#{$css_prefix}-inner {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex: 1 1 0;
+  position: relative;
 
   input {
     flex: 1 1 0;
@@ -26,14 +26,28 @@ $css_prefix: s3fileinput;
 .#{$css_prefix}-progress  {
   width: unset;
   height: 5px;
-  border: none;
+  position: relative;
 
-  &[data-state=error] {
-    background: red;
+  > div {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 100%;
+    transition: width 0.25s linear, background-color 0.25 ease;
+    background-color: #17a2b8;
   }
 
-  &[data-state=aborted] {
-    background: yellow;
+  &[data-state=error] > div  {
+    background-color: #dc3545;
+  }
+
+  &[data-state=successful] > div  {
+    background-color: #28a745;
+  }
+
+  &[data-state=aborted] > div {
+    background-color: #ffc107;
   }
 }
 
