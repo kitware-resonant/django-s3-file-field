@@ -2,7 +2,7 @@ import S3 from 'aws-sdk/clients/s3';
 
 const baseUrl = '/joist';
 
-async function uploadFile(file, onProgress) {
+async function uploadFile(file: File, onProgress: (p: number)=>void) {
   // the percent reserved for upload initiate and finalize operations
   const OVERHEAD_PERCENT = 0.05;
 
@@ -48,7 +48,7 @@ async function uploadFile(file, onProgress) {
   return finalized.name;
 }
 
-export function init(elem) {
+export function init(elem: HTMLInputElement) {
   console.log(elem);
 }
 
@@ -60,6 +60,7 @@ export function init(elem) {
     document.addEventListener('DOMContentLoaded', factory);
   }
 })(function () {
-  const inputs = Array.from(document.querySelectorAll('input[type=file][data-s3fileinput]'));
+  // auto init
+  const inputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[type=file][data-s3fileinput]'));
   inputs.forEach(init);
 });
