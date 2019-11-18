@@ -6,7 +6,6 @@
 ### Requirements
  * Terraform
  * AWS CLI
- * Docker + docker-compose
  * Python 3.7
  * node
  * yarn
@@ -31,11 +30,6 @@ cd terraform
 terraform output > ../django/.env
 ```
 Note: edit the `.env` file and remove the whitespaces around the `=` characters
-
-### create db
-```sh
-docker-compose up -d
-```
 
 ### Init Django and Python Repo
 ```sh
