@@ -16,9 +16,11 @@ from rest_framework.request import Request
 @api_view(['POST'])
 @parser_classes([JSONParser])
 def finalize_upload(request: Request) -> HttpResponseBase:
-    name = request.data['name']
+    name: str = request.data['name']
+    status: str = request.data['status']
+    # can be one of aborted|uploaded
     # TODO move file to where it belongs and return the new name
-    return JsonResponse({'name': name})
+    return JsonResponse({'name': name, 'status': status})
 
 
 # @authentication_classes([TokenAuthentication])

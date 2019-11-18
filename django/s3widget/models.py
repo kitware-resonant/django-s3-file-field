@@ -15,9 +15,21 @@ class S3FileField(FileField):
 
     @staticmethod
     def uuid_prefix_filename(instance, filename):
+        print(instance)
         return f'{uuid4()}/{filename}'
 
     def formfield(self, **kwargs):
         return super().formfield(
             **{'form_class': S3FormFileField, 'max_length': self.max_length, **kwargs}
         )
+
+    def save(self, name, content, save=True):
+        return super().save(name, content, save)
+        # name = self.field.generate_filename(self.instance, name)
+        # self.name = self.storage.save(name, content, max_length=self.field.max_length)
+        # setattr(self.instance, self.field.name, self.name)
+        # self._committed = True
+
+        # # Save the object because it has changed, unless save is False
+        # if save:
+        #     self.instance.save()

@@ -1,0 +1,14 @@
+
+$css_prefix: s3fileinput;
+
+.#{$css_prefix}-wrapper {
+  display: flex;
+
+  > input {
+    flex: 1 1 0;
+  }
+}
+
+.#{$css_prefix}-uploading {
+
+}

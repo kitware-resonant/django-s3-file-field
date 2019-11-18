@@ -1,9 +1,4 @@
-import { DEFAULT_BASE_URL } from "./constants";
-
-export function init(elem: HTMLInputElement) {
-  console.log(elem);
-  const baseUrl = elem.dataset.s3fileinput || DEFAULT_BASE_URL;
-}
+import S3FileInput from "./S3FileInput";
 
 (function (factory) {
   // in case the document is already rendered
@@ -14,6 +9,6 @@ export function init(elem: HTMLInputElement) {
   }
 })(function () {
   // auto init
-  const inputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[type=file][data-s3fileinput]'));
-  inputs.forEach(init);
+  const wrappers = Array.from(document.querySelectorAll<HTMLElement>('.s3fileinput-wrapper'));
+  wrappers.forEach((w) => new S3FileInput(w));
 });
