@@ -38,7 +38,7 @@ export default class S3FileInput {
     this.input = input;
     this.node = input.ownerDocument!.createElement('div');
     this.node.classList.add(cssClass('wrapper'));
-    this.node.innerHTML = `<div class="${cssClass('spinner-inner')}">
+    this.node.innerHTML = `<div class="${cssClass('inner')}">
     <button type="button" class="${cssClass('upload')}" disabled>Upload to S3</button>
     <button type="button" class="${cssClass('abort')}">Abort</button>
     <div class="${cssClass('spinner-wrapper')}">
