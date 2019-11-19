@@ -1,3 +1,4 @@
+from typing import Any, cast
 from uuid import uuid4
 
 from django.contrib.admin.widgets import AdminFileWidget
@@ -19,6 +20,8 @@ class S3FieldFile(FieldFile):
         if save:
             self.instance.save()
 
+    cast(Any, save).alters_data = True
+
 
 class S3FileField(FileField):
     attr_class = S3FieldFile
@@ -28,6 +31,9 @@ class S3FileField(FileField):
         kwargs['max_length'] = kwargs.get('max_length', 200)
         kwargs['upload_to'] = self.uuid_prefix_filename
         super().__init__(*args, **kwargs)
+
+    def get_internal_type(self):
+        return 'S3FieldFile'
 
     @staticmethod
     def uuid_prefix_filename(instance, filename):
@@ -40,9 +46,3 @@ class S3FileField(FileField):
             copy['widget'] = S3AdminFileInput
         copy.setdefault('form_class', S3FormFileField)
         return super().formfield(**copy)
-
-    def pre_save(self, model_instance, add):
-        return super().pre_save(model_instance, add)
-
-    def save_form_data(self, instance, data):
-        return super().save_form_data(instance, data)
