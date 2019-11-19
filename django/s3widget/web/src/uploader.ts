@@ -1,7 +1,7 @@
 import S3 from 'aws-sdk/clients/s3';
 import { DEFAULT_BASE_URL, fetchOptions } from './constants';
 
-interface IPrepareResponse {
+interface PrepareResponse {
   accessKeyId: string;
   secretAccessKey: string;
   sessionToken: string;
@@ -9,22 +9,22 @@ interface IPrepareResponse {
   objectKey: string;
 }
 
-interface IFinalizeResponse {
+interface FinalizeResponse {
   id?: string;
   name: string;
 }
 
-export interface IUploadResult extends IFinalizeResponse {
+export interface UploadResult extends FinalizeResponse {
   state: 'aborted' | 'successful' | 'error';
   msg: string;
-  error?: any;
+  error?: Error;
 }
 
 export declare type EProgressState = 'initial' | 'uploading' | 'preparing' | 'finishing' | 'done' | 'aborted';
 
-export interface IUploadOptions {
+export interface UploadOptions {
   baseUrl: string;
-  onProgress(progress: { percentage: number, loaded: number, total: number, state: EProgressState }): void;
+  onProgress(progress: { percentage: number; loaded: number; total: number; state: EProgressState }): void;
   abortSignal(onAbort: () => void): void;
 }
 
@@ -32,15 +32,15 @@ export interface IUploadOptions {
 const OVERHEAD_PERCENT = 0.05;
 
 
-export async function uploadFile(file: File, options: Partial<IUploadOptions> = {}): Promise<IUploadResult> {
+export async function uploadFile(file: File, options: Partial<UploadOptions> = {}): Promise<UploadResult> {
   const { onProgress, baseUrl, abortSignal } = Object.assign({
     onProgress: () => undefined,
     baseUrl: DEFAULT_BASE_URL,
     abortSignal: () => undefined
-  } as IUploadOptions, options);
+  } as UploadOptions, options);
 
   const size = file.size;
-  const progress = (state: EProgressState, percentage: number, loaded = 0, total = size) => {
+  const progress = (state: EProgressState, percentage: number, loaded = 0, total = size): void => {
     onProgress({
       percentage,
       loaded,
@@ -51,7 +51,7 @@ export async function uploadFile(file: File, options: Partial<IUploadOptions> = 
 
   progress('preparing', 0);
 
-  let initUpload: IPrepareResponse;
+  let initUpload: PrepareResponse;
   try {
     initUpload = await fetch(`${baseUrl}/prepare-upload/`, {
       ...fetchOptions(),
@@ -59,7 +59,7 @@ export async function uploadFile(file: File, options: Partial<IUploadOptions> = 
       body: JSON.stringify({
         name: file.name,
       }),
-    }).then((r) => r.json()) as IPrepareResponse;
+    }).then((r) => r.json()) as PrepareResponse;
 
     progress('uploading', OVERHEAD_PERCENT / 2);
   } catch (err) {
@@ -85,13 +85,13 @@ export async function uploadFile(file: File, options: Partial<IUploadOptions> = 
     Body: file,
   });
 
-  task.on('httpUploadProgress', (evt) => {
+  task.on('httpUploadProgress', (evt): void => {
     const s3Progress = evt.loaded / evt.total;
     // s3Progress only spans the total fileProgress range [0.05, 0.9)
     progress('uploading', OVERHEAD_PERCENT / 2 + s3Progress * (1 - OVERHEAD_PERCENT), evt.loaded, evt.total);
   });
 
-  function finalizeUpload(status: 'uploaded' | 'aborted' = 'uploaded') {
+  function finalizeUpload(status: 'uploaded' | 'aborted' = 'uploaded'): Promise<FinalizeResponse> {
     return fetch(`${baseUrl}/finalize-upload/`, {
       ...fetchOptions(),
       method: 'POST',
@@ -101,10 +101,10 @@ export async function uploadFile(file: File, options: Partial<IUploadOptions> = 
         status,
         upload: initUpload,
       }),
-    }).then((r) => r.json() as Promise<IFinalizeResponse>);
+    }).then((r) => r.json());
   }
 
-  return new Promise<IUploadResult>(async (resolve) => {
+  return new Promise<UploadResult>((resolve) => {
     abortSignal(() => {
       task.abort();
       progress('finishing', 1);
@@ -114,7 +114,7 @@ export async function uploadFile(file: File, options: Partial<IUploadOptions> = 
           ...r,
           state: 'aborted',
           msg: 'Upload aborted',
-        } as IUploadResult;
+        } as UploadResult;
       }).then(resolve).catch((error) => {
         resolve({
           name: file.name,
@@ -132,14 +132,14 @@ export async function uploadFile(file: File, options: Partial<IUploadOptions> = 
         return {
           ...r,
           state: 'successful'
-        } as IUploadResult;
+        } as UploadResult;
       }).then(resolve).catch((error) => {
         resolve({
           name: file.name,
           state: 'error',
           msg: 'Error occurred while finishing the upload',
           error
-        });;
+        });
       }).catch((error) => {
         resolve({
           name: file.name,

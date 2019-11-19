@@ -1,5 +1,6 @@
-export const DEFAULT_BASE_URL = '/api/joist';
 import Cookies from 'js-cookie';
+
+export const DEFAULT_BASE_URL = '/api/joist';
 
 export function fetchOptions(): RequestInit {
   return {

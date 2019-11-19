@@ -1,12 +1,12 @@
 import './style.scss';
 import { DEFAULT_BASE_URL } from './constants';
-import { uploadFile, IUploadResult } from './uploader';
+import { uploadFile, UploadResult } from './uploader';
 
-function cssClass(clazz: string) {
+function cssClass(clazz: string): string {
   return `s3fileinput-${clazz}`;
 }
 
-function sized(val: number) {
+function sized(val: number): string {
   const units = ['bytes', 'KiB', 'MiB', 'GiB', 'TiB'];
   const factor = 1024;
   let v = val;
@@ -17,7 +17,7 @@ function sized(val: number) {
   return `${Math.round(v * 100) / 100}${units[0]}`;
 }
 
-function fileInfo(result: IUploadResult, file: File) {
+function fileInfo(result: UploadResult, file: File): string {
   return JSON.stringify({
     name: result.name,
     size: file.size,
@@ -53,7 +53,7 @@ export default class S3FileInput {
 
     this.baseUrl = this.input.dataset.s3fileinput || DEFAULT_BASE_URL;
 
-    this.input.onchange = (evt) => {
+    this.input.onchange = (evt): void => {
       evt.preventDefault();
       if (this.input.type === 'file') {
         const files = Array.from(this.input.files || []);
@@ -65,20 +65,20 @@ export default class S3FileInput {
       }
     };
 
-    this.uploadButton.onclick = (evt) => {
+    this.uploadButton.onclick = (evt): void => {
       evt.preventDefault();
       evt.stopPropagation();
       this.uploadFiles();
     }
   }
 
-  private handleFiles(files: File[]) {
+  private handleFiles(files: File[]): void {
     this.uploadButton.disabled = files.length === 0;
 
     this.input.setCustomValidity(files.length > 0 ? 'Press Upload Button to upload directly' : '');
   }
 
-  private uploadFile(file: File): Promise<IUploadResult> {
+  private uploadFile(file: File): Promise<UploadResult> {
     const progress = this.node.ownerDocument!.createElement('div');
     progress.classList.add(cssClass('progress'));
     const indicator = this.node.ownerDocument!.createElement('div');
@@ -114,7 +114,7 @@ export default class S3FileInput {
         }
       },
       abortSignal: (onAbort) => {
-        abortHandler = (evt) => {
+        abortHandler = (evt): void => {
           evt.preventDefault();
           onAbort();
         };
@@ -141,7 +141,7 @@ export default class S3FileInput {
     });
   }
 
-  private uploadFiles() {
+  private uploadFiles(): Promise<void> | void {
     const files = Array.from(this.input.files || []);
     if (files.length === 0) {
       return;
@@ -156,27 +156,18 @@ export default class S3FileInput {
     this.input.setCustomValidity('Uploading files, wait till finished');
     this.input.value = ''; // reset file selection
 
-    if (files.length === 1) {
-      const file = files[0];
-      return this.uploadFile(file).then((result) => {
-        this.node.classList.remove(cssClass('uploading'));
-        this.node.classList.add(cssClass('set'));
-        if (result.state === 'successful') {
-          this.input.setCustomValidity(''); // no error
-          this.input.type = 'text';
-          this.input.value = fileInfo(result, file);
-        }
-      })
-    }
 
     // TODO support multi file upload -> is that possible with django anyhow?
-    return null;
-    // prepare n progress bars
-    // one by or or multi??
-    // return Promise.all(files.map((f) => this.uploadFile(f))).then((results) => {
-    //   this.node.classList.remove(cssClass('uploading'));
+    const file = files[0];
 
-    //   this.input.setCustomValidity('');
-    // });
+    return this.uploadFile(file).then((result) => {
+      this.node.classList.remove(cssClass('uploading'));
+      this.node.classList.add(cssClass('set'));
+      if (result.state === 'successful') {
+        this.input.setCustomValidity(''); // no error
+        this.input.type = 'text';
+        this.input.value = fileInfo(result, file);
+      }
+    });
   }
 }

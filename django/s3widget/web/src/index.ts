@@ -1,14 +1,16 @@
-import S3FileInput from "./S3FileInput";
+export { default } from './S3FileInput';
+export * from './S3FileInput';
 
-(function (factory) {
-  // in case the document is already rendered
-  if (document.readyState != 'loading') {
-    factory();
-  } else {
-    document.addEventListener('DOMContentLoaded', factory);
-  }
-})(function () {
+import S3FileInput from './S3FileInput';
+
+export function autoInit(): void {
   // auto init
   const wrappers = Array.from(document.querySelectorAll<HTMLInputElement>('input[data-s3fileinput]'));
   wrappers.forEach((w) => new S3FileInput(w));
-});
+}
+
+if (document.readyState != 'loading') {
+  autoInit();
+} else {
+  document.addEventListener('DOMContentLoaded', autoInit);
+}
