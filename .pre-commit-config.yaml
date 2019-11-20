@@ -26,6 +26,6 @@ repos:
       - id: toxlint
         name: tox
         entry: tox
-        pass_filenames: false
+        pass_filenames: true
         language: system
         types: [python]
