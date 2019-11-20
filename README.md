@@ -20,6 +20,22 @@ pip install -e 'git+https://github.com/danlamanna/joist.git#egg=joist'
 
 TODO
 
+## Usage
+
+instead of
+
+```python
+photo = models.FileField()
+```
+
+```python
+from joist.models import S3FileField
+
+photo = S3FileField()
+```
+
+TODO output image
+
 
 ## Development Environment
 
