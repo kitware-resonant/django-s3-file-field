@@ -5,8 +5,10 @@
 
 <ul>
 {% for blob in object_list %}
-    <li><a href="/blob/{{ blob.id }}/">{{ blob }}</a></li>
+    <li><a href="/{{ blob.id }}/">{{ blob }}</a></li>
 {% endfor %}
 </ul>
+
+<a href="/new/">Add Blob</a>
 
 {% endblock %}

@@ -10,9 +10,9 @@ router.register(r'blob', BlobViewSet)
 
 
 urlpatterns = [
-    path('blob/', IndexView.as_view(), name='index'),
-    path('blob/new/', new_blob, name='new'),
-    path('blob/<int:pk>/', DetailView.as_view(), name='detail'),
+    path('', IndexView.as_view(), name='index'),
+    path('new/', new_blob, name='new'),
+    path('<int:pk>/', DetailView.as_view(), name='detail'),
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
     path('api/save-blob/', save_blob),

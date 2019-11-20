@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('joist', '0001_add_blob_model'),
+        ('blobs', '0001_add_blob_model'),
     ]
 
     operations = [
