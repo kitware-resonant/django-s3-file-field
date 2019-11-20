@@ -1,5 +1,7 @@
 # joist
 
+[![PyPI version shields.io](https://img.shields.io/pypi/v/joist.svg)](https://pypi.python.org/pypi/joist/)
+
 Joist is a Django Widget library for providing a direct S3 bucket upload via the browser instead of going through the server.
 
 
