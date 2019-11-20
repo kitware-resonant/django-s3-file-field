@@ -4,7 +4,8 @@ from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
-from s3widget.models import S3FileField
+
+from joist.models import S3FileField
 
 
 class Migration(migrations.Migration):

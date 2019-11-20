@@ -41,8 +41,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework.authtoken',
-    's3widget',
     'joist',
+    'blobs',
 ]
 
 MIDDLEWARE = [
@@ -56,7 +56,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'joist.urls'
+ROOT_URLCONF = 'blobs.urls'
 
 TEMPLATES = [
     {
@@ -74,7 +74,7 @@ TEMPLATES = [
     }
 ]
 
-WSGI_APPLICATION = 'joist.wsgi.application'
+WSGI_APPLICATION = 'blobs.wsgi.application'
 
 
 # Database
@@ -124,4 +124,4 @@ AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
 AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
 UPLOAD_STS_ARN = os.environ['UPLOAD_STS_ARN']
 
-S3_WIDGET_UPLOAD_DURATION = 3600
+JOIST_UPLOAD_DURATION = 3600

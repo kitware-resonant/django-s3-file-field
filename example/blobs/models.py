@@ -1,7 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils import timezone
-from s3widget.models import S3FileField
+
+from joist.models import S3FileField
 
 
 class Blob(models.Model):
