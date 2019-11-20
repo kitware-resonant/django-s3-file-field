@@ -20,7 +20,15 @@
     </div>
 
     <div v-if="submitting">
-      Progress: {{ totalProgress * 100 }}%
+      <div
+        v-for="file in files"
+        :key="file.file.name"
+      >
+        {{ file.file.name }}
+        <progress :value="file.progress">
+          {{ Math.round(file.progress * 100) }} %
+        </progress>
+      </div>
     </div>
   </form>
 </template>
@@ -41,53 +49,50 @@ interface FileUploadUrl {
   objectKey: string;
 }
 
+interface IFileInfo {
+  file: File;
+  progress: number;
+}
+
+interface IFinalizeResponse {
+  name: string;
+}
+
 @Component
 export default class JoistUpload extends Vue {
-  @Prop(String) private readonly accept: string | undefined;
+  @Prop(String)
+  private readonly accept: string | undefined;
 
-  @Ref() private readonly fileInput!: HTMLInputElement;
+  @Ref()
+  private readonly fileInput!: HTMLInputElement;
 
-  private files: File[] = [];
+  private files: IFileInfo[] = [];
 
-  private submitting: boolean = false;
-
-  private currentUploadNum: number = 0;
-
-  private fileProgress: number = 0;
+  private submitting = false;
 
   private get filesSelected() {
     return this.files.length > 0;
   }
 
-  private get totalProgress() {
-    // fileProgress is an additional fractional amount in [0, 1]
-    return (this.currentUploadNum + this.fileProgress) / this.files.length;
-  }
-
-  private get currentUploadName() {
-    const currentFile = this.files[this.currentUploadNum];
-    return currentFile ? currentFile.name : '';
-  }
-
   private setFiles() {
-    this.files = Array.from(this.fileInput.files || []);
+    this.files = Array.from(this.fileInput.files || []).map(file => ({ file, progress: 0 }));
   }
 
-  private async uploadFile(file: File) {
+  private static async uploadFile(file: File, onProgress: (progress: number) => void) {
     // the percent reserved for upload initiate and finalize operations
     const OVERHEAD_PERCENT = 0.05;
 
-    this.fileProgress = 0;
+    onProgress(0);
     const initUploadResp = await http.request({
       method: 'get',
-      url: 'file-upload-url/',
+      url: 'joist/file-upload-url/',
       params: {
         name: file.name,
       },
     });
     const initUpload: FileUploadUrl = initUploadResp!.data;
 
-    this.fileProgress = OVERHEAD_PERCENT / 2;
+    onProgress(OVERHEAD_PERCENT / 2);
 
     const s3 = new S3({
       apiVersion: '2006-03-01',
@@ -105,38 +110,44 @@ export default class JoistUpload extends Vue {
       .on('httpUploadProgress', (evt) => {
         const s3Progress = evt.loaded / evt.total;
         // s3Progress only spans the total fileProgress range [0.1, 0.9)
-        this.fileProgress = OVERHEAD_PERCENT / 2 + s3Progress * (1 - OVERHEAD_PERCENT);
+        onProgress(OVERHEAD_PERCENT / 2 + s3Progress * (1 - OVERHEAD_PERCENT));
       })
       .promise();
 
-    await http.request({
+    const finalized = (await http.request({
       method: 'post',
-      url: 'finalize-upload/',
+      url: 'joist/finalize-upload/',
       data: {
         name: initUpload.objectKey,
       },
-    });
-    this.fileProgress = 1;
+    })).data as IFinalizeResponse;
+
+    onProgress(1);
+
+    return finalized.name;
   }
 
   public reset() {
     this.fileInput.value = '';
     this.submitting = false;
-    this.currentUploadNum = 0;
-    this.fileProgress = 0;
   }
 
   @Emit('complete')
   public async submit() {
     this.submitting = true;
 
-    this.currentUploadNum = 0;
-    for (const file of this.files) { // eslint-disable-line no-restricted-syntax
-      await this.uploadFile(file); // eslint-disable-line no-await-in-loop
+    const uploaded = this.files.map(file => JoistUpload.uploadFile(file.file, (p) => {
+      file.progress = p; // eslint-disable-line no-param-reassign
+    }));
+    const names = await Promise.all(uploaded);
 
-      this.fileProgress = 0;
-      this.currentUploadNum += 1;
-    }
+    await http.request({
+      method: 'post',
+      url: 'save-blob/',
+      data: {
+        names,
+      },
+    });
   }
 }
 </script>

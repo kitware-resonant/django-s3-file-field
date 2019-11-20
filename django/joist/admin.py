@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from core.models import Blob
+from .models import Blob
 
 
 @admin.register(Blob)

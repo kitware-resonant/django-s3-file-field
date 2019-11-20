@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from core.models import Blob
+from .models import Blob
 
 
 class BlobSerializer(serializers.ModelSerializer):
