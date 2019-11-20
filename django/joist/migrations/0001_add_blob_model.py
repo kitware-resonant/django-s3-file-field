@@ -24,10 +24,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ('created', models.DateTimeField(default=django.utils.timezone.now)),
-                (
-                    'resource',
-                    S3FileField(max_length=200, upload_to=S3FileField.uuid_prefix_filename,),
-                ),
+                ('resource', S3FileField(max_length=200),),
                 (
                     'creator',
                     models.ForeignKey(

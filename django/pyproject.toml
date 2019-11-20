@@ -2,4 +2,4 @@
 line-length = 100
 skip-string-normalization = true
 target-version = ['py37']
-exclude='\.eggs|\.git|\.mypy_cache|\.tox|\.venv|_build|buck-out|build|dist'
+exclude='\.eggs|\.git|\.mypy_cache|\.tox|\.venv|_build|buck-out|build|dist|web'

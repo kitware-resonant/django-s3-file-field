@@ -1,11 +1,17 @@
 import json
-from typing import Any, cast, Dict, Optional
+from typing import Any, cast, Dict, Iterable, Mapping, Optional
 
 from django.forms import ClearableFileInput, FileField, Widget
 
 
 class S3FakeFile:
-    def __init__(self, info: Dict[str, Any]):
+    """
+    helper object to act similar to an UploadedFile.
+
+    But without the data since they already have been uploaded.
+    """
+
+    def __init__(self, info: Mapping[str, Any]):
         super().__init__()
 
         self.name: str = info['id']
@@ -24,6 +30,8 @@ class S3FakeFile:
 
 
 class S3FileInput(ClearableFileInput):
+    """widget to render the S3 File Input."""
+
     class Media:
         js = ['s3fileinput/s3fileinput.js']
 
@@ -33,7 +41,7 @@ class S3FileInput(ClearableFileInput):
 
     def __init__(self, attrs=None):
         if attrs is not None and 'baseurl' in attrs:
-            self.baseurl = attrs.pop('type')
+            self.baseurl = attrs.pop('baseurl')
         super().__init__(attrs)
 
     def get_context(self, name: str, value: str, attrs):
@@ -41,24 +49,27 @@ class S3FileInput(ClearableFileInput):
         context['widget'].update({'baseurl': self.baseurl or ''})
         return context
 
-    def value_from_datadict(self, data, files, name):
-        if name in files:
-            return files[name]
-        if data.get(name):
+    def value_from_datadict(
+        self, data: Dict[str, Any], files: Mapping[str, Iterable[Any]], name: str
+    ):
+        if name not in files and data.get(name):
             # JSON fake file
             return S3FakeFile(json.loads(data[name]))
-        upload = files.get(name)
-        return upload
+        return super().value_from_datadict(data, files, name)
 
-    def value_omitted_from_data(self, data, files, name):
+    def value_omitted_from_data(self, data: Mapping[str, Any], files: Mapping[str, Any], name: str):
         return (
             name not in files and not data.get(name) and self.clear_checkbox_name(name) not in data
         )
 
 
 class S3AdminFileInput(S3FileInput):
+    """widget used by the admin page."""
+
     template_name = 's3fileinput/s3adminfileinput.html'
 
 
 class S3FormFileField(FileField):
+    """form field used by render an model.S3FileField."""
+
     widget = cast(Widget, S3FileInput)

@@ -4,11 +4,11 @@ from django.urls import path
 
 from .views import finalize_upload, prepare_upload
 
+urlpatterns = [
+    path(f'prepare-upload/', prepare_upload),
+    path(f'finalize-upload/', finalize_upload),
+]
 
-def add_url_patterns(urlpatterns: List[Any], prefix='api/joist'):
-    urlpatterns.extend(
-        [
-            path(f'{prefix}/prepare-upload/', prepare_upload),
-            path(f'{prefix}/finalize-upload/', finalize_upload),
-        ]
-    )
+
+def add_url_patterns(patterns: List[Any], prefix='api/joist'):
+    patterns.append(path(prefix, urlpatterns))

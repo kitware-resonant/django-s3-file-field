@@ -2,7 +2,6 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework import routers
 from rest_framework.authtoken import views as authviews
-from s3widget.urls import add_url_patterns
 
 from .views import BlobViewSet, DetailView, IndexView, new_blob, save_blob
 
@@ -19,6 +18,5 @@ urlpatterns = [
     path('api/save-blob/', save_blob),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('api/auth/', authviews.obtain_auth_token),
+    path('api/joist', include('s3widget.urls')),
 ]
-
-add_url_patterns(urlpatterns)

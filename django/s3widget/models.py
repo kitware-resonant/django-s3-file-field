@@ -8,7 +8,13 @@ from .widgets import S3AdminFileInput, S3FakeFile, S3FormFileField
 
 
 class S3FieldFile(FieldFile):
-    def save(self, name, content, save=True):
+    """
+    Helper class for the S3FileField.
+
+    it wraps the value within a model instance.
+    """
+
+    def save(self, name: str, content: Any, save=True):
         if not isinstance(content, S3FakeFile):
             return super().save(name, content, save)
 
@@ -24,19 +30,25 @@ class S3FieldFile(FieldFile):
 
 
 class S3FileField(FileField):
+    """
+    A django model field that is similar to a file field.
+
+    Except it supports directly uploading the file to S3 via the UI
+    """
+
     attr_class = S3FieldFile
-    description = 'A file field which is uploaded to <randomuuid>/filename.'
+    description = (
+        'A file field which is supports direct uploads to S3 via the '
+        'UI and fallsback to uploaded to <randomuuid>/filename.'
+    )
 
     def __init__(self, *args, **kwargs):
-        kwargs['max_length'] = kwargs.get('max_length', 200)
-        kwargs['upload_to'] = self.uuid_prefix_filename
+        kwargs.setdefault('max_length', 2000)
+        kwargs.setdefault('upload_to', self.uuid_prefix_filename)
         super().__init__(*args, **kwargs)
 
-    def get_internal_type(self):
-        return 'S3FieldFile'
-
     @staticmethod
-    def uuid_prefix_filename(instance, filename):
+    def uuid_prefix_filename(instance: Any, filename: str):
         return f'{uuid4()}/{filename}'
 
     def formfield(self, **kwargs):
