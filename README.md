@@ -39,6 +39,8 @@ Note:
 ```sh
 pipenv --python=3
 pipenv install -r requirements.txt example/requirements.txt
+pip install -e .
+
 cd example
 ./manage.py migrate
 ./manage.py createsuperuser

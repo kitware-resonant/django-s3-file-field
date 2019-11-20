@@ -72,4 +72,4 @@ dmypy.json
 *.sqlite3
 
 node_modules
-/static
+/joist/static

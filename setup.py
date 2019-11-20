@@ -144,7 +144,7 @@ def prerelease_local_scheme(version):
     """
     from setuptools_scm.version import get_local_node_and_date
 
-    if os.getenv('CIRCLE_BRANCH') == 'master':
+    if os.getenv('CI_BRANCH') == 'master':
         return ''
     else:
         return get_local_node_and_date(version)
@@ -161,7 +161,7 @@ extras_require = {}
 # perform the install
 setup(
     name='joist',
-    version='0.1',
+    version='0.0.1',
     use_scm_version={'local_scheme': prerelease_local_scheme},
     setup_requires=['setuptools-scm'],
     description='A django widget library for direct S3 uploads',
@@ -183,8 +183,9 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
     ],
-    include_package_data=True,
     packages=find_packages(include=['joist']),
+    package_data={'': ['*.html', '*.js']},
+    include_package_data=True,
     zip_safe=False,
     extras_require=extras_require,
     install_requires=install_reqs,

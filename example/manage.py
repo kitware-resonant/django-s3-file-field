@@ -6,9 +6,6 @@ import warnings
 
 import dotenv
 
-# add parent dir
-sys.path.insert(0, os.path.dirname(os.path.realpath(os.path.dirname(__file__))))
-
 
 def main() -> None:
     with warnings.catch_warnings():
