@@ -2,11 +2,26 @@
 
 [![PyPI version shields.io](https://img.shields.io/pypi/v/joist.svg)](https://pypi.python.org/pypi/joist/)
 
-Joist is a Django Widget library for providing a direct S3 bucket upload via the browser instead of going through the server.
+Joist is a Django Widget library for providing a direct S3 bucket upload via the browser instead of going through the server. It extends the [django-storages](https://github.com/jschneier/django-storages) library for the S3 file storage
+
+## Installation
+
+```sh
+pip install django-storages joist
+```
+
+by source:
+
+```sh
+pip install -e 'git+https://github.com/danlamanna/joist.git#egg=joist'
+```
+
+## Configuration
+
+TODO
 
 
-
-## development environment
+## Development Environment
 
 ### Requirements
  * Terraform
