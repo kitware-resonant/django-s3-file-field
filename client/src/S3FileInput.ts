@@ -25,6 +25,17 @@ function fileInfo(result: UploadResult, file: File): string {
   });
 }
 
+export interface S3FileInputOptions {
+  /**
+   * @default /api/joist
+   */
+  baseUrl: string;
+  /**
+   * @default false
+   */
+  autoUpload: boolean;
+}
+
 export default class S3FileInput {
   private readonly node: HTMLElement;
   private readonly input: HTMLInputElement;
@@ -33,15 +44,22 @@ export default class S3FileInput {
   private readonly spinnerWrapper: HTMLElement;
 
   private readonly baseUrl: string;
+  private readonly autoUpload: boolean;
 
-  constructor(input: HTMLInputElement) {
+  constructor(input: HTMLInputElement, options: Partial<S3FileInputOptions> = {}) {
     this.input = input;
+
+    this.baseUrl =
+      options.baseUrl || this.input.dataset.s3fileinput || DEFAULT_BASE_URL;
+    this.autoUpload =
+      options.autoUpload != null
+        ? options.autoUpload
+        : this.input.dataset.autoUpload != null;
+
     this.node = input.ownerDocument!.createElement("div");
     this.node.classList.add(cssClass("wrapper"));
     this.node.innerHTML = `<div class="${cssClass("inner")}">
-    <button type="button" class="${cssClass(
-      "upload"
-    )}" disabled>Upload to S3</button>
+    <button type="button" class="${cssClass("upload")}" disabled>Upload to S3</button>
     <button type="button" class="${cssClass("abort")}">Abort</button>
     <div class="${cssClass("spinner-wrapper")}">
       <div class="${cssClass(
@@ -53,6 +71,9 @@ export default class S3FileInput {
     this.uploadButton = this.node.querySelector<HTMLButtonElement>(
       `.${cssClass("upload")}`
     )!;
+    if (this.autoUpload) {
+      this.uploadButton.classList.add(cssClass('autoupload'));
+    }
     this.uploadButton.insertAdjacentElement("beforebegin", this.input);
     this.abortButton = this.node.querySelector<HTMLButtonElement>(
       `.${cssClass("abort")}`
@@ -61,7 +82,6 @@ export default class S3FileInput {
       `.${cssClass("spinner-wrapper")}`
     )!;
 
-    this.baseUrl = this.input.dataset.s3fileinput || DEFAULT_BASE_URL;
 
     this.input.onchange = (evt): void => {
       evt.preventDefault();
@@ -82,7 +102,10 @@ export default class S3FileInput {
     };
   }
 
-  private handleFiles(files: File[]): void {
+  private handleFiles(files: File[]): void | Promise<void> {
+    if (this.autoUpload) {
+      return this.uploadFiles();
+    }
     this.uploadButton.disabled = files.length === 0;
 
     this.input.setCustomValidity(

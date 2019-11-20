@@ -127,6 +127,10 @@ $dot-width: 0.5em;
   }
 }
 
+.#{$css_prefix}-autoupload {
+  display: none;
+}
+
 .#{$css_prefix}-uploading {
   .#{$css_prefix}-upload {
     display: none;

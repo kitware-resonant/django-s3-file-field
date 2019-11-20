@@ -9,7 +9,7 @@ interface PrepareResponse {
   objectKey: string;
 }
 
-interface FinalizeResponse {
+export interface FinalizeResponse {
   id?: string;
   name: string;
 }

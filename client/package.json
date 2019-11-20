@@ -2,16 +2,18 @@
   "name": "joist",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "author": "Samuel Gratzl",
+  "license": "MIT",
+  "main": "build/joist.js",
+  "types": "build/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "webpack --mode=development",
     "lint": "eslint src/**.ts",
     "watch": "webpack -w --mode=development",
-    "build": "webpack --mode=production"
+    "build": "webpack --mode=production",
+    "pretest": "npm run lint",
+    "test": "echo \"Error: no test specified\""
   },
-  "author": "",
-  "license": "MIT",
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^2.8.0",
     "@typescript-eslint/parser": "^2.8.0",
