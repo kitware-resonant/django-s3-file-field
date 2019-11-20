@@ -26,4 +26,6 @@ resource "aws_s3_bucket" "server_blobs" {
     # Exclude "x-amz-request-id" and "x-amz-id-2", as they are only for debugging
     max_age_seconds = 600
   }
+
+  force_destroy = true
 }

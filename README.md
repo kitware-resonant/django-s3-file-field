@@ -35,7 +35,7 @@ Note: edit the `.env` file and remove the whitespaces around the `=` characters
 ```sh
 pipenv --python=3
 cd django
-pip install -r requirements.txt
+pipenv install -r requirements.txt
 ./manage.py migrate
 ./manage.py createsuperuser
 ```
