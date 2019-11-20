@@ -1,13 +1,13 @@
-import Cookies from 'js-cookie';
+import Cookies from "js-cookie";
 
-export const DEFAULT_BASE_URL = '/api/joist';
+export const DEFAULT_BASE_URL = "/api/joist";
 
 export function fetchOptions(): RequestInit {
   return {
-    credentials: 'same-origin',
+    credentials: "same-origin",
     headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': Cookies.get('csrftoken')!
-    },
-  }
+      "Content-Type": "application/json",
+      "X-CSRFToken": Cookies.get("csrftoken")!
+    }
+  };
 }

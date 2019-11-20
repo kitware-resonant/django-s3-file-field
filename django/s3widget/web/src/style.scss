@@ -1,4 +1,3 @@
-
 $css_prefix: s3fileinput;
 
 .#{$css_prefix}-wrapper {
@@ -22,8 +21,7 @@ $css_prefix: s3fileinput;
   display: none;
 }
 
-
-.#{$css_prefix}-progress  {
+.#{$css_prefix}-progress {
   width: unset;
   height: 5px;
   position: relative;
@@ -39,19 +37,20 @@ $css_prefix: s3fileinput;
     background-color: #17a2b8;
   }
 
-  &[data-state=error] > div  {
+  &[data-state="error"] > div {
     background-color: #dc3545;
+    min-width: 25%;
   }
 
-  &[data-state=successful] > div  {
+  &[data-state="successful"] > div {
     background-color: #28a745;
   }
 
-  &[data-state=aborted] > div {
+  &[data-state="aborted"] > div {
     background-color: #ffc107;
+    min-width: 25%;
   }
 }
-
 
 // spinner based on loading.io
 

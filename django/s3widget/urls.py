@@ -5,8 +5,8 @@ from django.urls import path
 from .views import finalize_upload, prepare_upload
 
 urlpatterns = [
-    path(f'prepare-upload/', prepare_upload),
-    path(f'finalize-upload/', finalize_upload),
+    path('prepare-upload/', prepare_upload),
+    path('finalize-upload/', finalize_upload),
 ]
 
 
