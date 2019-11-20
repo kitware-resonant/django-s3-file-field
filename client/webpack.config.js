@@ -3,7 +3,7 @@ const path = require('path');
 module.exports = {
   entry: './src/index.ts',
   output: {
-    path: path.resolve('../static/s3fileinput/'),
+    path: path.resolve('../joist/static/s3fileinput/'),
     filename: 's3fileinput.js',
     libraryExport: 'S3FileInput',
     libraryTarget: 'umd',
