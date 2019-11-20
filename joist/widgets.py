@@ -33,9 +33,9 @@ class S3FileInput(ClearableFileInput):
     """widget to render the S3 File Input."""
 
     class Media:
-        js = ['s3fileinput/s3fileinput.js']
+        js = ['joist/joist.js']
 
-    template_name = 's3fileinput/s3fileinput.html'
+    template_name = 'joist/s3fileinput.html'
 
     baseurl: Optional[str] = None
 
@@ -66,7 +66,7 @@ class S3FileInput(ClearableFileInput):
 class S3AdminFileInput(S3FileInput):
     """widget used by the admin page."""
 
-    template_name = 's3fileinput/s3adminfileinput.html'
+    template_name = 'joist/s3adminfileinput.html'
 
 
 class S3FormFileField(FileField):

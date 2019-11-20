@@ -28,4 +28,5 @@ repos:
         entry: tox
         pass_filenames: true
         language: system
+        exclude: setup.py
         types: [python]

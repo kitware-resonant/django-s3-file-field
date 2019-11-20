@@ -1,32 +1,32 @@
 const path = require('path');
 
 module.exports = {
-  entry: './src/index.ts',
+  entry: "./src/index.ts",
   output: {
-    path: path.resolve('../joist/static/s3fileinput/'),
-    filename: 's3fileinput.js',
-    libraryExport: 'S3FileInput',
-    libraryTarget: 'umd',
+    path: path.resolve("../joist/static/joist/"),
+    filename: "joist.js",
+    libraryExport: "Joist",
+    libraryTarget: "umd"
   },
   resolve: {
     // Add `.ts` and `.tsx` as a resolvable extension.
-    extensions: ['.ts', '.tsx', '.js']
+    extensions: [".ts", ".tsx", ".js"]
   },
   module: {
     rules: [
       // all files with a `.ts` or `.tsx` extension will be handled by `ts-loader`
-      { test: /\.tsx?$/, loader: 'ts-loader' },
+      { test: /\.tsx?$/, loader: "ts-loader" },
       {
         test: /\.s[ac]ss$/i,
         use: [
           // Creates `style` nodes from JS strings
-          'style-loader',
+          "style-loader",
           // Translates CSS into CommonJS
-          'css-loader',
+          "css-loader",
           // Compiles Sass to CSS
-          'sass-loader',
-        ],
+          "sass-loader"
+        ]
       }
-    ],
+    ]
   }
-}
+};
