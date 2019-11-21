@@ -96,10 +96,7 @@ class NPM(Command):
         return self.has_npm()
 
     def should_run_npm_build(self):
-        for t in self.targets:
-            if not os.path.exists(t):
-                return True
-        return False
+        return True
 
     def run(self):
         has_npm = self.has_npm()
@@ -121,7 +118,7 @@ class NPM(Command):
             log.info("building with npm.  This may take a while...")
             npm_name = self.get_npm_name()
             check_call(
-                [npm_name, 'run', 'build'], cwd=node_root, stdout=sys.stdout, stderr=sys.stderr
+                [npm_name, 'run', 'build:widget'], cwd=node_root, stdout=sys.stdout, stderr=sys.stderr
             )
 
         for t in self.targets:

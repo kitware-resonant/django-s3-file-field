@@ -1,6 +1,6 @@
 {
   "name": "joist",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "",
   "author": "Samuel Gratzl",
   "license": "MIT",
@@ -14,10 +14,13 @@
   "scripts": {
     "clean": "rimraf build",
     "dev": "webpack --mode=development",
+    "dev:widget": "webpack --mode=development --config webpack.config.widget.js",
     "compile": "tsc -p tsconfig.lib.json",
     "lint": "eslint src/**.ts",
     "watch": "webpack -w --mode=development",
+    "watch:widget": "webpack -w --mode=development --config webpack.config.widget.js",
     "build": "npm run clean && npm run compile && webpack --mode=production",
+    "build:widget": "webpack --mode=production --config webpack.config.widget.js",
     "pretest": "npm run lint",
     "test": "echo \"Error: no test specified\"",
     "prepare": "echo 'dummy prepare since prepack has no dev dependencies'",

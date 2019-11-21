@@ -148,7 +148,7 @@ npm run dev
 ### Init Test Vue Client
 ```sh
 cd example-client
-yarn
+npm install
 ```
 
 TODO
@@ -168,6 +168,17 @@ Example blob forms:
 
 ```sh
 cd example-client
-yarn serve
+npm run serve
 ```
 --> run at http://localhost:8080
+
+
+### Release
+
+```sh
+pipenv shell
+pip install bumpversion
+bumpversion minor
+```
+
+TODO: npm release
