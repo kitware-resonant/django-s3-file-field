@@ -7,11 +7,13 @@ interface PrepareResponse {
   sessionToken: string;
   bucketName: string;
   objectKey: string;
+  signature: string;
 }
 
 export interface FinalizeResponse {
   id?: string;
   name: string;
+  signature?: string;
 }
 
 export interface UploadResult extends FinalizeResponse {
@@ -99,7 +101,7 @@ export async function uploadFile(file: File, options: Partial<UploadOptions> = {
         name: file.name,
         id: initUpload.objectKey,
         status,
-        upload: initUpload,
+        signature: initUpload.signature
       }),
     }).then((r) => r.json());
   }

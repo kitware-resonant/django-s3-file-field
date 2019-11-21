@@ -21,7 +21,8 @@ function fileInfo(result: UploadResult, file: File): string {
   return JSON.stringify({
     name: result.name,
     size: file.size,
-    id: result.id
+    id: result.id,
+    signature: result.signature
   });
 }
 

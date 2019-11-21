@@ -3,6 +3,7 @@ import time
 import uuid
 
 import boto3
+from django.core.signing import BadSignature, Signer, TimestampSigner
 from django.http import JsonResponse
 from django.http.response import HttpResponseBase
 from rest_framework.decorators import api_view, parser_classes
@@ -20,13 +21,25 @@ from . import signals
 def upload_finalize(request: Request) -> HttpResponseBase:
     name: str = request.data['name']
     status: str = request.data['status']
-    id: str = request.data['id']
+    object_id: str = request.data['id']
+    upload_sig: str = request.data['signature']
+
+    # check if upload_prepare signed this less than max age ago
+    tsigner = TimestampSigner()
+    if object_id != tsigner.unsign(upload_sig, max_age=settings.JOIST_UPLOAD_DURATION):
+        raise BadSignature()
+
+    signals.joist_upload_finalize.send(
+        sender=upload_finalize, name=name, status=status, object_key=object_id
+    )
+
+    signer = Signer()
+    sig = signer.sign(object_id)
+
     # can be one of aborted|uploaded
     # TODO move file to where it belongs and return the new name
-    signals.joist_upload_finalize.send(
-        sender=upload_finalize, name=name, status=status, object_key=id
-    )
-    return JsonResponse({'name': name, 'status': status, 'id': id})
+
+    return JsonResponse({'name': name, 'status': status, 'id': object_id, 'signature': sig})
 
 
 # @authentication_classes([TokenAuthentication])
@@ -68,6 +81,9 @@ def upload_prepare(request: Request) -> HttpResponseBase:
 
     signals.joist_upload_prepare.send(sender=upload_prepare, name=name, object_key=object_key)
 
+    signer = TimestampSigner()
+    sig = signer.sign(object_key)
+
     return JsonResponse(
         {
             'accessKeyId': credentials['AccessKeyId'],
@@ -75,5 +91,6 @@ def upload_prepare(request: Request) -> HttpResponseBase:
             'sessionToken': credentials['SessionToken'],
             'bucketName': settings.AWS_STORAGE_BUCKET_NAME,
             'objectKey': object_key,
+            'signature': sig,
         }
     )
