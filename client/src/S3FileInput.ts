@@ -1,5 +1,5 @@
 import "./style.scss";
-import { DEFAULT_BASE_URL } from "./constants";
+import { DEFAULT_BASE_URL, EVENT_UPLOAD_COMPLETE, EVENT_UPLOAD_STARTED } from "./constants";
 import { uploadFile, UploadResult } from "./uploader";
 
 function cssClass(clazz: string): string {
@@ -21,7 +21,8 @@ function fileInfo(result: UploadResult, file: File): string {
   return JSON.stringify({
     name: result.name,
     size: file.size,
-    id: result.id
+    id: result.id,
+    signature: result.signature
   });
 }
 
@@ -36,11 +37,17 @@ export interface S3FileInputOptions {
   autoUpload: boolean;
 }
 
+function i18n(text: string): string {
+  return text;
+}
+
 export default class S3FileInput {
   private readonly node: HTMLElement;
   private readonly input: HTMLInputElement;
+  private readonly info: HTMLElement;
   private readonly uploadButton: HTMLButtonElement;
   private readonly abortButton: HTMLButtonElement;
+  private readonly clearButton: HTMLButtonElement;
   private readonly spinnerWrapper: HTMLElement;
 
   private readonly baseUrl: string;
@@ -59,8 +66,16 @@ export default class S3FileInput {
     this.node = input.ownerDocument!.createElement("div");
     this.node.classList.add(cssClass("wrapper"));
     this.node.innerHTML = `<div class="${cssClass("inner")}">
-    <button type="button" class="${cssClass("upload")}" disabled>Upload to S3</button>
-    <button type="button" class="${cssClass("abort")}">Abort</button>
+    <div class="${cssClass("info")}"></div>
+    <button type="button" class="${cssClass("upload")}" disabled>
+      ${i18n("Upload to S3")}
+    </button>
+    <button type="button" class="${cssClass("abort")}" title="${i18n('Abort Upload')}">
+      ${i18n("Abort")}
+    </button>
+    <button type="button" class="${cssClass("clear")}" title="${i18n('Clear (file was already uploaded tho)')}">
+      ${i18n("x")}
+    </button>
     <div class="${cssClass("spinner-wrapper")}">
       <div class="${cssClass(
         "spinner"
@@ -70,6 +85,12 @@ export default class S3FileInput {
     this.input.parentElement!.replaceChild(this.node, this.input);
     this.uploadButton = this.node.querySelector<HTMLButtonElement>(
       `.${cssClass("upload")}`
+    )!;
+    this.clearButton = this.node.querySelector<HTMLButtonElement>(
+      `.${cssClass("clear")}`
+    )!;
+    this.info = this.node.querySelector<HTMLElement>(
+      `.${cssClass("info")}`
     )!;
     if (this.autoUpload) {
       this.uploadButton.classList.add(cssClass('autoupload'));
@@ -91,9 +112,19 @@ export default class S3FileInput {
       } else if (this.input.value === "") {
         // already processed but user resetted it -> convert bak
         this.input.type = "file";
+        this.info.innerText = "";
         this.node.classList.remove(cssClass("set"));
       }
     };
+
+    this.clearButton.onclick = (evt): void => {
+      evt.preventDefault();
+      evt.stopPropagation();
+      this.input.type = "file";
+      this.input.value = "";
+      this.info.innerText = "";
+      this.node.classList.remove(cssClass("set"));
+    }
 
     this.uploadButton.onclick = (evt): void => {
       evt.preventDefault();
@@ -109,7 +140,7 @@ export default class S3FileInput {
     this.uploadButton.disabled = files.length === 0;
 
     this.input.setCustomValidity(
-      files.length > 0 ? "Press Upload Button to upload directly" : ""
+      files.length > 0 ? i18n("Press Upload Button to upload directly") : ""
     );
   }
 
@@ -122,6 +153,11 @@ export default class S3FileInput {
 
     let abortHandler: null | ((evt: MouseEvent) => void) = null;
 
+    const event = new CustomEvent(EVENT_UPLOAD_STARTED, {
+      detail: file
+    });
+    this.input.dispatchEvent(event);
+
     return uploadFile(file, {
       baseUrl: this.baseUrl,
       onProgress: p => {
@@ -129,10 +165,10 @@ export default class S3FileInput {
         indicator.style.width = `${Math.round(p.percentage * 100)}%`;
         switch (p.state) {
           case "initial":
-            progress.title = `${file.name}: Initializing Upload`;
+            progress.title = `${file.name}: ${i18n('Initializing Upload')}`;
             break;
           case "preparing":
-            progress.title = `${file.name}: Requesting Upload Token`;
+            progress.title = `${file.name}: ${i18n('Requesting Upload Token')}`;
             break;
           case "uploading":
             progress.title = `${file.name}: ${Math.round(
@@ -140,13 +176,13 @@ export default class S3FileInput {
             )}% ${sized(p.loaded)}/${sized(p.total)}`;
             break;
           case "finishing":
-            progress.title = `${file.name}: Finishing Upload`;
+            progress.title = `${file.name}: ${i18n('Finishing Upload')}`;
             break;
           case "aborted":
-            progress.title = `${file.name}: Upload Aborted`;
+            progress.title = `${file.name}: ${i18n('Upload Aborted')}`;
             break;
           case "done":
-            progress.title = `${file.name}: Done (${sized(p.total)})`;
+            progress.title = `${file.name}: ${i18n('Done ')} (${sized(p.total)})`;
             break;
         }
       },
@@ -162,15 +198,19 @@ export default class S3FileInput {
         this.abortButton.removeEventListener("click", abortHandler);
       }
       progress.dataset.state = r.state;
+      const event = new CustomEvent(EVENT_UPLOAD_COMPLETE, {
+        detail: r
+      });
+      this.input.dispatchEvent(event);
       switch (r.state) {
         case "successful":
-          progress.title = `${file.name}: Done (${sized(file.size)})`;
+          progress.title = `${file.name}: ${i18n('Done')} (${sized(file.size)})`;
           break;
         case "aborted":
-          progress.title = `${file.name}: Upload Aborted`;
+          progress.title = `${file.name}: ${i18n('Upload Aborted')}`;
           break;
         case "error":
-          progress.title = `${file.name}: Error occurred: ${r.msg}`;
+          progress.title = `${file.name}: ${i18n("Error occurred")}: ${r.msg}`;
           break;
       }
       // progress.remove();
@@ -190,10 +230,9 @@ export default class S3FileInput {
 
     this.node.classList.add(cssClass("uploading"));
     this.uploadButton.disabled = true;
-    this.input.setCustomValidity("Uploading files, wait till finished");
+    this.input.setCustomValidity(i18n("Uploading files, wait till finished"));
     this.input.value = ""; // reset file selection
 
-    // TODO support multi file upload -> is that possible with django anyhow?
     const file = files[0];
 
     return this.uploadFile(file).then(result => {
@@ -201,8 +240,9 @@ export default class S3FileInput {
       if (result.state === "successful") {
         this.node.classList.add(cssClass("set"));
         this.input.setCustomValidity(""); // no error
-        this.input.type = "text";
+        this.input.type = "hidden";
         this.input.value = fileInfo(result, file);
+        this.info.innerText = file.name;
       }
     });
   }

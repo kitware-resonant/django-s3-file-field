@@ -54,5 +54,5 @@ def new_blob(request: Request) -> HttpResponseBase:
             # process the data in form.cleaned_data as required
             # ...
             # redirect to a new URL:
-            return HttpResponseRedirect('/blob/')
+            return HttpResponseRedirect('/')
     return render(request, 'blob/new.html', {'form': form})

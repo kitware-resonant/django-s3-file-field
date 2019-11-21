@@ -17,8 +17,15 @@ $css_prefix: s3fileinput;
   }
 }
 
-.#{$css_prefix}-abort {
+.#{$css_prefix}-abort,
+.#{$css_prefix}-info,
+.#{$css_prefix}-clear {
   display: none;
+}
+
+.#{$css_prefix}-info {
+  flex: 1 1 0;
+  font-style: italic;
 }
 
 .#{$css_prefix}-progress {
@@ -148,5 +155,11 @@ $dot-width: 0.5em;
 .#{$css_prefix}-set {
   .#{$css_prefix}-upload {
     display: none;
+  }
+  .#{$css_prefix}-info {
+    display: inline-block;
+  }
+  .#{$css_prefix}-clear {
+    display: unset;
   }
 }

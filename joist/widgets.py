@@ -1,7 +1,8 @@
 import json
 from typing import Any, cast, Dict, Iterable, Mapping, Optional
 
-from django.forms import ClearableFileInput, FileField, Widget
+from django.core.signing import BadSignature, Signer
+from django.forms import ClearableFileInput, FileField, ValidationError, Widget
 
 from . import settings
 
@@ -19,6 +20,7 @@ class S3FakeFile:
         self.name: str = info['id']
         self.original_name: str = info['name']
         self.size: int = info['size']
+        self.signature: str = info['signature']
         self._committed = True
 
     def __str__(self):
@@ -75,3 +77,16 @@ class S3FormFileField(FileField):
     """form field used by render an model.S3FileField."""
 
     widget = cast(Widget, S3FileInput)
+
+    def validate(self, value):
+        super().validate(value)
+
+        if isinstance(value, S3FakeFile):
+            # verify signature
+            signer = Signer()
+            try:
+                expected = signer.unsign(value.signature)
+                if value.name != expected:
+                    raise ValidationError('Signature tempering detected')
+            except BadSignature:
+                raise ValidationError('Signature tempering detected')

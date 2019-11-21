@@ -25,8 +25,7 @@ Joist depends on the django-storages S3 config (see https://django-storages.read
 | AWS_ACCESS_KEY_ID       | Your Amazon Web Services access key, as a string. |
 | AWS_SECRET_ACCESS_KEY   | Your Amazon Web Services secret access key, as a string. |
 | AWS_S3_REGION_NAME      | Name of the AWS S3 region to use (eg. eu-west-1) |
-| AWS_STORAGE_BUCKET_NAME | Your Amazon Web Services storage bucket name, as a string.
- |
+| AWS_STORAGE_BUCKET_NAME | Your Amazon Web Services storage bucket name, as a string. (required) |
 
 Additional settings
 
@@ -34,9 +33,8 @@ Additional settings
 | ----------------------- | ------------- |
 | JOIST_UPLOAD_STS_ARN    | The STS Arn Role to use (required) |
 | JOIST_UPLOAD_DURATION   | The duration the upload token should be valid in seconds (default: `60*60*12 = 12h`) |
-| JOIST_UPLOAD_PREFIX      | Prefix where files should be stored (default: '') |
-| JOIST_API_BASE_URL | API prefix where the server urls are hosted (default: 'api/joist')
-|
+| JOIST_UPLOAD_PREFIX      | Prefix where files should be stored (default: `''`) |
+| JOIST_API_BASE_URL | API prefix where the server urls are hosted (default: `/api/joist`) |
 
 
 ## Usage
@@ -73,6 +71,7 @@ instead of
 photo = models.FileField()
 ```
 
+use
 ```python
 from joist.models import S3FileField
 
@@ -80,6 +79,15 @@ photo = S3FileField()
 ```
 
 The result is that once the user select a file in the file chooser, it will be automatically uploaded to S3 on the client side.
+
+## Signals
+
+Joist sends out two signals when its REST api is called:
+
+```python
+joist_upload_prepare(name: str, object_key: str)
+joist_upload_finalize(name: str, object_key: str, status: string)
+```
 
 ## Development Environment
 
