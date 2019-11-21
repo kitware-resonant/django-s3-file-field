@@ -3,12 +3,13 @@ import time
 import uuid
 
 import boto3
-from django.conf import settings
 from django.http import JsonResponse
 from django.http.response import HttpResponseBase
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import JSONParser
 from rest_framework.request import Request
+
+from . import settings
 
 
 # @authentication_classes([TokenAuthentication])
@@ -31,7 +32,7 @@ def finalize_upload(request: Request) -> HttpResponseBase:
 def prepare_upload(request: Request) -> HttpResponseBase:
     bucket_arn = f'arn:aws:s3:::{settings.AWS_STORAGE_BUCKET_NAME}'
     name = request.data['name']
-    object_key = f'{uuid.uuid4()}/{name}'
+    object_key = f'{settings.JOIST_UPLOAD_PREFIX}{uuid.uuid4()}/{name}'
     upload_policy = {
         'Version': '2012-10-17',
         'Statement': [
@@ -53,10 +54,10 @@ def prepare_upload(request: Request) -> HttpResponseBase:
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
     )
     resp = client.assume_role(
-        RoleArn=settings.UPLOAD_STS_ARN,
+        RoleArn=settings.JOIST_UPLOAD_STS_ARN,
         RoleSessionName=f'file-upload-{int(time.time())}',
         Policy=json.dumps(upload_policy),
-        DurationSeconds=settings.S3_WIDGET_UPLOAD_DURATION,
+        DurationSeconds=settings.JOIST_UPLOAD_DURATION,
     )
 
     credentials = resp['Credentials']

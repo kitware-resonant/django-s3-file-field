@@ -3,6 +3,8 @@ from typing import Any, cast, Dict, Iterable, Mapping, Optional
 
 from django.forms import ClearableFileInput, FileField, Widget
 
+from . import settings
+
 
 class S3FakeFile:
     """
@@ -37,7 +39,7 @@ class S3FileInput(ClearableFileInput):
 
     template_name = 'joist/s3fileinput.html'
 
-    baseurl: Optional[str] = None
+    baseurl: Optional[str] = settings.JOIST_API_BASE_URL
 
     def __init__(self, attrs=None):
         if attrs is not None and 'baseurl' in attrs:
