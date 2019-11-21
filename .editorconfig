@@ -1,0 +1,18 @@
+root = true
+
+[*.{js,ts,json}]
+indent_style = space
+trim_trailing_whitespace = true
+indent_size = 2
+insert_final_newline = true
+
+[*.{py,rst,txt}]
+indent_style = space
+trim_trailing_whitespace = true
+indent_size = 4
+insert_final_newline = true
+
+[*.yml]
+indent_style = space
+indent_size = 2
+insert_final_newline = true

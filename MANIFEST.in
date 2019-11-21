@@ -1,0 +1,7 @@
+prune .github
+prune client
+prune terraform
+prune example
+prune example-client
+exclude .pre-commit-config.yaml
+graft joist/static

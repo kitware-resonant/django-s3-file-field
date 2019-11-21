@@ -1,0 +1,4 @@
+django
+django-storages
+boto3
+djangorestframework

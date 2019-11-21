@@ -25,7 +25,8 @@ repos:
     hooks:
       - id: toxlint
         name: tox
-        entry: tox -c django
+        entry: tox
         pass_filenames: true
         language: system
+        exclude: setup.py
         types: [python]
