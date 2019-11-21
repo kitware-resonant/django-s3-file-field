@@ -41,16 +41,18 @@ Additional settings
 
 ## Usage
 
-instead of
+### Setup
 
+Add `joist` to the list of installed apps:
+
+`settings.py`:
 ```python
-photo = models.FileField()
-```
-
-```python
-from joist.models import S3FileField
-
-photo = S3FileField()
+INSTALLED_APPS = [
+    ...
+    'rest_framework',
+    'rest_framework.authtoken',
+    'joist',
+]
 ```
 
 Moreover, since the field requires additional REST endpoints one has to use add them to the `urlpatterns`:
@@ -63,7 +65,21 @@ urlpatterns = [
 ]
 ```
 
-The result is that once the user select a file in the file chooser, it will be automatically uploaded to S3 on the client side
+### Model Definition:
+
+instead of
+
+```python
+photo = models.FileField()
+```
+
+```python
+from joist.models import S3FileField
+
+photo = S3FileField()
+```
+
+The result is that once the user select a file in the file chooser, it will be automatically uploaded to S3 on the client side.
 
 ## Development Environment
 
