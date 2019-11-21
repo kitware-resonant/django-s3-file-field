@@ -43,8 +43,10 @@ function i18n(text: string): string {
 export default class S3FileInput {
   private readonly node: HTMLElement;
   private readonly input: HTMLInputElement;
+  private readonly info: HTMLElement;
   private readonly uploadButton: HTMLButtonElement;
   private readonly abortButton: HTMLButtonElement;
+  private readonly clearButton: HTMLButtonElement;
   private readonly spinnerWrapper: HTMLElement;
 
   private readonly baseUrl: string;
@@ -63,11 +65,15 @@ export default class S3FileInput {
     this.node = input.ownerDocument!.createElement("div");
     this.node.classList.add(cssClass("wrapper"));
     this.node.innerHTML = `<div class="${cssClass("inner")}">
+    <div class="${cssClass("info")}"></div>
     <button type="button" class="${cssClass("upload")}" disabled>
       ${i18n("Upload to S3")}
     </button>
-    <button type="button" class="${cssClass("abort")}">
+    <button type="button" class="${cssClass("abort")}" title="${i18n('Abort Upload')}">
       ${i18n("Abort")}
+    </button>
+    <button type="button" class="${cssClass("clear")}" title="${i18n('Clear (file was already uploaded tho)')}">
+      ${i18n("x")}
     </button>
     <div class="${cssClass("spinner-wrapper")}">
       <div class="${cssClass(
@@ -78,6 +84,12 @@ export default class S3FileInput {
     this.input.parentElement!.replaceChild(this.node, this.input);
     this.uploadButton = this.node.querySelector<HTMLButtonElement>(
       `.${cssClass("upload")}`
+    )!;
+    this.clearButton = this.node.querySelector<HTMLButtonElement>(
+      `.${cssClass("clear")}`
+    )!;
+    this.info = this.node.querySelector<HTMLElement>(
+      `.${cssClass("info")}`
     )!;
     if (this.autoUpload) {
       this.uploadButton.classList.add(cssClass('autoupload'));
@@ -99,9 +111,19 @@ export default class S3FileInput {
       } else if (this.input.value === "") {
         // already processed but user resetted it -> convert bak
         this.input.type = "file";
+        this.info.innerText = "";
         this.node.classList.remove(cssClass("set"));
       }
     };
+
+    this.clearButton.onclick = (evt): void => {
+      evt.preventDefault();
+      evt.stopPropagation();
+      this.input.type = "file";
+      this.input.value = "";
+      this.info.innerText = "";
+      this.node.classList.remove(cssClass("set"));
+    }
 
     this.uploadButton.onclick = (evt): void => {
       evt.preventDefault();
@@ -201,7 +223,6 @@ export default class S3FileInput {
     this.input.setCustomValidity(i18n("Uploading files, wait till finished"));
     this.input.value = ""; // reset file selection
 
-    // TODO support multi file upload -> is that possible with django anyhow?
     const file = files[0];
 
     return this.uploadFile(file).then(result => {
@@ -211,6 +232,7 @@ export default class S3FileInput {
         this.input.setCustomValidity(""); // no error
         this.input.type = "hidden";
         this.input.value = fileInfo(result, file);
+        this.info.innerText = file.name;
       }
     });
   }
