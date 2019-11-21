@@ -16,6 +16,13 @@ interface IFinalizeResponse {
 
 declare const process: any;
 
+interface IBlob {
+  id: string;
+  created: string;
+  creator: number;
+  resource: string;
+}
+
 @Component
 export default class JoistUpload extends Vue {
   @Prop(String)
@@ -27,6 +34,10 @@ export default class JoistUpload extends Vue {
   private files: IFileInfo[] = [];
 
   private submitting = false;
+
+  private status = '';
+
+  private blobs: IBlob[] = [];
 
   public reset() {
     this.fileInput.value = '';
@@ -48,45 +59,27 @@ export default class JoistUpload extends Vue {
       },
     })));
 
-    results.forEach((r) => {
-      if (r.state === 'successful') {
-        form.append('ressource', r.value);
-      }
-    });
+    try {
+      const out = await fetch(`${process.env.VUE_APP_API_ROOT}/save-blob/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          names: results.map(r => r.id!),
+        }),
+      }).then(r => r.json());
 
-    await fetch('/new', {
-      method: 'POST',
-      body: form,
-    });
+      this.blobs = out;
+      this.status = 'Saved';
+    } catch {
+      this.status = 'Failed';
+    }
   }
 }
 </script>
 <template>
   <form @submit.prevent="submit">
-    <label for="id_created">Created:</label>
-    <input
-      id="id_created"
-      type="text"
-      name="created"
-      value="2019-11-21 15:33:54"
-      required
-    >
-    <label for="id_creator">Creator:</label>
-    <select
-      id="id_creator"
-      name="creator"
-      required
-    >
-      <option value="">
-        ---------
-      </option>
-      <option
-        value="1"
-        selected
-      >
-        admin
-      </option>
-    </select>
     <label for="id_resource">Resource:</label>
     <input
       id="id_resource"
@@ -95,18 +88,10 @@ export default class JoistUpload extends Vue {
       name="resource"
       required
     >
-    <label for="id_r2">R2:</label>
-    <input
-      id="id_r2"
-      type="file"
-      name="r2"
-      required
-    >
     <input
       type="submit"
       value="Create"
     >
-
     <div v-if="submitting">
       <div
         v-for="file in files"
@@ -117,6 +102,14 @@ export default class JoistUpload extends Vue {
           {{ Math.round(file.progress * 100) }} %
         </progress>
       </div>
+    </div>
+    {{ status }}
+
+    <div
+      v-for="blob in blobs"
+      :key="blob.id"
+    >
+      <a :href="blob.resource">{{ blob.id }}</a>
     </div>
   </form>
 </template>
