@@ -1,7 +1,20 @@
 {
   "name": "joist",
+  "description": "Joist is JS library complementing the python django joist widget",
   "version": "0.1.0",
-  "private": true,
+  "license": "Apache 2.0",
+  "author": {
+    "name": "Samuel Gratzl",
+    "email": "sam@sgratzl.com",
+    "url": "https://www.sgratzl.com"
+  },
+  "bugs": {
+    "url": "https://github.com/danlamanna/joist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danlamanna/joist.git"
+  },
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
@@ -9,12 +22,11 @@
   },
   "dependencies": {
     "@vue/eslint-config-airbnb": "^4.0.1",
-    "aws-sdk": "^2.569.0",
-    "axios": "^0.19.0",
     "core-js": "^3.3.2",
     "vue": "^2.6.10",
     "vue-class-component": "^7.0.2",
-    "vue-property-decorator": "^8.3.0"
+    "vue-property-decorator": "^8.3.0",
+    "joist": "file:../client"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^4.0.0",
@@ -40,7 +52,13 @@
     "rules": {},
     "parserOptions": {
       "parser": "@typescript-eslint/parser"
-    }
+    },
+    "overrides": [
+      {
+        "files": "src/**/*",
+        "excludedFiles": "joist.js"
+      }
+    ]
   },
   "postcss": {
     "plugins": {

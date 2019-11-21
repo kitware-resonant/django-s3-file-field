@@ -1,53 +1,9 @@
-<template>
-  <form @submit.prevent="submit">
-    <input
-      ref="fileInput"
-      type="file"
-      :accept="accept"
-      @change="setFiles"
-    >
-
-    <div>
-      <input
-        type="button"
-        value="Reset"
-        @click="reset"
-      >
-      <input
-        :disabled="!filesSelected"
-        type="submit"
-      >
-    </div>
-
-    <div v-if="submitting">
-      <div
-        v-for="file in files"
-        :key="file.file.name"
-      >
-        {{ file.file.name }}
-        <progress :value="file.progress">
-          {{ Math.round(file.progress * 100) }} %
-        </progress>
-      </div>
-    </div>
-  </form>
-</template>
-
 <script lang="ts">
-import S3 from 'aws-sdk/clients/s3';
 import {
   Component, Emit, Prop, Ref, Vue,
 } from 'vue-property-decorator';
+import uploadFile from 'joist';
 
-import http from '@/http';
-
-interface FileUploadUrl {
-  accessKeyId: string;
-  secretAccessKey: string;
-  sessionToken: string;
-  bucketName: string;
-  objectKey: string;
-}
 
 interface IFileInfo {
   file: File;
@@ -56,6 +12,15 @@ interface IFileInfo {
 
 interface IFinalizeResponse {
   name: string;
+}
+
+declare const process: any;
+
+interface IBlob {
+  id: string;
+  created: string;
+  creator: number;
+  resource: string;
 }
 
 @Component
@@ -70,62 +35,9 @@ export default class JoistUpload extends Vue {
 
   private submitting = false;
 
-  private get filesSelected() {
-    return this.files.length > 0;
-  }
+  private status = '';
 
-  private setFiles() {
-    this.files = Array.from(this.fileInput.files || []).map(file => ({ file, progress: 0 }));
-  }
-
-  private static async uploadFile(file: File, onProgress: (progress: number) => void) {
-    // the percent reserved for upload initiate and finalize operations
-    const OVERHEAD_PERCENT = 0.05;
-
-    onProgress(0);
-    const initUploadResp = await http.request({
-      method: 'get',
-      url: 'joist/file-upload-url/',
-      params: {
-        name: file.name,
-      },
-    });
-    const initUpload: FileUploadUrl = initUploadResp!.data;
-
-    onProgress(OVERHEAD_PERCENT / 2);
-
-    const s3 = new S3({
-      apiVersion: '2006-03-01',
-      accessKeyId: initUpload.accessKeyId,
-      secretAccessKey: initUpload.secretAccessKey,
-      sessionToken: initUpload.sessionToken,
-    });
-
-    await s3
-      .upload({
-        Bucket: initUpload.bucketName,
-        Key: initUpload.objectKey,
-        Body: file,
-      })
-      .on('httpUploadProgress', (evt) => {
-        const s3Progress = evt.loaded / evt.total;
-        // s3Progress only spans the total fileProgress range [0.1, 0.9)
-        onProgress(OVERHEAD_PERCENT / 2 + s3Progress * (1 - OVERHEAD_PERCENT));
-      })
-      .promise();
-
-    const finalized = (await http.request({
-      method: 'post',
-      url: 'joist/finalize-upload/',
-      data: {
-        name: initUpload.objectKey,
-      },
-    })).data as IFinalizeResponse;
-
-    onProgress(1);
-
-    return finalized.name;
-  }
+  private blobs: IBlob[] = [];
 
   public reset() {
     this.fileInput.value = '';
@@ -133,28 +45,80 @@ export default class JoistUpload extends Vue {
   }
 
   @Emit('complete')
-  public async submit() {
+  public async submit(evt: Event) {
+    const form = new FormData(evt.currentTarget as HTMLFormElement);
     this.submitting = true;
+    this.files = form.getAll('resource').map(d => ({ file: d as File, progress: 0 }));
 
-    const uploaded = this.files.map(file => JoistUpload.uploadFile(file.file, (p) => {
-      file.progress = p; // eslint-disable-line no-param-reassign
-    }));
-    const names = await Promise.all(uploaded);
+    form.delete('resource');
 
-    await http.request({
-      method: 'post',
-      url: 'save-blob/',
-      data: {
-        names,
+    const results = await Promise.all(this.files.map(f => uploadFile(f.file, {
+      baseUrl: `${process.env.VUE_APP_API_ROOT}/joist`,
+      onProgress({ percentage }) {
+        f.progress = percentage; // eslint-disable-line no-param-reassign
       },
-    });
+    })));
+
+    try {
+      const out = await fetch(`${process.env.VUE_APP_API_ROOT}/save-blob/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          names: results.map(r => r.id!),
+        }),
+      }).then(r => r.json());
+
+      this.blobs = out;
+      this.status = 'Saved';
+    } catch {
+      this.status = 'Failed';
+    }
   }
 }
 </script>
+<template>
+  <form @submit.prevent="submit">
+    <label for="id_resource">Resource:</label>
+    <input
+      id="id_resource"
+      ref="fileInput"
+      type="file"
+      name="resource"
+      required
+    >
+    <input
+      type="submit"
+      value="Create"
+    >
+    <div v-if="submitting">
+      <div
+        v-for="file in files"
+        :key="file.file.name"
+      >
+        {{ file.file.name }}
+        <progress :value="file.progress">
+          {{ Math.round(file.progress * 100) }} %
+        </progress>
+      </div>
+    </div>
+    {{ status }}
+
+    <div
+      v-for="blob in blobs"
+      :key="blob.id"
+    >
+      <a :href="blob.resource">{{ blob.id }}</a>
+    </div>
+  </form>
+</template>
 
 <style scoped>
-  form input {
-    margin-bottom: 10px;
-    margin-right: 10px;
+  form {
+    max-width: 25vw;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
   }
 </style>

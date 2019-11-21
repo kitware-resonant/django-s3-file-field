@@ -14,6 +14,8 @@ export interface FinalizeResponse {
   id?: string;
   name: string;
   signature?: string;
+
+  value: string;
 }
 
 export interface UploadResult extends FinalizeResponse {
@@ -33,6 +35,15 @@ export interface UploadOptions {
 // the percent reserved for upload initiate and finalize operations
 const OVERHEAD_PERCENT = 0.05;
 
+
+function fileInfo(result: FinalizeResponse, file: File): string {
+  return JSON.stringify({
+    name: result.name,
+    size: file.size,
+    id: result.id,
+    signature: result.signature
+  });
+}
 
 export async function uploadFile(file: File, options: Partial<UploadOptions> = {}): Promise<UploadResult> {
   const { onProgress, baseUrl, abortSignal } = Object.assign({
@@ -70,7 +81,8 @@ export async function uploadFile(file: File, options: Partial<UploadOptions> = {
       name: file.name,
       state: 'error',
       msg: 'Failed to prepare upload token',
-      error: err
+      error: err,
+      value: ''
     }
   }
 
@@ -122,7 +134,8 @@ export async function uploadFile(file: File, options: Partial<UploadOptions> = {
           name: file.name,
           state: 'error',
           msg: 'Error occurred while aborting the upload',
-          error
+          error,
+          value: ''
         });
       });
     });
@@ -133,21 +146,24 @@ export async function uploadFile(file: File, options: Partial<UploadOptions> = {
         progress('done', 1, size);
         return {
           ...r,
-          state: 'successful'
+          state: 'successful',
+          value: fileInfo(r, file)
         } as UploadResult;
       }).then(resolve).catch((error) => {
         resolve({
           name: file.name,
           state: 'error',
           msg: 'Error occurred while finishing the upload',
-          error
+          error,
+          value: ''
         });
       }).catch((error) => {
         resolve({
           name: file.name,
           state: 'error',
           msg: 'Error occurred while uploading',
-          error
+          error,
+          value: ''
         });
       });
     });

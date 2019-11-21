@@ -1,6 +1,7 @@
 const path = require('path');
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
-function gen(declarations = false) {
+function gen(bundle = false) {
   return {
     resolve: {
       // Add `.ts` and `.tsx` as a resolvable extension.
@@ -12,14 +13,10 @@ function gen(declarations = false) {
         {
           test: /\.tsx?$/,
           loader: "ts-loader",
-          options: declarations
+          options: bundle
             ? {
-                compilerOptions: {
-                  declaration: true,
-                  declarationDir: "build"
-                }
-              }
-            : {}
+              configFile: "./tsconfig.lib.json"
+            } : {}
         },
         {
           test: /\.s[ac]ss$/i,
@@ -33,20 +30,47 @@ function gen(declarations = false) {
           ]
         }
       ]
-    }
+    },
+
   };
 }
 
 module.exports = [
   {
-    entry: "./src/index.ts",
+    entry: "./src/bundle.ts",
     output: {
       path: path.resolve("build"),
       filename: "joist.js",
       libraryExport: "Joist",
       libraryTarget: "umd"
     },
-    ...gen(true)
+    resolve: {
+      // Add `.ts` and `.tsx` as a resolvable extension.
+      extensions: [".ts", ".tsx", ".js"]
+    },
+    module: {
+      rules: [
+        // all files with a `.ts` or `.tsx` extension will be handled by `ts-loader`
+        {
+          test: /\.tsx?$/,
+          loader: "ts-loader",
+          options: {
+            configFile: "tsconfig.lib.json"
+          }
+        },
+        {
+          test: /\.s[ac]ss$/i,
+          use: [
+            {loader: MiniCssExtractPlugin.loader},
+            "css-loader",
+            "sass-loader"
+          ]
+        }
+      ]
+    },
+    plugins: [
+      new MiniCssExtractPlugin(),
+    ],
   },
   {
     entry: "./src/widget.ts",
@@ -56,6 +80,20 @@ module.exports = [
       libraryExport: "Joist",
       libraryTarget: "umd"
     },
-    ...gen()
+    resolve: {
+      extensions: [".ts", ".tsx", ".js"]
+    },
+    module: {
+      rules: [
+        {
+          test: /\.tsx?$/,
+          loader: "ts-loader"
+        },
+        {
+          test: /\.s[ac]ss$/i,
+          use: ["style-loader", "css-loader", "sass-loader"]
+        }
+      ]
+    }
   }
 ];

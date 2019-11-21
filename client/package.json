@@ -5,14 +5,23 @@
   "author": "Samuel Gratzl",
   "license": "MIT",
   "main": "build/joist.js",
+  "module": "build/index.js",
   "types": "build/index.d.ts",
+  "files": [
+    "build",
+    "src"
+  ],
   "scripts": {
+    "clean": "rimraf build",
     "dev": "webpack --mode=development",
+    "compile": "tsc -p tsconfig.lib.json",
     "lint": "eslint src/**.ts",
     "watch": "webpack -w --mode=development",
-    "build": "webpack --mode=production",
+    "build": "npm run clean && npm run compile && webpack --mode=production",
     "pretest": "npm run lint",
-    "test": "echo \"Error: no test specified\""
+    "test": "echo \"Error: no test specified\"",
+    "prepare": "echo 'dummy prepare since prepack has no dev dependencies'",
+    "prepack": "npm run build"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^2.8.0",
@@ -20,7 +29,9 @@
     "css-loader": "^3.2.0",
     "eslint": "^6.6.0",
     "json-loader": "^0.5.7",
+    "mini-css-extract-plugin": "^0.8.0",
     "node-sass": "^4.13.0",
+    "rimraf": "^3.0.0",
     "sass-loader": "^8.0.0",
     "style-loader": "^1.0.0",
     "ts-loader": "^6.2.1",
@@ -30,6 +41,7 @@
   },
   "dependencies": {
     "@types/js-cookie": "^2.2.4",
+    "@types/node": "^12.12.11",
     "aws-sdk": "^2.573.0",
     "js-cookie": "^2.2.1"
   }
