@@ -1,6 +1,7 @@
 import "./style.scss";
 import { DEFAULT_BASE_URL } from "./constants";
 import { uploadFile, UploadResult } from "./uploader";
+import { EVENT_UPLOAD_COMPLETE, EVENT_UPLOAD_STARTED } from "../build/constants";
 
 function cssClass(clazz: string): string {
   return `s3fileinput-${clazz}`;
@@ -152,6 +153,11 @@ export default class S3FileInput {
 
     let abortHandler: null | ((evt: MouseEvent) => void) = null;
 
+    const event = new CustomEvent(EVENT_UPLOAD_STARTED, {
+      detail: file
+    });
+    this.input.dispatchEvent(event);
+
     return uploadFile(file, {
       baseUrl: this.baseUrl,
       onProgress: p => {
@@ -192,6 +198,10 @@ export default class S3FileInput {
         this.abortButton.removeEventListener("click", abortHandler);
       }
       progress.dataset.state = r.state;
+      const event = new CustomEvent(EVENT_UPLOAD_COMPLETE, {
+        detail: r
+      });
+      this.input.dispatchEvent(event);
       switch (r.state) {
         case "successful":
           progress.title = `${file.name}: ${i18n('Done')} (${sized(file.size)})`;

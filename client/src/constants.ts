@@ -5,6 +5,10 @@ import Cookies from "js-cookie";
  */
 export const DEFAULT_BASE_URL = "/api/joist";
 
+
+export const EVENT_UPLOAD_STARTED = 's3UploadStarted';
+export const EVENT_UPLOAD_COMPLETE = 's3UploadComplete';
+
 /**
  * @internal
  */
