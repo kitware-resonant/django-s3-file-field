@@ -53,7 +53,7 @@ export async function uploadFile(file: File, options: Partial<UploadOptions> = {
 
   let initUpload: PrepareResponse;
   try {
-    initUpload = await fetch(`${baseUrl}/prepare-upload/`, {
+    initUpload = await fetch(`${baseUrl}/upload-prepare/`, {
       ...fetchOptions(),
       method: 'POST',
       body: JSON.stringify({
@@ -92,7 +92,7 @@ export async function uploadFile(file: File, options: Partial<UploadOptions> = {
   });
 
   function finalizeUpload(status: 'uploaded' | 'aborted' = 'uploaded'): Promise<FinalizeResponse> {
-    return fetch(`${baseUrl}/finalize-upload/`, {
+    return fetch(`${baseUrl}/upload-finalize/`, {
       ...fetchOptions(),
       method: 'POST',
       body: JSON.stringify({

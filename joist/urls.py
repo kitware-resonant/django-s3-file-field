@@ -2,11 +2,11 @@ from typing import Any, List
 
 from django.urls import path
 
-from .views import finalize_upload, prepare_upload
+from .views import upload_finalize, upload_prepare
 
 urlpatterns = [
-    path('prepare-upload/', prepare_upload),
-    path('finalize-upload/', finalize_upload),
+    path('upload-prepare/', upload_prepare),
+    path('upload-finalize/', upload_finalize),
 ]
 
 

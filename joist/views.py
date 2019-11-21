@@ -16,7 +16,7 @@ from . import settings
 # @permission_classes([IsAuthenticated])
 @api_view(['POST'])
 @parser_classes([JSONParser])
-def finalize_upload(request: Request) -> HttpResponseBase:
+def upload_finalize(request: Request) -> HttpResponseBase:
     name: str = request.data['name']
     status: str = request.data['status']
     id: str = request.data['id']
@@ -29,7 +29,7 @@ def finalize_upload(request: Request) -> HttpResponseBase:
 # @permission_classes([IsAuthenticated])
 @api_view(['POST'])
 @parser_classes([JSONParser])
-def prepare_upload(request: Request) -> HttpResponseBase:
+def upload_prepare(request: Request) -> HttpResponseBase:
     bucket_arn = f'arn:aws:s3:::{settings.AWS_STORAGE_BUCKET_NAME}'
     name = request.data['name']
     object_key = f'{settings.JOIST_UPLOAD_PREFIX}{uuid.uuid4()}/{name}'
