@@ -1,7 +1,20 @@
 {
   "name": "joist",
+  "description": "Joist is JS library complementing the python django joist widget",
   "version": "0.1.0",
-  "private": true,
+  "license": "Apache 2.0",
+  "author": {
+    "name": "Samuel Gratzl",
+    "email": "sam@sgratzl.com",
+    "url": "https://www.sgratzl.com"
+  },
+  "bugs": {
+    "url": "https://github.com/danlamanna/joist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danlamanna/joist.git"
+  },
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
