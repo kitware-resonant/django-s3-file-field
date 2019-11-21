@@ -9,12 +9,11 @@
   },
   "dependencies": {
     "@vue/eslint-config-airbnb": "^4.0.1",
-    "aws-sdk": "^2.569.0",
-    "axios": "^0.19.0",
     "core-js": "^3.3.2",
     "vue": "^2.6.10",
     "vue-class-component": "^7.0.2",
-    "vue-property-decorator": "^8.3.0"
+    "vue-property-decorator": "^8.3.0",
+    "joist": "file:../client"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^4.0.0",
@@ -40,7 +39,13 @@
     "rules": {},
     "parserOptions": {
       "parser": "@typescript-eslint/parser"
-    }
+    },
+    "overrides": [
+      {
+        "files": "src/**/*",
+        "excludedFiles": "joist.js"
+      }
+    ]
   },
   "postcss": {
     "plugins": {

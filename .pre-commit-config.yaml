@@ -3,6 +3,7 @@ repos:
     rev: v2.0.0
     hooks:
       - id: check-added-large-files
+        exclude: package-lock.json
       - id: check-ast
       - id: check-executables-have-shebangs
       - id: check-json

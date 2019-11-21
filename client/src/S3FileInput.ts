@@ -1,4 +1,3 @@
-import "./style.scss";
 import { DEFAULT_BASE_URL, EVENT_UPLOAD_COMPLETE, EVENT_UPLOAD_STARTED } from "./constants";
 import { uploadFile, UploadResult } from "./uploader";
 
@@ -15,15 +14,6 @@ function sized(val: number): string {
     units.shift();
   }
   return `${Math.round(v * 100) / 100}${units[0]}`;
-}
-
-function fileInfo(result: UploadResult, file: File): string {
-  return JSON.stringify({
-    name: result.name,
-    size: file.size,
-    id: result.id,
-    signature: result.signature
-  });
 }
 
 export interface S3FileInputOptions {
@@ -241,7 +231,7 @@ export default class S3FileInput {
         this.node.classList.add(cssClass("set"));
         this.input.setCustomValidity(""); // no error
         this.input.type = "hidden";
-        this.input.value = fileInfo(result, file);
+        this.input.value = result.value;
         this.info.innerText = file.name;
       }
     });

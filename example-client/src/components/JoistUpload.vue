@@ -1,23 +1,111 @@
+<script lang="ts">
+import {
+  Component, Emit, Prop, Ref, Vue,
+} from 'vue-property-decorator';
+import uploadFile from 'joist';
+
+
+interface IFileInfo {
+  file: File;
+  progress: number;
+}
+
+interface IFinalizeResponse {
+  name: string;
+}
+
+declare const process: any;
+
+@Component
+export default class JoistUpload extends Vue {
+  @Prop(String)
+  private readonly accept: string | undefined;
+
+  @Ref()
+  private readonly fileInput!: HTMLInputElement;
+
+  private files: IFileInfo[] = [];
+
+  private submitting = false;
+
+  public reset() {
+    this.fileInput.value = '';
+    this.submitting = false;
+  }
+
+  @Emit('complete')
+  public async submit(evt: Event) {
+    const form = new FormData(evt.currentTarget as HTMLFormElement);
+    this.submitting = true;
+    this.files = form.getAll('resource').map(d => ({ file: d as File, progress: 0 }));
+
+    form.delete('resource');
+
+    const results = await Promise.all(this.files.map(f => uploadFile(f.file, {
+      baseUrl: `${process.env.VUE_APP_API_ROOT}/joist`,
+      onProgress({ percentage }) {
+        f.progress = percentage; // eslint-disable-line no-param-reassign
+      },
+    })));
+
+    results.forEach((r) => {
+      if (r.state === 'successful') {
+        form.append('ressource', r.value);
+      }
+    });
+
+    await fetch('/new', {
+      method: 'POST',
+      body: form,
+    });
+  }
+}
+</script>
 <template>
   <form @submit.prevent="submit">
+    <label for="id_created">Created:</label>
     <input
+      id="id_created"
+      type="text"
+      name="created"
+      value="2019-11-21 15:33:54"
+      required
+    >
+    <label for="id_creator">Creator:</label>
+    <select
+      id="id_creator"
+      name="creator"
+      required
+    >
+      <option value="">
+        ---------
+      </option>
+      <option
+        value="1"
+        selected
+      >
+        admin
+      </option>
+    </select>
+    <label for="id_resource">Resource:</label>
+    <input
+      id="id_resource"
       ref="fileInput"
       type="file"
-      :accept="accept"
-      @change="setFiles"
+      name="resource"
+      required
     >
-
-    <div>
-      <input
-        type="button"
-        value="Reset"
-        @click="reset"
-      >
-      <input
-        :disabled="!filesSelected"
-        type="submit"
-      >
-    </div>
+    <label for="id_r2">R2:</label>
+    <input
+      id="id_r2"
+      type="file"
+      name="r2"
+      required
+    >
+    <input
+      type="submit"
+      value="Create"
+    >
 
     <div v-if="submitting">
       <div
@@ -33,128 +121,11 @@
   </form>
 </template>
 
-<script lang="ts">
-import S3 from 'aws-sdk/clients/s3';
-import {
-  Component, Emit, Prop, Ref, Vue,
-} from 'vue-property-decorator';
-
-import http from '@/http';
-
-interface FileUploadUrl {
-  accessKeyId: string;
-  secretAccessKey: string;
-  sessionToken: string;
-  bucketName: string;
-  objectKey: string;
-}
-
-interface IFileInfo {
-  file: File;
-  progress: number;
-}
-
-interface IFinalizeResponse {
-  name: string;
-}
-
-@Component
-export default class JoistUpload extends Vue {
-  @Prop(String)
-  private readonly accept: string | undefined;
-
-  @Ref()
-  private readonly fileInput!: HTMLInputElement;
-
-  private files: IFileInfo[] = [];
-
-  private submitting = false;
-
-  private get filesSelected() {
-    return this.files.length > 0;
-  }
-
-  private setFiles() {
-    this.files = Array.from(this.fileInput.files || []).map(file => ({ file, progress: 0 }));
-  }
-
-  private static async uploadFile(file: File, onProgress: (progress: number) => void) {
-    // the percent reserved for upload initiate and finalize operations
-    const OVERHEAD_PERCENT = 0.05;
-
-    onProgress(0);
-    const initUploadResp = await http.request({
-      method: 'get',
-      url: 'joist/file-upload-url/',
-      params: {
-        name: file.name,
-      },
-    });
-    const initUpload: FileUploadUrl = initUploadResp!.data;
-
-    onProgress(OVERHEAD_PERCENT / 2);
-
-    const s3 = new S3({
-      apiVersion: '2006-03-01',
-      accessKeyId: initUpload.accessKeyId,
-      secretAccessKey: initUpload.secretAccessKey,
-      sessionToken: initUpload.sessionToken,
-    });
-
-    await s3
-      .upload({
-        Bucket: initUpload.bucketName,
-        Key: initUpload.objectKey,
-        Body: file,
-      })
-      .on('httpUploadProgress', (evt) => {
-        const s3Progress = evt.loaded / evt.total;
-        // s3Progress only spans the total fileProgress range [0.1, 0.9)
-        onProgress(OVERHEAD_PERCENT / 2 + s3Progress * (1 - OVERHEAD_PERCENT));
-      })
-      .promise();
-
-    const finalized = (await http.request({
-      method: 'post',
-      url: 'joist/finalize-upload/',
-      data: {
-        name: initUpload.objectKey,
-      },
-    })).data as IFinalizeResponse;
-
-    onProgress(1);
-
-    return finalized.name;
-  }
-
-  public reset() {
-    this.fileInput.value = '';
-    this.submitting = false;
-  }
-
-  @Emit('complete')
-  public async submit() {
-    this.submitting = true;
-
-    const uploaded = this.files.map(file => JoistUpload.uploadFile(file.file, (p) => {
-      file.progress = p; // eslint-disable-line no-param-reassign
-    }));
-    const names = await Promise.all(uploaded);
-
-    await http.request({
-      method: 'post',
-      url: 'save-blob/',
-      data: {
-        names,
-      },
-    });
-  }
-}
-</script>
-
 <style scoped>
-  form input {
-    margin-bottom: 10px;
-    margin-right: 10px;
+  form {
+    max-width: 25vw;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
   }
 </style>

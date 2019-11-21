@@ -1,3 +1,4 @@
+import "./style.scss";
 import S3FileInput from "./S3FileInput";
 
 /**
