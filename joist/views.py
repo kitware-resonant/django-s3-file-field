@@ -10,6 +10,7 @@ from rest_framework.parsers import JSONParser
 from rest_framework.request import Request
 
 from . import settings
+from . import signals
 
 
 # @authentication_classes([TokenAuthentication])
@@ -22,6 +23,9 @@ def upload_finalize(request: Request) -> HttpResponseBase:
     id: str = request.data['id']
     # can be one of aborted|uploaded
     # TODO move file to where it belongs and return the new name
+    signals.joist_upload_finalize.send(
+        sender=upload_finalize, name=name, status=status, object_key=id
+    )
     return JsonResponse({'name': name, 'status': status, 'id': id})
 
 
@@ -61,6 +65,8 @@ def upload_prepare(request: Request) -> HttpResponseBase:
     )
 
     credentials = resp['Credentials']
+
+    signals.joist_upload_prepare.send(sender=upload_prepare, name=name, object_key=object_key)
 
     return JsonResponse(
         {

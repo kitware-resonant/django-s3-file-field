@@ -80,6 +80,15 @@ photo = S3FileField()
 
 The result is that once the user select a file in the file chooser, it will be automatically uploaded to S3 on the client side.
 
+## Signals
+
+Joist sends out two signals when its REST api is called:
+
+```python
+joist_upload_prepare(name: str, object_key: str)
+joist_upload_finalize(name: str, object_key: str, status: string)
+```
+
 ## Development Environment
 
 ### Requirements
