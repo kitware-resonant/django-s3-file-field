@@ -36,6 +36,10 @@ export interface S3FileInputOptions {
   autoUpload: boolean;
 }
 
+function i18n(text: string): string {
+  return text;
+}
+
 export default class S3FileInput {
   private readonly node: HTMLElement;
   private readonly input: HTMLInputElement;
@@ -59,8 +63,12 @@ export default class S3FileInput {
     this.node = input.ownerDocument!.createElement("div");
     this.node.classList.add(cssClass("wrapper"));
     this.node.innerHTML = `<div class="${cssClass("inner")}">
-    <button type="button" class="${cssClass("upload")}" disabled>Upload to S3</button>
-    <button type="button" class="${cssClass("abort")}">Abort</button>
+    <button type="button" class="${cssClass("upload")}" disabled>
+      ${i18n("Upload to S3")}
+    </button>
+    <button type="button" class="${cssClass("abort")}">
+      ${i18n("Abort")}
+    </button>
     <div class="${cssClass("spinner-wrapper")}">
       <div class="${cssClass(
         "spinner"
@@ -109,7 +117,7 @@ export default class S3FileInput {
     this.uploadButton.disabled = files.length === 0;
 
     this.input.setCustomValidity(
-      files.length > 0 ? "Press Upload Button to upload directly" : ""
+      files.length > 0 ? i18n("Press Upload Button to upload directly") : ""
     );
   }
 
@@ -129,10 +137,10 @@ export default class S3FileInput {
         indicator.style.width = `${Math.round(p.percentage * 100)}%`;
         switch (p.state) {
           case "initial":
-            progress.title = `${file.name}: Initializing Upload`;
+            progress.title = `${file.name}: ${i18n('Initializing Upload')}`;
             break;
           case "preparing":
-            progress.title = `${file.name}: Requesting Upload Token`;
+            progress.title = `${file.name}: ${i18n('Requesting Upload Token')}`;
             break;
           case "uploading":
             progress.title = `${file.name}: ${Math.round(
@@ -140,13 +148,13 @@ export default class S3FileInput {
             )}% ${sized(p.loaded)}/${sized(p.total)}`;
             break;
           case "finishing":
-            progress.title = `${file.name}: Finishing Upload`;
+            progress.title = `${file.name}: ${i18n('Finishing Upload')}`;
             break;
           case "aborted":
-            progress.title = `${file.name}: Upload Aborted`;
+            progress.title = `${file.name}: ${i18n('Upload Aborted')}`;
             break;
           case "done":
-            progress.title = `${file.name}: Done (${sized(p.total)})`;
+            progress.title = `${file.name}: ${i18n('Done ')} (${sized(p.total)})`;
             break;
         }
       },
@@ -164,13 +172,13 @@ export default class S3FileInput {
       progress.dataset.state = r.state;
       switch (r.state) {
         case "successful":
-          progress.title = `${file.name}: Done (${sized(file.size)})`;
+          progress.title = `${file.name}: ${i18n('Done')} (${sized(file.size)})`;
           break;
         case "aborted":
-          progress.title = `${file.name}: Upload Aborted`;
+          progress.title = `${file.name}: ${i18n('Upload Aborted')}`;
           break;
         case "error":
-          progress.title = `${file.name}: Error occurred: ${r.msg}`;
+          progress.title = `${file.name}: ${i18n("Error occurred")}: ${r.msg}`;
           break;
       }
       // progress.remove();
@@ -190,7 +198,7 @@ export default class S3FileInput {
 
     this.node.classList.add(cssClass("uploading"));
     this.uploadButton.disabled = true;
-    this.input.setCustomValidity("Uploading files, wait till finished");
+    this.input.setCustomValidity(i18n("Uploading files, wait till finished"));
     this.input.value = ""; // reset file selection
 
     // TODO support multi file upload -> is that possible with django anyhow?
@@ -201,7 +209,7 @@ export default class S3FileInput {
       if (result.state === "successful") {
         this.node.classList.add(cssClass("set"));
         this.input.setCustomValidity(""); // no error
-        this.input.type = "text";
+        this.input.type = "hidden";
         this.input.value = fileInfo(result, file);
       }
     });
