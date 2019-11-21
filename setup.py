@@ -158,7 +158,7 @@ extras_require = {}
 # perform the install
 setup(
     name='joist',
-    version='0.0.1',
+    version='0.0.2',
     use_scm_version={'local_scheme': prerelease_local_scheme},
     setup_requires=['setuptools-scm'],
     description='A django widget library for direct S3 uploads',
