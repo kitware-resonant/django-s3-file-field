@@ -2,7 +2,7 @@
 
 [![PyPI version shields.io](https://img.shields.io/pypi/v/joist.svg)](https://pypi.python.org/pypi/joist/)
 
-Joist is a Django Widget library for providing a direct S3 bucket upload via the browser instead of going through the server. It extends the [django-storages](https://github.com/jschneier/django-storages) library for the S3 file storage
+Joist is a Django Widget library for providing a direct S3 bucket upload via the browser instead of going through the server. It extends the [django-storages](https://github.com/jschneier/django-storages) library for the S3 file storage.
 
 ## Installation
 
@@ -92,10 +92,10 @@ joist_upload_finalize(name: str, object_key: str, status: string)
 ## Development Environment
 
 ### Requirements
- * Terraform
- * AWS CLI
  * Python 3.7
  * node
+ * Terraform
+ * AWS CLI
 
 ## Init AWS
 login to AWS Concole and create an API access key
@@ -122,10 +122,8 @@ Note:
 
 ### Init Django and Python Repo
 ```sh
-pipenv --python=3
-pipenv install -r requirements.txt -r example/requirements.txt
-pip install -e .
-
+pipenv install --skip-lock
+pipenv shell
 cd example
 ./manage.py migrate
 ./manage.py createsuperuser
@@ -134,7 +132,6 @@ cd example
 ### Init Repo Pre Commits
 ```sh
 pipenv shell
-pip install pre-commit
 pre-commit install
 ```
 
@@ -177,7 +174,6 @@ npm run serve
 
 ```sh
 pipenv shell
-pip install bumpversion
 bumpversion minor
 ```
 
