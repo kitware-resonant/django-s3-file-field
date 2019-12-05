@@ -34,9 +34,6 @@ Additional settings
 | Key                     | Description  |
 | ----------------------- | ------------- |
 | JOIST_UPLOAD_STS_ARN    | The STS Arn Role to use (required) |
-| JOIST_UPLOAD_DURATION   | The duration the upload token should be valid in seconds (default: `60*60*12 = 12h`) |
-| JOIST_UPLOAD_PREFIX      | Prefix where files should be stored (default: `''`) |
-| JOIST_API_BASE_URL | API prefix where the server urls are hosted (default: `/api/joist`) |
 
 ### MinIO Configuration
 
