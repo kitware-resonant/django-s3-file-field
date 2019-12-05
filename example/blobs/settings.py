@@ -116,11 +116,21 @@ CORS_ORIGIN_ALLOW_ALL = True
 STATIC_URL = '/static/'
 
 
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+# django-storages s3
+# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+# AWS_REGION = os.environ.get('AWS_REGION', 'us-east1')
+# AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
+# AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+# AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 
-AWS_REGION = os.environ.get('AWS_REGION')
-AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
-AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+# JOIST_UPLOAD_STS_ARN = os.environ.get('UPLOAD_STS_ARN')
 
-JOIST_UPLOAD_STS_ARN = os.environ.get('UPLOAD_STS_ARN')
+# django-minio-storage
+DEFAULT_FILE_STORAGE = 'minio_storage.storage.MinioMediaStorage'
+MINIO_STORAGE_ENDPOINT = os.environ.get('MINIO_STORAGE_ENDPOINT', 'http://localhost:9000')
+MINIO_STORAGE_MEDIA_BUCKET_NAME = os.environ.get('MINIO_STORAGE_MEDIA_BUCKET_NAME')
+MINIO_STORAGE_ACCESS_KEY = os.environ.get('MINIO_ACCESS_KEY')
+MINIO_STORAGE_SECRET_KEY = os.environ.get('MINIO_SECRET_KEY')
+
+
+

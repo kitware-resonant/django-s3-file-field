@@ -1,5 +1,6 @@
 import json
 import time
+from typing import Dict
 import uuid
 
 import boto3
@@ -47,9 +48,10 @@ def upload_finalize(request: Request) -> HttpResponseBase:
 @api_view(['POST'])
 @parser_classes([JSONParser])
 def upload_prepare(request: Request) -> HttpResponseBase:
-    bucket_arn = f'arn:aws:s3:::{settings.AWS_STORAGE_BUCKET_NAME}'
     name = request.data['name']
     object_key = f'{settings.JOIST_UPLOAD_PREFIX}{uuid.uuid4()}/{name}'
+
+    bucket_arn = f'arn:aws:s3:::{settings.AWS_STORAGE_BUCKET_NAME}'
     upload_policy = {
         'Version': '2012-10-17',
         'Statement': [
@@ -66,18 +68,30 @@ def upload_prepare(request: Request) -> HttpResponseBase:
     # the credentials when the machine assumes the upload role.
     client = boto3.client(
         'sts',
+        endpoint_url=settings.AWS_S3_ENDPOINT_URL,
         region_name=settings.AWS_REGION,
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
     )
     resp = client.assume_role(
-        RoleArn=settings.JOIST_UPLOAD_STS_ARN,
+        RoleArn=settings.JOIST_UPLOAD_STS_ARN or 'arn:xxx:xxx:xxx:xxxx',
         RoleSessionName=f'file-upload-{int(time.time())}',
         Policy=json.dumps(upload_policy),
         DurationSeconds=settings.JOIST_UPLOAD_DURATION,
     )
 
     credentials = resp['Credentials']
+    s3_options = {
+        'apiVersion': '2006-03-01',
+        'accessKeyId': credentials['AccessKeyId'],
+        'secretAccessKey': credentials['SecretAccessKey'],
+        'sessionToken': credentials['SessionToken'],
+    }
+    if settings.JOIST_STORAGE_PROVIDER == 'minio':
+        s3_options.update({
+            's3ForcePathStyle': True,
+            'endpoint': settings.AWS_S3_ENDPOINT_URL
+        })
 
     signals.joist_upload_prepare.send(sender=upload_prepare, name=name, object_key=object_key)
 
@@ -86,12 +100,7 @@ def upload_prepare(request: Request) -> HttpResponseBase:
 
     return JsonResponse(
         {
-            's3Options': {
-                'apiVersion': '2006-03-01',
-                'accessKeyId': credentials['AccessKeyId'],
-                'secretAccessKey': credentials['SecretAccessKey'],
-                'sessionToken': credentials['SessionToken'],
-            },
+            's3Options': s3_options,
             'bucketName': settings.AWS_STORAGE_BUCKET_NAME,
             'objectKey': object_key,
             'signature': sig,

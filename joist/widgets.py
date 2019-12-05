@@ -40,7 +40,7 @@ class S3FileInput(ClearableFileInput):
         js = ['joist/joist.js']
 
     template_name = (
-        'django/forms/widgets/file.html' if settings.USE_FALLBACK else 'joist/s3fileinput.html'
+        'django/forms/widgets/file.html' if settings.JOIST_STORAGE_PROVIDER == 'unknown' else 'joist/s3fileinput.html'
     )
 
     baseurl: Optional[str] = settings.JOIST_API_BASE_URL
@@ -74,7 +74,7 @@ class S3AdminFileInput(S3FileInput):
 
     template_name = (
         'admin/widgets/clearable_file_input.html'
-        if settings.USE_FALLBACK
+        if settings.JOIST_STORAGE_PROVIDER == 'unknown'
         else 'joist/s3adminfileinput.html'
     )
 

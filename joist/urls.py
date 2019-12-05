@@ -2,12 +2,12 @@ from typing import Any, List
 
 from django.urls import path
 
-from .settings import USE_FALLBACK
+from .settings import JOIST_STORAGE_PROVIDER
 from .views import upload_finalize, upload_prepare
 
 urlpatterns = (
     []
-    if USE_FALLBACK
+    if JOIST_STORAGE_PROVIDER == 'unknown'
     else [path('upload-prepare/', upload_prepare), path('upload-finalize/', upload_finalize)]
 )
 
