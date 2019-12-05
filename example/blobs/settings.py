@@ -126,11 +126,8 @@ STATIC_URL = '/static/'
 # JOIST_UPLOAD_STS_ARN = os.environ.get('UPLOAD_STS_ARN')
 
 # django-minio-storage
-DEFAULT_FILE_STORAGE = 'minio_storage.storage.MinioMediaStorage'
-MINIO_STORAGE_ENDPOINT = os.environ.get('MINIO_STORAGE_ENDPOINT', 'http://localhost:9000')
-MINIO_STORAGE_MEDIA_BUCKET_NAME = os.environ.get('MINIO_STORAGE_MEDIA_BUCKET_NAME')
-MINIO_STORAGE_ACCESS_KEY = os.environ.get('MINIO_ACCESS_KEY')
-MINIO_STORAGE_SECRET_KEY = os.environ.get('MINIO_SECRET_KEY')
-
-
-
+# DEFAULT_FILE_STORAGE = 'minio_storage.storage.MinioMediaStorage'
+# MINIO_STORAGE_ENDPOINT = os.environ.get('MINIO_STORAGE_ENDPOINT', 'http://localhost:9000')
+# MINIO_STORAGE_MEDIA_BUCKET_NAME = os.environ.get('MINIO_STORAGE_MEDIA_BUCKET_NAME')
+# MINIO_STORAGE_ACCESS_KEY = os.environ.get('MINIO_ACCESS_KEY')
+# MINIO_STORAGE_SECRET_KEY = os.environ.get('MINIO_SECRET_KEY')

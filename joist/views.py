@@ -1,6 +1,5 @@
 import json
 import time
-from typing import Dict
 import uuid
 
 import boto3
@@ -88,10 +87,7 @@ def upload_prepare(request: Request) -> HttpResponseBase:
         'sessionToken': credentials['SessionToken'],
     }
     if settings.JOIST_STORAGE_PROVIDER == 'minio':
-        s3_options.update({
-            's3ForcePathStyle': True,
-            'endpoint': settings.AWS_S3_ENDPOINT_URL
-        })
+        s3_options.update({'s3ForcePathStyle': True, 'endpoint': settings.AWS_S3_ENDPOINT_URL})
 
     signals.joist_upload_prepare.send(sender=upload_prepare, name=name, object_key=object_key)
 

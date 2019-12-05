@@ -11,16 +11,24 @@ def _s(key: str, default: Any = None):
 
 def _guess_provider():
     storage = _s('DEFAULT_FILE_STORAGE')
-    if storage == 'minio_storage.storage.MinioMediaStorage' or hasattr(settings, 'MINIO_STORAGE_MEDIA_BUCKET_NAME'):
+    if storage == 'minio_storage.storage.MinioMediaStorage' or hasattr(
+        settings, 'MINIO_STORAGE_MEDIA_BUCKET_NAME'
+    ):
         return 'minio'
-    if storage == 'storages.backends.s3boto3.S3Boto3Storage' or hasattr(settings, 'AWS_STORAGE_BUCKET_NAME'):
+    if storage == 'storages.backends.s3boto3.S3Boto3Storage' or hasattr(
+        settings, 'AWS_STORAGE_BUCKET_NAME'
+    ):
         return 'aws'
     return 'unknown'
 
 
 # configuration from django-storage for S3
-AWS_ACCESS_KEY_ID = _s('AWS_S3_ACCESS_KEY_ID', _s('AWS_ACCESS_KEY_ID', _s('MINIO_STORAGE_ACCESS_KEY')))
-AWS_SECRET_ACCESS_KEY = _s('AWS_S3_SECRET_ACCESS_KEY', _s('AWS_SECRET_ACCESS_KEY', _s('MINIO_STORAGE_SECRET_KEY')))
+AWS_ACCESS_KEY_ID = _s(
+    'AWS_S3_ACCESS_KEY_ID', _s('AWS_ACCESS_KEY_ID', _s('MINIO_STORAGE_ACCESS_KEY'))
+)
+AWS_SECRET_ACCESS_KEY = _s(
+    'AWS_S3_SECRET_ACCESS_KEY', _s('AWS_SECRET_ACCESS_KEY', _s('MINIO_STORAGE_SECRET_KEY'))
+)
 AWS_REGION = _s('AWS_S3_REGION_NAME', _s('AWS_REGION'))
 
 AWS_S3_ENDPOINT_URL = _s('AWS_S3_ENDPOINT_URL', _s('MINIO_STORAGE_ENDPOINT'))
@@ -38,7 +46,8 @@ JOIST_UPLOAD_PREFIX = _s('JOIST_UPLOAD_PREFIX', '')
 # verify settings
 if JOIST_STORAGE_PROVIDER == 'unknown':
     logging.getLogger('joist').warning(
-        'joist is not configured properly, could not identify the storage provider (minio, aws), will fall back to default upload'
+        'joist is not configured properly, could not identify the storage provider (minio, aws), '
+        'will fall back to default upload'
     )
 elif any(v is None for v in [AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_STORAGE_BUCKET_NAME]):
     raise ImproperlyConfigured(f'joist missing some required setting')
