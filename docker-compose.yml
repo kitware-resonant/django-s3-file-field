@@ -4,7 +4,21 @@ services:
   minio:
     image: minio/minio
     command: server /data
-    env_file: 
+    env_file:
       - ./example/.env
     ports:
       - '9000:9000'
+  mc:
+    image: minio/mc
+    entrypoint: "/bin/sh -c"
+    # add docker-compose host, create bucket, create new user, and add readwrite rights, then watch something to keep running
+    command: '"/usr/bin/mc config host add minio http://minio:9000 $${MINIO_ACCESS_KEY} $${MINIO_SECRET_KEY}
+      && /usr/bin/mc mb minio/$${MINIO_STORAGE_MEDIA_BUCKET_NAME}
+      && /usr/bin/mc admin user add minio $${MINIO_STORAGE_ACCESS_KEY} $${MINIO_STORAGE_SECRET_KEY}
+      && /usr/bin/mc admin policy set minio readwrite user=$${MINIO_STORAGE_ACCESS_KEY}
+      && /usr/bin/mc watch ~
+      "'
+    env_file:
+      - ./example/.env
+    links:
+      - minio

@@ -62,16 +62,23 @@ def upload_prepare(request: Request) -> HttpResponseBase:
         ],
     }
 
+    full_endpoint = None
+    if settings.AWS_S3_ENDPOINT_URL:
+        full_endpoint = (
+            f'http{"s" if settings.AWS_S3_USE_SSL else ""}://{settings.AWS_S3_ENDPOINT_URL}'
+        )
+
     # Get temporary security credentials with permission to upload into the
     # object in the S3 bucket. The AWS Security Token Service (STS) provides
     # the credentials when the machine assumes the upload role.
     client = boto3.client(
         'sts',
-        endpoint_url=settings.AWS_S3_ENDPOINT_URL,
+        endpoint_url=full_endpoint,
         region_name=settings.AWS_REGION,
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
     )
+
     resp = client.assume_role(
         RoleArn=settings.JOIST_UPLOAD_STS_ARN or 'arn:xxx:xxx:xxx:xxxx',
         RoleSessionName=f'file-upload-{int(time.time())}',
@@ -87,7 +94,8 @@ def upload_prepare(request: Request) -> HttpResponseBase:
         'sessionToken': credentials['SessionToken'],
     }
     if settings.JOIST_STORAGE_PROVIDER == 'minio':
-        s3_options.update({'s3ForcePathStyle': True, 'endpoint': settings.AWS_S3_ENDPOINT_URL})
+        s3_options['s3ForcePathStyle'] = True
+        s3_options['endpoint'] = full_endpoint
 
     signals.joist_upload_prepare.send(sender=upload_prepare, name=name, object_key=object_key)
 
