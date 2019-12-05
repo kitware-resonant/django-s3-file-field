@@ -123,7 +123,7 @@ Note:
 ### Init Django and Python Repo
 ```sh
 pipenv --python=3
-pipenv install -r requirements.txt example/requirements.txt
+pipenv install -r requirements.txt -r example/requirements.txt
 pip install -e .
 
 cd example

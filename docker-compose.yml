@@ -1,0 +1,10 @@
+version: '3.3'
+
+services:
+  minio:
+    image: minio/minio
+    command: server /data
+    env_file: 
+      - ./example/.env
+    ports:
+      - '9000:9000'
