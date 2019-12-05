@@ -86,9 +86,12 @@ def upload_prepare(request: Request) -> HttpResponseBase:
 
     return JsonResponse(
         {
-            'accessKeyId': credentials['AccessKeyId'],
-            'secretAccessKey': credentials['SecretAccessKey'],
-            'sessionToken': credentials['SessionToken'],
+            's3Options': {
+                'apiVersion': '2006-03-01',
+                'accessKeyId': credentials['AccessKeyId'],
+                'secretAccessKey': credentials['SecretAccessKey'],
+                'sessionToken': credentials['SessionToken'],
+            },
             'bucketName': settings.AWS_STORAGE_BUCKET_NAME,
             'objectKey': object_key,
             'signature': sig,

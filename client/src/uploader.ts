@@ -2,9 +2,7 @@ import S3 from 'aws-sdk/clients/s3';
 import { DEFAULT_BASE_URL, fetchOptions } from './constants';
 
 interface PrepareResponse {
-  accessKeyId: string;
-  secretAccessKey: string;
-  sessionToken: string;
+  s3Options: S3.Types.ClientConfiguration;
   bucketName: string;
   objectKey: string;
   signature: string;
@@ -87,10 +85,7 @@ export async function uploadFile(file: File, options: Partial<UploadOptions> = {
   }
 
   const s3 = new S3({
-    apiVersion: '2006-03-01',
-    accessKeyId: initUpload.accessKeyId,
-    secretAccessKey: initUpload.secretAccessKey,
-    sessionToken: initUpload.sessionToken,
+    ...initUpload.s3Options
   });
 
   const task = s3.upload({
