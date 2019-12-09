@@ -39,7 +39,11 @@ class S3FileInput(ClearableFileInput):
     class Media:
         js = ['joist/joist.js']
 
-    template_name = 'joist/s3fileinput.html'
+    template_name = (
+        'django/forms/widgets/file.html'
+        if settings.JOIST_STORAGE_PROVIDER == 'unknown'
+        else 'joist/s3fileinput.html'
+    )
 
     baseurl: Optional[str] = settings.JOIST_API_BASE_URL
 
@@ -70,7 +74,11 @@ class S3FileInput(ClearableFileInput):
 class S3AdminFileInput(S3FileInput):
     """widget used by the admin page."""
 
-    template_name = 'joist/s3adminfileinput.html'
+    template_name = (
+        'admin/widgets/clearable_file_input.html'
+        if settings.JOIST_STORAGE_PROVIDER == 'unknown'
+        else 'joist/s3adminfileinput.html'
+    )
 
 
 class S3FormFileField(FileField):

@@ -9,7 +9,6 @@
 *.sln
 *.sw?
 .mypy_cache
-Pipfile*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
