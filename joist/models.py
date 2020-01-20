@@ -4,7 +4,7 @@ from uuid import uuid4
 from django.contrib.admin.widgets import AdminFileWidget
 from django.db.models.fields.files import FieldFile, FileField
 
-from .settings import JOIST_STORAGE_PROVIDER
+from .settings import _JOIST_STORAGE_PROVIDER
 from .widgets import S3AdminFileInput, S3FakeFile, S3FormFileField
 
 
@@ -53,7 +53,7 @@ class S3FileField(FileField):
         return f'{uuid4()}/{filename}'
 
     def formfield(self, **kwargs):
-        if JOIST_STORAGE_PROVIDER == 'unknown':
+        if not _JOIST_STORAGE_PROVIDER:
             return super().formfield(**kwargs)
 
         copy = kwargs.copy()

@@ -41,7 +41,7 @@ class S3FileInput(ClearableFileInput):
 
     template_name = (
         'django/forms/widgets/file.html'
-        if settings.JOIST_STORAGE_PROVIDER == 'unknown'
+        if not settings._JOIST_STORAGE_PROVIDER
         else 'joist/s3fileinput.html'
     )
 
@@ -76,7 +76,7 @@ class S3AdminFileInput(S3FileInput):
 
     template_name = (
         'admin/widgets/clearable_file_input.html'
-        if settings.JOIST_STORAGE_PROVIDER == 'unknown'
+        if not settings._JOIST_STORAGE_PROVIDER
         else 'joist/s3adminfileinput.html'
     )
 
