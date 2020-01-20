@@ -3,5 +3,12 @@ prune client
 prune terraform
 prune example
 prune example-client
+prune tests
+exclude tox.ini
+exclude docker-compose.yml
+exclude mypy.ini
+exclude .editorconfig
+exclude .gitignore
+exclude Pipfile
 exclude .pre-commit-config.yaml
 graft joist/static

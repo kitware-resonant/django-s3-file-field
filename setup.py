@@ -65,9 +65,7 @@ class NPM(Command):
 
     node_modules = os.path.join(node_root, 'node_modules')
 
-    targets = [
-        os.path.join(here, 'joist', 'static', 'joist', 'joist.js')
-    ]
+    targets = [os.path.join(here, 'joist', 'static', 'joist', 'joist.js')]
 
     def initialize_options(self):
         pass
@@ -118,7 +116,10 @@ class NPM(Command):
             log.info("building with npm.  This may take a while...")
             npm_name = self.get_npm_name()
             check_call(
-                [npm_name, 'run', 'build:widget'], cwd=node_root, stdout=sys.stdout, stderr=sys.stderr
+                [npm_name, 'run', 'build:widget'],
+                cwd=node_root,
+                stdout=sys.stdout,
+                stderr=sys.stderr,
             )
 
         for t in self.targets:
@@ -150,11 +151,6 @@ def prerelease_local_scheme(version):
 with open('README.md') as f:
     readme = f.read()
 
-with open('requirements.txt') as f:
-    install_reqs = f.readlines()
-
-extras_require = {}
-
 # perform the install
 setup(
     name='joist',
@@ -173,22 +169,22 @@ setup(
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Web Environment',
+        'Framework :: Django :: 2.2',
+        'Framework :: Django :: 3.0',
+        'Framework :: Django',
+        'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
-        'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
-        'Framework :: Django',
-        'Framework :: Django :: 2.2',
-        'Framework :: Django :: 3.0',
+        'Programming Language :: Python',
     ],
     packages=find_packages(include=['joist']),
     package_data={'': ['*.html', '*.js']},
     include_package_data=True,
     zip_safe=False,
-    extras_require=extras_require,
-    install_requires=install_reqs,
+    install_requires=['django>=2', 'boto3', 'djangorestframework',],
     cmdclass={
         'build_py': js_prerelease(build_py),
         'egg_info': js_prerelease(egg_info),
