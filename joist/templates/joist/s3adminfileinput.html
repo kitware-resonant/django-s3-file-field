@@ -10,7 +10,7 @@
     {{ widget.input_text }}:
 {% endif %}
 
-<input type="file" name="{{ widget.name }}" {% include "django/forms/widgets/attrs.html" %} data-s3fileinput="{{ widget.baseurl }}">
+<input type="file" name="{{ widget.name }}" {% include "django/forms/widgets/attrs.html" %} data-s3fileinput="{{ widget.baseurl }}" data-auto-upload>
 
 {% if widget.is_initial %}
   </p>
