@@ -78,7 +78,7 @@ def upload_prepare(request: Request) -> HttpResponseBase:
     )
 
     resp = client.assume_role(
-        RoleArn=settings.JOIST_UPLOAD_STS_ARN or 'arn:xxx:xxx:xxx:xxxx',
+        RoleArn=settings.JOIST_UPLOAD_STS_ARN,
         RoleSessionName=f'file-upload-{int(time.time())}',
         Policy=json.dumps(upload_policy),
         DurationSeconds=settings._JOIST_UPLOAD_DURATION,

@@ -22,7 +22,7 @@ INSTALLED_APPS = [
 
 Add the required settings:
 ```python
-JOIST_UPLOAD_STS_ARN = '' # see STS Role section below
+JOIST_UPLOAD_STS_ARN = '' # see STS Role section below (not required for minio)
 ```
 
 Add the joist routes to `urls.py`:
