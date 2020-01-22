@@ -5,7 +5,7 @@ import boto3
 from . import settings
 
 
-def _get_endpoint_url() -> Optional[str]:
+def _get_endpoint_url():
     if settings._JOIST_ENDPOINT:
         return f'http{"s" if settings._JOIST_USE_SSL else ""}://{settings._JOIST_ENDPOINT}'
 
