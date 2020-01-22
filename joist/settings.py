@@ -3,6 +3,7 @@ import logging
 from django.conf import settings
 
 from .configuration import get_storage_provider
+from pathlib import PurePosixPath
 
 
 # internal settings
@@ -41,4 +42,4 @@ else:
 # user configurable settings
 # TODO: make sure these work correctly regardless of leading/trailing slashes
 JOIST_API_BASE_URL = getattr(settings, 'JOIST_API_BASE_URL', '/api/joist').rstrip('/')
-JOIST_UPLOAD_PREFIX = getattr(settings, 'JOIST_UPLOAD_PREFIX', '')
+JOIST_UPLOAD_PREFIX = PurePosixPath(getattr(settings, 'JOIST_UPLOAD_PREFIX', ''))

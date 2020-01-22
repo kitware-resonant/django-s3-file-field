@@ -44,6 +44,16 @@ class Car(db.Model):
 ```
 
 
+## Running checks
+
+joist can detect common misconfigurations using Django's built in [System check
+framework](https://docs.djangoproject.com/en/3.0/topics/checks/). To confirm
+your configuration is correct, run:
+
+``` sh
+./manage.py check
+```
+
 
 ## Advanced Topics
 
