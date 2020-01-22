@@ -5,6 +5,7 @@ from django.core.signing import BadSignature, Signer
 from django.forms import ClearableFileInput, FileField, ValidationError, Widget
 
 from . import settings
+from .configuration import StorageProvider
 
 
 class S3FakeFile:
@@ -39,13 +40,14 @@ class S3FileInput(ClearableFileInput):
     class Media:
         js = ['joist/joist.js']
 
-    template_name = (
-        'django/forms/widgets/file.html'
-        if not settings._JOIST_STORAGE_PROVIDER
-        else 'joist/s3fileinput.html'
-    )
-
     baseurl: Optional[str] = settings.JOIST_API_BASE_URL
+
+    @property
+    def template_name(self):
+        if settings._JOIST_STORAGE_PROVIDER == StorageProvider.UNSUPPORTED:
+            return 'django/forms/widgets/file.html'
+        else:
+            return 'joist/s3fileinput.html'
 
     def __init__(self, attrs=None):
         if attrs is not None and 'baseurl' in attrs:
@@ -74,11 +76,12 @@ class S3FileInput(ClearableFileInput):
 class S3AdminFileInput(S3FileInput):
     """widget used by the admin page."""
 
-    template_name = (
-        'admin/widgets/clearable_file_input.html'
-        if not settings._JOIST_STORAGE_PROVIDER
-        else 'joist/s3adminfileinput.html'
-    )
+    @property
+    def template_name(self):
+        if settings._JOIST_STORAGE_PROVIDER == StorageProvider.UNSUPPORTED:
+            return 'admin/widgets/clearable_file_input.html'
+        else:
+            return 'joist/s3adminfileinput.html'
 
 
 class S3FormFileField(FileField):

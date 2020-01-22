@@ -1,19 +1,17 @@
 import io
 import json
 import logging
-import os
 from pathlib import PurePosixPath
 from time import time
 from typing import List, Optional
 
 from botocore.client import Config
 from botocore.exceptions import ConnectionError
-import boto3
 from django.core.checks import Error, register, Warning
 
+from . import settings
 from .boto import client_factory
 from .configuration import get_storage_provider
-from . import settings
 
 
 # TODO: this should only add a handler when running the check command
@@ -22,15 +20,15 @@ logger.addHandler(logging.StreamHandler())
 
 
 W001 = Warning(
-    "Unable to determine the underlying storage provider. "
-    "joist will use the filesystem for storing all files.",
+    'Unable to determine the underlying storage provider. '
+    'joist will use the filesystem for storing all files.',
     id='joist.W001',
 )
 
-E001 = Error("Unable to connect to the specified storage bucket.", id='joist.E001')
-E002 = Error("Unable to put objects into the specified storage bucket.", id='joist.E002')
-E003 = Error("Unable to delete objects from the specified storage bucket.", id='joist.E003')
-E004 = Error("Unable to assume STS role for issuing temporary credentials.", id='joist.E004')
+E001 = Error('Unable to connect to the specified storage bucket.', id='joist.E001')
+E002 = Error('Unable to put objects into the specified storage bucket.', id='joist.E002')
+E003 = Error('Unable to delete objects from the specified storage bucket.', id='joist.E003')
+E004 = Error('Unable to assume STS role for issuing temporary credentials.', id='joist.E004')
 
 
 @register()
@@ -45,7 +43,7 @@ def test_bucket_access(app_configs: Optional[List], **kwargs) -> List:
     test_object_key = str(settings.JOIST_UPLOAD_PREFIX / PurePosixPath('.joist-test-file'))
 
     try:
-        response = client.upload_fileobj(io.BytesIO(), settings._JOIST_BUCKET, test_object_key)
+        client.upload_fileobj(io.BytesIO(), settings._JOIST_BUCKET, test_object_key)
     except ConnectionError:
         logger.exception('Failed to connect to storage bucket')
         return [E001]
@@ -54,7 +52,7 @@ def test_bucket_access(app_configs: Optional[List], **kwargs) -> List:
         return [E002]
 
     try:
-        response = client.delete_object(Bucket=settings._JOIST_BUCKET, Key=test_object_key)
+        client.delete_object(Bucket=settings._JOIST_BUCKET, Key=test_object_key)
     except ConnectionError:
         logger.exception('Failed to connect to storage bucket')
         return [E001]
@@ -70,7 +68,7 @@ def test_assume_role_configuration(app_configs: Optional[List], **kwargs) -> Lis
     client = client_factory('sts', config=Config(connect_timeout=5, retries={'max_attempts': 0}))
 
     try:
-        resp = client.assume_role(
+        client.assume_role(
             RoleArn=settings.JOIST_UPLOAD_STS_ARN,
             RoleSessionName=f'file-upload-{int(time())}',
             Policy=json.dumps(

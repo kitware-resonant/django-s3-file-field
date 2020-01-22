@@ -1,9 +1,9 @@
 import logging
+from pathlib import PurePosixPath
 
 from django.conf import settings
 
-from .configuration import get_storage_provider
-from pathlib import PurePosixPath
+from .configuration import get_storage_provider, StorageProvider
 
 
 # internal settings
@@ -11,7 +11,7 @@ _JOIST_UPLOAD_DURATION = 60 * 60 * 12
 _JOIST_STORAGE_PROVIDER = get_storage_provider()
 
 # settings inferred from other packages (django-storages and django-minio-storage)
-if _JOIST_STORAGE_PROVIDER == 'AWS':
+if _JOIST_STORAGE_PROVIDER == StorageProvider.AWS:
     _JOIST_ACCESS_KEY = settings.AWS_ACCESS_KEY_ID
     _JOIST_SECRET_KEY = settings.AWS_SECRET_ACCESS_KEY
     _JOIST_BUCKET = settings.AWS_STORAGE_BUCKET_NAME
@@ -20,7 +20,7 @@ if _JOIST_STORAGE_PROVIDER == 'AWS':
     _JOIST_USE_SSL = getattr(settings, 'AWS_S3_USE_SSL', True)
 
     JOIST_UPLOAD_STS_ARN = settings.JOIST_UPLOAD_STS_ARN
-elif _JOIST_STORAGE_PROVIDER == 'MINIO':
+elif _JOIST_STORAGE_PROVIDER == StorageProvider.MINIO:
     _JOIST_ACCESS_KEY = settings.MINIO_STORAGE_ACCESS_KEY
     _JOIST_SECRET_KEY = settings.MINIO_STORAGE_SECRET_KEY
     _JOIST_BUCKET = settings.MINIO_STORAGE_MEDIA_BUCKET_NAME

@@ -5,4 +5,5 @@ class JoistConfig(AppConfig):
     name = 'joist'
 
     def ready(self):
-        from . import checks
+        # import checks to register them
+        from . import checks  # noqa: F401

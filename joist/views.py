@@ -2,7 +2,6 @@ import json
 import time
 import uuid
 
-import boto3
 from django.core.signing import BadSignature, Signer, TimestampSigner
 from django.http import JsonResponse
 from django.http.response import HttpResponseBase
@@ -10,9 +9,10 @@ from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import JSONParser
 from rest_framework.request import Request
 
-from .boto import _get_endpoint_url, client_factory
 from . import settings
 from . import signals
+from .boto import _get_endpoint_url, client_factory
+from .configuration import StorageProvider
 
 
 # @authentication_classes([TokenAuthentication])
@@ -81,9 +81,10 @@ def upload_prepare(request: Request) -> HttpResponseBase:
         'accessKeyId': credentials['AccessKeyId'],
         'secretAccessKey': credentials['SecretAccessKey'],
         'sessionToken': credentials['SessionToken'],
+        'endpoint': _get_endpoint_url(),
+        # MinIO uses path style URLs instead of the subdomain style typical of AWS
+        's3ForcePathStyle': settings._JOIST_STORAGE_PROVIDER == StorageProvider.MINIO,
     }
-    if settings._JOIST_STORAGE_PROVIDER == 'minio':
-        s3_options['s3ForcePathStyle'] = True
 
     signals.joist_upload_prepare.send(sender=upload_prepare, name=name, object_key=object_key)
 
@@ -96,6 +97,5 @@ def upload_prepare(request: Request) -> HttpResponseBase:
             'bucketName': settings._JOIST_BUCKET,
             'objectKey': object_key,
             'signature': sig,
-            'endpoint': _get_endpoint_url(),
         }
     )
