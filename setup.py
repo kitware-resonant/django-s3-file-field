@@ -154,7 +154,7 @@ with open('README.md') as f:
 # perform the install
 setup(
     name='django-s3-file-field',
-    version='0.0.1',
+    version='0.0.3',
     use_scm_version={'local_scheme': prerelease_local_scheme},
     setup_requires=['setuptools-scm'],
     description='A django widget library for uploading files directly to S3 (or MinIO).',
