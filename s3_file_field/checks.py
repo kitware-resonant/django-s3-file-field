@@ -19,16 +19,21 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 
 
+TEST_OBJECT_KEY = str(settings.S3FF_UPLOAD_PREFIX / PurePosixPath('.s3-file-field-test-file'))
+
+
 W001 = Warning(
     'Unable to determine the underlying storage provider. '
-    'joist will use the filesystem for storing all files.',
-    id='joist.W001',
+    's3_file_field will use the filesystem for storing all files.',
+    id='s3_file_field.W001',
 )
 
-E001 = Error('Unable to connect to the specified storage bucket.', id='joist.E001')
-E002 = Error('Unable to put objects into the specified storage bucket.', id='joist.E002')
-E003 = Error('Unable to delete objects from the specified storage bucket.', id='joist.E003')
-E004 = Error('Unable to assume STS role for issuing temporary credentials.', id='joist.E004')
+E001 = Error('Unable to connect to the specified storage bucket.', id='s3_file_field.E001')
+E002 = Error('Unable to put objects into the specified storage bucket.', id='s3_file_field.E002')
+E003 = Error('Unable to delete objects from the specified storage bucket.', id='s3_file_field.E003')
+E004 = Error(
+    'Unable to assume STS role for issuing temporary credentials.', id='s3_file_field.E004'
+)
 
 
 @register()
@@ -40,10 +45,9 @@ def determine_storage_provider(app_configs: Optional[List], **kwargs) -> List:
 def test_bucket_access(app_configs: Optional[List], **kwargs) -> List:
     # Use a short timeout to quickly fail on connection misconfigurations
     client = client_factory('s3', config=Config(connect_timeout=5, retries={'max_attempts': 0}))
-    test_object_key = str(settings.JOIST_UPLOAD_PREFIX / PurePosixPath('.joist-test-file'))
 
     try:
-        client.upload_fileobj(io.BytesIO(), settings._JOIST_BUCKET, test_object_key)
+        client.upload_fileobj(io.BytesIO(), settings._S3FF_BUCKET, TEST_OBJECT_KEY)
     except ConnectionError:
         logger.exception('Failed to connect to storage bucket')
         return [E001]
@@ -52,7 +56,7 @@ def test_bucket_access(app_configs: Optional[List], **kwargs) -> List:
         return [E002]
 
     try:
-        client.delete_object(Bucket=settings._JOIST_BUCKET, Key=test_object_key)
+        client.delete_object(Bucket=settings._S3FF_BUCKET, Key=TEST_OBJECT_KEY)
     except ConnectionError:
         logger.exception('Failed to connect to storage bucket')
         return [E001]
@@ -69,7 +73,7 @@ def test_assume_role_configuration(app_configs: Optional[List], **kwargs) -> Lis
 
     try:
         client.assume_role(
-            RoleArn=settings.JOIST_UPLOAD_STS_ARN,
+            RoleArn=settings.S3FF_UPLOAD_STS_ARN,
             RoleSessionName=f'file-upload-{int(time())}',
             Policy=json.dumps(
                 {
@@ -78,12 +82,12 @@ def test_assume_role_configuration(app_configs: Optional[List], **kwargs) -> Lis
                         {
                             'Effect': 'Allow',
                             'Action': ['s3:PutObject'],
-                            'Resource': f'arn:aws:s3:::{settings._JOIST_BUCKET}/.joist-test-file',
+                            'Resource': f'arn:aws:s3:::{settings._S3FF_BUCKET}/{TEST_OBJECT_KEY}',
                         }
                     ],
                 }
             ),
-            DurationSeconds=settings._JOIST_UPLOAD_DURATION,
+            DurationSeconds=settings._S3FF_UPLOAD_DURATION,
         )
     except ConnectionError:
         logger.exception('Failed to connect to storage bucket')

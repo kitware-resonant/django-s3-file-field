@@ -5,7 +5,7 @@ from django.contrib.admin.widgets import AdminFileWidget
 from django.db.models.fields.files import FieldFile, FileField
 
 from .configuration import StorageProvider
-from .settings import _JOIST_STORAGE_PROVIDER
+from .settings import _S3FF_STORAGE_PROVIDER
 from .widgets import S3AdminFileInput, S3FakeFile, S3FormFileField
 
 
@@ -54,7 +54,7 @@ class S3FileField(FileField):
         return f'{uuid4()}/{filename}'
 
     def formfield(self, **kwargs):
-        if _JOIST_STORAGE_PROVIDER == StorageProvider.UNSUPPORTED:
+        if _S3FF_STORAGE_PROVIDER == StorageProvider.UNSUPPORTED:
             return super().formfield(**kwargs)
 
         copy = kwargs.copy()

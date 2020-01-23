@@ -27,10 +27,10 @@ def upload_finalize(request: Request) -> HttpResponseBase:
 
     # check if upload_prepare signed this less than max age ago
     tsigner = TimestampSigner()
-    if object_id != tsigner.unsign(upload_sig, max_age=settings._JOIST_UPLOAD_DURATION):
+    if object_id != tsigner.unsign(upload_sig, max_age=settings._S3FF_UPLOAD_DURATION):
         raise BadSignature()
 
-    signals.joist_upload_finalize.send(
+    signals.s3_file_field_upload_finalize.send(
         sender=upload_finalize, name=name, status=status, object_key=object_id
     )
 
@@ -49,9 +49,9 @@ def upload_finalize(request: Request) -> HttpResponseBase:
 @parser_classes([JSONParser])
 def upload_prepare(request: Request) -> HttpResponseBase:
     name = request.data['name']
-    object_key = f'{settings.JOIST_UPLOAD_PREFIX}{uuid.uuid4()}/{name}'
+    object_key = str(settings.S3FF_UPLOAD_PREFIX / str(uuid.uuid4()) / name)
 
-    bucket_arn = f'arn:aws:s3:::{settings._JOIST_BUCKET}'
+    bucket_arn = f'arn:aws:s3:::{settings._S3FF_BUCKET}'
     upload_policy = {
         'Version': '2012-10-17',
         'Statement': [
@@ -69,10 +69,10 @@ def upload_prepare(request: Request) -> HttpResponseBase:
     client = client_factory('sts')
 
     resp = client.assume_role(
-        RoleArn=settings.JOIST_UPLOAD_STS_ARN,
+        RoleArn=settings.S3FF_UPLOAD_STS_ARN,
         RoleSessionName=f'file-upload-{int(time.time())}',
         Policy=json.dumps(upload_policy),
-        DurationSeconds=settings._JOIST_UPLOAD_DURATION,
+        DurationSeconds=settings._S3FF_UPLOAD_DURATION,
     )
 
     credentials = resp['Credentials']
@@ -83,10 +83,12 @@ def upload_prepare(request: Request) -> HttpResponseBase:
         'sessionToken': credentials['SessionToken'],
         'endpoint': _get_endpoint_url(),
         # MinIO uses path style URLs instead of the subdomain style typical of AWS
-        's3ForcePathStyle': settings._JOIST_STORAGE_PROVIDER == StorageProvider.MINIO,
+        's3ForcePathStyle': settings._S3FF_STORAGE_PROVIDER == StorageProvider.MINIO,
     }
 
-    signals.joist_upload_prepare.send(sender=upload_prepare, name=name, object_key=object_key)
+    signals.s3_file_field_upload_prepare.send(
+        sender=upload_prepare, name=name, object_key=object_key
+    )
 
     signer = TimestampSigner()
     sig = signer.sign(object_key)
@@ -94,7 +96,7 @@ def upload_prepare(request: Request) -> HttpResponseBase:
     return JsonResponse(
         {
             's3Options': s3_options,
-            'bucketName': settings._JOIST_BUCKET,
+            'bucketName': settings._S3FF_BUCKET,
             'objectKey': object_key,
             'signature': sig,
         }

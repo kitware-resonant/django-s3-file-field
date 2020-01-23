@@ -1,42 +1,48 @@
-# joist
+# django-s3-file-field
 
-[![PyPI version shields.io](https://img.shields.io/pypi/v/joist.svg)](https://pypi.python.org/pypi/joist/) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/joist) ![PyPI - Django Version](https://img.shields.io/pypi/djversions/joist)
+[![PyPI version
+ shields.io](https://img.shields.io/pypi/v/django-s3-file-field.svg)](https://pypi.python.org/pypi/django-s3-file-field/)
+![PyPI - Python
+ Version](https://img.shields.io/pypi/pyversions/django-s3-file-field)
+![PyPI - Django Version](https://img.shields.io/pypi/djversions/django-s3-file-field)
 
-joist is a Django library for uploading files directly to S3 (or MinIO) through the browser. joist heavily depends on the [django-storages](https://github.com/jschneier/django-storages) package.
+`django-s3-file-field` is a Django widget library for uploading files directly to S3
+(or MinIO) through the browser. django-s3-file-field heavily depends on the
+[django-storages](https://github.com/jschneier/django-storages) package.
 
 ## Quickstart
 Ensure you've configured your Django installation to use `django-storages` for S3 access: https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html.
 
-Install the joist package:
+Install the django-s3-file-field package:
 ```sh
-pip install joist
+pip install django-s3-file-field
 ```
 
-Add `joist` to your `INSTALLED_APPS`:
+Add `s3_file_field` to your `INSTALLED_APPS`:
 ```python
 INSTALLED_APPS = [
  ...
- 'joist',
+ 's3_file_field',
 ]
 ```
 
 Add the required settings:
 ```python
-JOIST_UPLOAD_STS_ARN = '' # see STS Role section below (not required for minio)
+S3FF_UPLOAD_STS_ARN = '' # see STS Role section below (not required for minio)
 ```
 
-Add the joist routes to `urls.py`:
+Add the appropriate routes to `urls.py`:
 ```python
 urlpatterns = [
     ...
-    path('api/joist/', include('joist.urls')),
+    path('api/s3-upload/', include('s3_file_field.urls')),
 ]
 ```
 
 
 ## Usage
 ```python
-from joist.fields import S3FileField
+from s3_file_field import S3FileField
 
 class Car(db.Model):
     ...
@@ -46,7 +52,7 @@ class Car(db.Model):
 
 ## Running checks
 
-joist can detect common misconfigurations using Django's built in [System check
+django-s3-file-field can detect common misconfigurations using Django's built in [System check
 framework](https://docs.djangoproject.com/en/3.0/topics/checks/). To confirm
 your configuration is correct, run:
 
@@ -59,17 +65,17 @@ your configuration is correct, run:
 
 ### Advanced configuration
 
-| Key                  | Default      | Description                                 |
-| -------------------  | ------------ | ------------------------------------------- |
-| JOIST_UPLOAD_STS_ARN | none         | ...                                         |
-| JOIST_UPLOAD_PREFIX  | none         | Prefix where files should be stored         |
-| JOIST_API_BASE_URL   | `/api/joist` | API prefix where the server urls are hosted |
+| Key                  | Default          | Description                                 |
+| -------------------  | ---------------- | ------------------------------------------- |
+| S3FF_UPLOAD_STS_ARN  | none             | ...                                         |
+| S3FF_UPLOAD_PREFIX   | none             | Prefix where files should be stored         |
+| S3FF_API_BASE_URL    | `/api/s3-upload` | API prefix where the server urls are hosted |
 
 
 #### STS configuration
 #### CORS configuration
 
-This is a minimal function CORS configuration for an S3 bucket to be compatible with joist:
+This is a minimal function CORS configuration for an S3 bucket to be compatible with django-s3-file-field:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -106,10 +112,10 @@ MinIO support depends on the django-minio-storage config (see https://django-min
 
 ### Extending
 
-Joist sends out two signals when its REST api is called:
+django-s3-file-field sends out two signals when its REST api is called:
 
 ```python
-joist_upload_prepare(name: str, object_key: str)
-joist_upload_finalize(name: str, object_key: str, status: string)
+s3_file_field_upload_prepare(name: str, object_key: str)
+s3_file_field_upload_finalize(name: str, object_key: str, status: string)
 ```
 ### API Reference

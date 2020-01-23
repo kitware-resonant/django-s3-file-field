@@ -1,5 +1,5 @@
 """
-WSGI config for joist project.
+WSGI config for s3_file_field project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'joist.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 's3_file_field.settings')
 
 application = get_wsgi_application()

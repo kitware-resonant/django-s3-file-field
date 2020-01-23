@@ -25,7 +25,7 @@ django-minio-storage = "*"
 django-cors-headers = "*"
 django-dotenv = "*"
 Django = "*"
-joist = {editable = true,path = "."}
+s3_file_field = {editable = true,path = "."}
 
 [requires]
 python_version = "3.7"

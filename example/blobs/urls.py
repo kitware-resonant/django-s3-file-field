@@ -18,5 +18,5 @@ urlpatterns = [
     path('api/save-blob/', save_blob),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('api/auth/', authviews.obtain_auth_token),
-    path('api/joist/', include('joist.urls')),
+    path('api/joist/', include('s3_file_field.urls')),
 ]

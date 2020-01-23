@@ -72,3 +72,4 @@ dmypy.json
 
 node_modules
 /joist/static
+/s3_file_field/static
