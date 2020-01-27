@@ -12,8 +12,8 @@ _S3FF_STORAGE_PROVIDER = get_storage_provider()
 
 # settings inferred from other packages (django-storages and django-minio-storage)
 if _S3FF_STORAGE_PROVIDER == StorageProvider.AWS:
-    _S3FF_ACCESS_KEY = settings.AWS_ACCESS_KEY_ID
-    _S3FF_SECRET_KEY = settings.AWS_SECRET_ACCESS_KEY
+    _S3FF_ACCESS_KEY = getattr(settings, 'AWS_ACCESS_KEY_ID', None)
+    _S3FF_SECRET_KEY = getattr(settings, 'AWS_SECRET_ACCESS_KEY', None)
     _S3FF_BUCKET = settings.AWS_STORAGE_BUCKET_NAME
     _S3FF_REGION = getattr(settings, 'AWS_S3_REGION_NAME', None)
     _S3FF_ENDPOINT = getattr(settings, 'AWS_S3_ENDPOINT_URL', None)
