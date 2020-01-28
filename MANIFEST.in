@@ -11,4 +11,4 @@ exclude .editorconfig
 exclude .gitignore
 exclude Pipfile
 exclude .pre-commit-config.yaml
-graft joist/static
+graft s3_file_field/static

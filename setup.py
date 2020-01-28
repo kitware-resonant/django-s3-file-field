@@ -157,7 +157,7 @@ setup(
     version='0.0.3',
     use_scm_version={'local_scheme': prerelease_local_scheme},
     setup_requires=['setuptools-scm'],
-    description='A django widget library for uploading files directly to S3 (or MinIO).',
+    description='A django widget library for securely uploading files directly to S3 (or MinIO).',
     long_description=readme,
     long_description_content_type='text/markdown',
     url='https://github.com/girder/django-s3-file-field',
