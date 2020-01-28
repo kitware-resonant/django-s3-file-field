@@ -38,6 +38,15 @@ else:
         'will fall back to default upload'
     )
 
+    _S3FF_ACCESS_KEY = None
+    _S3FF_SECRET_KEY = None
+    _S3FF_BUCKET = None
+    _S3FF_REGION = None
+    _S3FF_ENDPOINT = None
+    _S3FF_USE_SSL = None
+
+    S3FF_UPLOAD_STS_ARN = None
+
 
 # user configurable settings
 # TODO: make sure these work correctly regardless of leading/trailing slashes

@@ -11,7 +11,7 @@ from django.core.checks import Error, register, Warning
 
 from . import settings
 from .boto import client_factory
-from .configuration import get_storage_provider
+from .configuration import get_storage_provider, StorageProvider
 
 
 # TODO: this should only add a handler when running the check command
@@ -34,15 +34,25 @@ E003 = Error('Unable to delete objects from the specified storage bucket.', id='
 E004 = Error(
     'Unable to assume STS role for issuing temporary credentials.', id='s3_file_field.E004'
 )
+E005 = Error('Unable to determine the underlying storage provider.', id='s3_file_field.E005')
+
+
+@register(deploy=True)
+def check_supported_storage_provider(app_configs: Optional[List], **kwargs) -> List:
+    return [] if get_storage_provider() != StorageProvider.UNSUPPORTED else [E005]
 
 
 @register()
 def determine_storage_provider(app_configs: Optional[List], **kwargs) -> List:
-    return [] if get_storage_provider() else [W001]
+    return [] if get_storage_provider() != StorageProvider.UNSUPPORTED else [W001]
 
 
 @register()
 def test_bucket_access(app_configs: Optional[List], **kwargs) -> List:
+    # ignore bucket access checks when in development mode
+    if get_storage_provider() == StorageProvider.UNSUPPORTED:
+        return []
+
     # Use a short timeout to quickly fail on connection misconfigurations
     client = client_factory('s3', config=Config(connect_timeout=5, retries={'max_attempts': 0}))
 
@@ -69,6 +79,10 @@ def test_bucket_access(app_configs: Optional[List], **kwargs) -> List:
 
 @register()
 def test_assume_role_configuration(app_configs: Optional[List], **kwargs) -> List:
+    # ignore assume role checks when in development mode
+    if get_storage_provider() == StorageProvider.UNSUPPORTED:
+        return []
+
     client = client_factory('sts', config=Config(connect_timeout=5, retries={'max_attempts': 0}))
 
     try:
