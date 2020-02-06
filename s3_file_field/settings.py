@@ -1,5 +1,6 @@
 import logging
 from pathlib import PurePosixPath
+from typing import Optional
 
 from django.conf import settings
 
@@ -12,14 +13,14 @@ _S3FF_STORAGE_PROVIDER = get_storage_provider()
 
 # settings inferred from other packages (django-storages and django-minio-storage)
 if _S3FF_STORAGE_PROVIDER == StorageProvider.AWS:
-    _S3FF_ACCESS_KEY = getattr(settings, 'AWS_ACCESS_KEY_ID', None)
-    _S3FF_SECRET_KEY = getattr(settings, 'AWS_SECRET_ACCESS_KEY', None)
-    _S3FF_BUCKET = settings.AWS_STORAGE_BUCKET_NAME
-    _S3FF_REGION = getattr(settings, 'AWS_S3_REGION_NAME', None)
-    _S3FF_ENDPOINT = getattr(settings, 'AWS_S3_ENDPOINT_URL', None)
-    _S3FF_USE_SSL = getattr(settings, 'AWS_S3_USE_SSL', True)
+    _S3FF_ACCESS_KEY: Optional[str] = getattr(settings, 'AWS_ACCESS_KEY_ID', None)
+    _S3FF_SECRET_KEY: Optional[str] = getattr(settings, 'AWS_SECRET_ACCESS_KEY', None)
+    _S3FF_BUCKET: Optional[str] = settings.AWS_STORAGE_BUCKET_NAME
+    _S3FF_REGION: Optional[str] = getattr(settings, 'AWS_S3_REGION_NAME', None)
+    _S3FF_ENDPOINT: Optional[str] = getattr(settings, 'AWS_S3_ENDPOINT_URL', None)
+    _S3FF_USE_SSL: Optional[str] = getattr(settings, 'AWS_S3_USE_SSL', True)
 
-    S3FF_UPLOAD_STS_ARN = settings.S3FF_UPLOAD_STS_ARN
+    S3FF_UPLOAD_STS_ARN: Optional[str] = settings.S3FF_UPLOAD_STS_ARN
 elif _S3FF_STORAGE_PROVIDER == StorageProvider.MINIO:
     _S3FF_ACCESS_KEY = settings.MINIO_STORAGE_ACCESS_KEY
     _S3FF_SECRET_KEY = settings.MINIO_STORAGE_SECRET_KEY
