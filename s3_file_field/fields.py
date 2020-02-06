@@ -1,12 +1,13 @@
-from typing import Any, cast
+from typing import Any, cast, Optional, Type
 from uuid import uuid4
 
-from django.contrib.admin.widgets import AdminFileWidget
 from django.db.models.fields.files import FieldFile, FileField
+from django.forms import Field as FormField
 
+from . import settings
 from .configuration import StorageProvider
-from .settings import _S3FF_STORAGE_PROVIDER
-from .widgets import S3AdminFileInput, S3FakeFile, S3FormFileField
+from .forms import S3FormFileField
+from .widgets import S3FakeFile
 
 
 class S3FieldFile(FieldFile):
@@ -53,13 +54,15 @@ class S3FileField(FileField):
     def uuid_prefix_filename(instance: Any, filename: str):
         return f'{uuid4()}/{filename}'
 
-    def formfield(self, **kwargs):
-        if _S3FF_STORAGE_PROVIDER == StorageProvider.UNSUPPORTED:
-            return super().formfield(**kwargs)
+    def formfield(self, form_class: Optional[Type[FormField]] = None, **kwargs,) -> FormField:
+        """
+        Return a forms.Field instance for this model field.
 
-        copy = kwargs.copy()
-        if copy.get('widget') == AdminFileWidget:
-            # replace for admin
-            copy['widget'] = S3AdminFileInput
-        copy.setdefault('form_class', S3FormFileField)
-        return super().formfield(**copy)
+        This is an instance of "form_class", with a widget of "widget".
+        """
+        if settings._S3FF_STORAGE_PROVIDER != StorageProvider.UNSUPPORTED:
+            if not form_class:
+                # Use S3FormFileField as a default, instead of forms.FileField
+                form_class = S3FormFileField
+
+        return super().formfield(form_class=form_class, **kwargs)
