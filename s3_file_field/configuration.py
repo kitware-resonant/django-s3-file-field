@@ -1,4 +1,5 @@
 import enum
+import functools
 import posixpath
 
 from django.conf import settings
@@ -33,8 +34,8 @@ def get_storage_provider() -> StorageProvider:
     return StorageProvider.UNSUPPORTED
 
 
+@functools.lru_cache(maxsize=1)
 def get_base_url() -> str:
-    # TODO: This could be memoized
     prepare_url = reverse('s3_file_field:upload-prepare')
     finalize_url = reverse('s3_file_field:upload-finalize')
     # Use posixpath to always parse URL paths with forward slashes
