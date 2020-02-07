@@ -1,4 +1,3 @@
-import logging
 from pathlib import PurePosixPath
 from typing import Optional
 
@@ -34,12 +33,6 @@ elif _S3FF_STORAGE_PROVIDER == StorageProvider.MINIO:
     # See https://github.com/minio/minio/blob/master/docs/sts/assume-role.md#testing
     S3FF_UPLOAD_STS_ARN = 'arn:s3ff:minio:fake:fake'
 else:
-    # TODO: is this necessary since the check now runs this on runserver?
-    logging.getLogger('s3_file_field').warning(
-        's3_file_field could not identify the storage provider (minio, aws), '
-        'will fall back to default upload'
-    )
-
     _S3FF_ACCESS_KEY = None
     _S3FF_SECRET_KEY = None
     _S3FF_BUCKET = None
