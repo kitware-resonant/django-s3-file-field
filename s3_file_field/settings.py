@@ -25,7 +25,8 @@ elif _S3FF_STORAGE_PROVIDER == StorageProvider.MINIO:
     _S3FF_ACCESS_KEY = settings.MINIO_STORAGE_ACCESS_KEY
     _S3FF_SECRET_KEY = settings.MINIO_STORAGE_SECRET_KEY
     _S3FF_BUCKET = settings.MINIO_STORAGE_MEDIA_BUCKET_NAME
-    _S3FF_REGION = None
+    # Boto needs some region to be set
+    _S3FF_REGION = 'xxxx'
     _S3FF_ENDPOINT = settings.MINIO_STORAGE_ENDPOINT
     _S3FF_USE_SSL = settings.MINIO_STORAGE_USE_HTTPS
 
