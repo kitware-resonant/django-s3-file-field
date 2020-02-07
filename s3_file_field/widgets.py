@@ -1,8 +1,7 @@
 import json
-from typing import Any, cast, Dict, Iterable, Mapping, Optional
+from typing import Any, Dict, Iterable, Mapping, Optional
 
-from django.core.signing import BadSignature, Signer
-from django.forms import ClearableFileInput, FileField, ValidationError, Widget
+from django.forms import ClearableFileInput
 
 from . import settings
 from .configuration import StorageProvider
@@ -82,22 +81,3 @@ class S3AdminFileInput(S3FileInput):
             return 'admin/widgets/clearable_file_input.html'
         else:
             return 'joist/s3adminfileinput.html'
-
-
-class S3FormFileField(FileField):
-    """form field used by render an model.S3FileField."""
-
-    widget = cast(Widget, S3FileInput)
-
-    def validate(self, value):
-        super().validate(value)
-
-        if isinstance(value, S3FakeFile):
-            # verify signature
-            signer = Signer()
-            try:
-                expected = signer.unsign(value.signature)
-                if value.name != expected:
-                    raise ValidationError('Signature tempering detected')
-            except BadSignature:
-                raise ValidationError('Signature tempering detected')
