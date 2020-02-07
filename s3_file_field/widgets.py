@@ -1,10 +1,10 @@
 import json
-from typing import Any, Dict, Iterable, Mapping, Optional
+from typing import Any, Dict, Iterable, Mapping
 
 from django.forms import ClearableFileInput
 
 from . import settings
-from .configuration import StorageProvider
+from .configuration import get_base_url, StorageProvider
 
 
 class S3FakeFile:
@@ -39,8 +39,6 @@ class S3FileInput(ClearableFileInput):
     class Media:
         js = ['joist/joist.js']
 
-    baseurl: Optional[str] = settings.S3FF_API_BASE_URL
-
     @property
     def template_name(self):
         if settings._S3FF_STORAGE_PROVIDER == StorageProvider.UNSUPPORTED:
@@ -48,14 +46,9 @@ class S3FileInput(ClearableFileInput):
         else:
             return 'joist/s3fileinput.html'
 
-    def __init__(self, attrs=None):
-        if attrs is not None and 'baseurl' in attrs:
-            self.baseurl = attrs.pop('baseurl')
-        super().__init__(attrs)
-
     def get_context(self, name: str, value: str, attrs):
         context = super().get_context(name, value, attrs)
-        context['widget'].update({'baseurl': self.baseurl or ''})
+        context['widget'].update({'baseurl': get_base_url()})
         return context
 
     def value_from_datadict(
