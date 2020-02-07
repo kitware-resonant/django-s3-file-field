@@ -51,6 +51,4 @@ else:
 
 
 # user configurable settings
-# TODO: make sure these work correctly regardless of leading/trailing slashes
-S3FF_API_BASE_URL = getattr(settings, 'S3FF_API_BASE_URL', '/api/s3-upload').rstrip('/')
 S3FF_UPLOAD_PREFIX = PurePosixPath(getattr(settings, 'S3FF_UPLOAD_PREFIX', ''))

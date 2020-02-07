@@ -69,7 +69,6 @@ your configuration is correct, run:
 | -------------------  | ---------------- | ------------------------------------------- |
 | S3FF_UPLOAD_STS_ARN  | none             | ...                                         |
 | S3FF_UPLOAD_PREFIX   | none             | Prefix where files should be stored         |
-| S3FF_API_BASE_URL    | `/api/s3-upload` | API prefix where the server urls are hosted |
 
 
 #### STS configuration

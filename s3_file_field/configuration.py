@@ -1,6 +1,8 @@
 import enum
+import os.path
 
 from django.conf import settings
+from django.urls import reverse
 from django.utils.module_loading import import_string
 
 
@@ -29,3 +31,11 @@ def get_storage_provider() -> StorageProvider:
         pass
 
     return StorageProvider.UNSUPPORTED
+
+
+def get_base_url() -> str:
+    # TODO: This could be memoized
+    prepare_url = reverse('s3_file_field:upload-prepare')
+    finalize_url = reverse('s3_file_field:upload-finalize')
+    # TODO: Using os.path.commonpath on Windows will return incorrect URL paths
+    return os.path.commonpath([prepare_url, finalize_url])
