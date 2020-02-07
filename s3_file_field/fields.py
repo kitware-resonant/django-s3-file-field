@@ -1,4 +1,4 @@
-from typing import Any, cast, Optional, Type
+from typing import Any, cast
 from uuid import uuid4
 
 from django.db.models.fields.files import FieldFile, FileField
@@ -54,15 +54,13 @@ class S3FileField(FileField):
     def uuid_prefix_filename(instance: Any, filename: str):
         return f'{uuid4()}/{filename}'
 
-    def formfield(self, form_class: Optional[Type[FormField]] = None, **kwargs,) -> FormField:
+    def formfield(self, **kwargs) -> FormField:
         """
         Return a forms.Field instance for this model field.
 
         This is an instance of "form_class", with a widget of "widget".
         """
         if settings._S3FF_STORAGE_PROVIDER != StorageProvider.UNSUPPORTED:
-            if not form_class:
-                # Use S3FormFileField as a default, instead of forms.FileField
-                form_class = S3FormFileField
-
-        return super().formfield(form_class=form_class, **kwargs)
+            # Use S3FormFileField as a default, instead of forms.FileField from the superclass
+            kwargs.setdefault('form_class', S3FormFileField)
+        return super().formfield(**kwargs)
