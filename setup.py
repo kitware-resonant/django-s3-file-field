@@ -165,7 +165,7 @@ setup(
     author='Kitware, Inc.',
     author_email='kitware@kitware.com',
     license='Apache 2.0',
-    python_requires='>=3.7.0',
+    python_requires='>=3.6.0',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Web Environment',
@@ -176,6 +176,7 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python',
