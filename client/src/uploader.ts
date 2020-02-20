@@ -26,7 +26,12 @@ export declare type EProgressState = 'initial' | 'uploading' | 'preparing' | 'fi
 
 export interface UploadOptions {
   baseUrl: string;
-  onProgress(progress: { percentage: number; loaded: number; total: number; state: EProgressState }): void;
+  onProgress(progress: {
+    percentage: number;
+    loaded: number;
+    total: number;
+    state: EProgressState;
+  }): void;
   abortSignal(onAbort: () => void): void;
 }
 
@@ -43,6 +48,15 @@ function fileInfo(result: FinalizeResponse, file: File): string {
   });
 }
 
+async function fetchJson(...args: Parameters<typeof fetch>): Promise<any> {
+  const resp = await fetch(...args);
+  if(!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`Server returned ${resp.status} error: ${text}`);
+  }
+  return resp.json();
+}
+
 export async function uploadFile(file: File, options: Partial<UploadOptions> = {}): Promise<UploadResult> {
   const { onProgress, baseUrl, abortSignal } = Object.assign({
     onProgress: () => undefined,
@@ -51,26 +65,31 @@ export async function uploadFile(file: File, options: Partial<UploadOptions> = {
   } as UploadOptions, options);
 
   const size = file.size;
-  const progress = (state: EProgressState, percentage: number, loaded = 0, total = size): void => {
+  const progress = (
+      state: EProgressState,
+      percentage: number,
+      loaded = 0,
+      total = size,
+  ): void => {
     onProgress({
       percentage,
       loaded,
       total,
       state
     });
-  }
+  };
 
   progress('preparing', 0);
 
   let initUpload: PrepareResponse;
   try {
-    initUpload = await fetch(`${baseUrl}/upload-prepare/`, {
+    initUpload = await fetchJson(`${baseUrl}/upload-prepare/`, {
       ...fetchOptions(),
       method: 'POST',
       body: JSON.stringify({
         name: file.name,
       }),
-    }).then((r) => r.json()) as PrepareResponse;
+    }) as PrepareResponse;
 
     progress('uploading', OVERHEAD_PERCENT / 2);
   } catch (err) {
@@ -100,8 +119,10 @@ export async function uploadFile(file: File, options: Partial<UploadOptions> = {
     progress('uploading', OVERHEAD_PERCENT / 2 + s3Progress * (1 - OVERHEAD_PERCENT), evt.loaded, evt.total);
   });
 
-  function finalizeUpload(status: 'uploaded' | 'aborted' = 'uploaded'): Promise<FinalizeResponse> {
-    return fetch(`${baseUrl}/upload-finalize/`, {
+
+
+  async function finalizeUpload(status: 'uploaded' | 'aborted' = 'uploaded'): Promise<FinalizeResponse> {
+    return fetchJson(`${baseUrl}/upload-finalize/`, {
       ...fetchOptions(),
       method: 'POST',
       body: JSON.stringify({
@@ -110,7 +131,7 @@ export async function uploadFile(file: File, options: Partial<UploadOptions> = {
         status,
         signature: initUpload.signature
       }),
-    }).then((r) => r.json());
+    }) as Promise<FinalizeResponse>;
   }
 
   return new Promise<UploadResult>((resolve) => {
