@@ -49,7 +49,7 @@ def upload_finalize(request: Request) -> HttpResponseBase:
 @parser_classes([JSONParser])
 def upload_prepare(request: Request) -> HttpResponseBase:
     name = request.data['name']
-    object_key = str(settings.S3FF_UPLOAD_PREFIX / str(uuid.uuid4()) / name)
+    object_key = f'{str(uuid.uuid4())}/{name}'
 
     bucket_arn = f'arn:aws:s3:::{settings._S3FF_BUCKET}'
     upload_policy = {

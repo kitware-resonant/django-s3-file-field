@@ -41,7 +41,3 @@ else:
     _S3FF_USE_SSL = None
 
     S3FF_UPLOAD_STS_ARN = None
-
-
-# user configurable settings
-S3FF_UPLOAD_PREFIX = PurePosixPath(getattr(settings, 'S3FF_UPLOAD_PREFIX', ''))

@@ -1,7 +1,6 @@
 import io
 import json
 import logging
-from pathlib import PurePosixPath
 from time import time
 from typing import List, Optional
 
@@ -19,7 +18,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 
 
-TEST_OBJECT_KEY = str(settings.S3FF_UPLOAD_PREFIX / PurePosixPath('.s3-file-field-test-file'))
+TEST_OBJECT_KEY = '.s3-file-field-test-file'
 
 
 W001 = Warning(
