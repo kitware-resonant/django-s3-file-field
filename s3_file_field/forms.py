@@ -1,4 +1,4 @@
-from typing import cast, Optional, Type, Union
+from typing import Optional, Type, Union
 
 from django.contrib.admin.widgets import AdminFileWidget
 from django.core.signing import BadSignature, Signer
@@ -12,7 +12,7 @@ from .widgets import S3AdminFileInput, S3FakeFile, S3FileInput
 class S3FormFileField(FileField):
     """Form field used by render an model.S3FileField."""
 
-    widget = cast(Widget, S3FileInput)
+    widget = S3FileInput
 
     def __init__(self, widget: Optional[Union[Type[Widget], Widget]] = None, **kwargs):
         if settings._S3FF_STORAGE_PROVIDER != StorageProvider.UNSUPPORTED:
