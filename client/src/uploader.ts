@@ -1,187 +1,183 @@
 import S3 from 'aws-sdk/clients/s3';
-import { DEFAULT_BASE_URL, fetchOptions } from './constants';
+
+import {DjangoApi} from "./api";
+
+export enum ProgressState {
+  Initializing,
+  Preparing,
+  Uploading,
+  Finishing,
+  Done,
+  Aborting,
+  Aborted,
+}
+
+export interface Progress {
+  readonly state: ProgressState;
+  readonly percentage: number;
+}
+
+type ProgressCallback = (this: void, progress: Progress) => void;
 
 interface PrepareResponse {
   s3Options: S3.Types.ClientConfiguration;
   bucketName: string;
   objectKey: string;
-  signature: string;
+  fieldValue: string;
+  fieldSignature: string;
 }
 
-export interface FinalizeResponse {
+interface FinalizeResponse {
   id?: string;
   name: string;
   signature?: string;
-
   value: string;
 }
 
-export interface UploadResult extends FinalizeResponse {
-  state: 'aborted' | 'successful' | 'error';
-  msg: string;
-  error?: Error;
-}
+export class FileUploader {
+  // The percent reserved for each of the prepare and finalize operations
+  private static readonly OVERHEAD_PERCENT = 0.05;
 
-export declare type EProgressState = 'initial' | 'uploading' | 'preparing' | 'finishing' | 'done' | 'aborted';
+  private readonly djangoApi: DjangoApi;
+  private prepareResponse?: PrepareResponse;
+  private s3Upload?: S3.ManagedUpload;
+  private finalizeResponse?: FinalizeResponse;
 
-export interface UploadOptions {
-  baseUrl: string;
-  onProgress(progress: {
-    percentage: number;
-    loaded: number;
-    total: number;
-    state: EProgressState;
-  }): void;
-  abortSignal(onAbort: () => void): void;
-}
-
-// the percent reserved for upload initiate and finalize operations
-const OVERHEAD_PERCENT = 0.05;
-
-
-function fileInfo(result: FinalizeResponse, file: File): string {
-  return JSON.stringify({
-    name: result.name,
-    size: file.size,
-    id: result.id,
-    signature: result.signature
-  });
-}
-
-async function fetchJson(...args: Parameters<typeof fetch>): Promise<any> {
-  const resp = await fetch(...args);
-  if(!resp.ok) {
-    const text = await resp.text();
-    throw new Error(`Server returned ${resp.status} error: ${text}`);
+  constructor(
+      public readonly file: File,
+      baseUrl?: string,
+      private readonly onProgress?: ProgressCallback,
+  ) {
+    this.djangoApi = new DjangoApi(baseUrl);
+    this.updateProgress(ProgressState.Initializing, 0);
   }
-  return resp.json();
-}
 
-export async function uploadFile(file: File, options: Partial<UploadOptions> = {}): Promise<UploadResult> {
-  const { onProgress, baseUrl, abortSignal } = Object.assign({
-    onProgress: () => undefined,
-    baseUrl: DEFAULT_BASE_URL,
-    abortSignal: () => undefined
-  } as UploadOptions, options);
-
-  const size = file.size;
-  const progress = (
-      state: EProgressState,
+  private updateProgress(
+      state: ProgressState,
       percentage: number,
-      loaded = 0,
-      total = size,
-  ): void => {
-    onProgress({
-      percentage,
-      loaded,
-      total,
-      state
-    });
-  };
-
-  progress('preparing', 0);
-
-  let initUpload: PrepareResponse;
-  try {
-    initUpload = await fetchJson(`${baseUrl}/upload-prepare/`, {
-      ...fetchOptions(),
-      method: 'POST',
-      body: JSON.stringify({
-        name: file.name,
-      }),
-    }) as PrepareResponse;
-
-    progress('uploading', OVERHEAD_PERCENT / 2);
-  } catch (err) {
-    return {
-      id: undefined,
-      name: file.name,
-      state: 'error',
-      msg: 'Failed to prepare upload token',
-      error: err,
-      value: ''
+  ): void {
+    if (this.onProgress) {
+      // TODO: which one?
+      // Don't leak the "this" context out to the callback
+      this.onProgress({state, percentage});
+      this.onProgress.call(undefined, {
+        state,
+        percentage,
+      });
     }
   }
 
-  const s3 = new S3({
-    ...initUpload.s3Options
-  });
+  public async upload(): Promise<FinalizeResponse> {
+    // Prepare upload
+    this.updateProgress(ProgressState.Preparing, 0);
+    try {
+      this.prepareResponse = await this.djangoApi.fetchJson(`upload-prepare/`, {
+        method: 'POST',
+        body: JSON.stringify({
+          filename: this.file.name,
+        }),
+      });
+    } catch (e) {
+      if (e.name === 'AbortError') {
+        throw e;
+      }
+      throw new Error(`Error preparing the upload: ${e}`);
+    }
+    if(!this.prepareResponse){
+      // This is just to keep TypeScript happy
+      throw new Error();
+    }
 
-  const task = s3.upload({
-    Bucket: initUpload.bucketName,
-    Key: initUpload.objectKey,
-    Body: file,
-  });
+    // Do upload to S3
+    this.updateProgress(ProgressState.Uploading, FileUploader.OVERHEAD_PERCENT);
+    const s3 = new S3({
+      ...this.prepareResponse.s3Options
+    });
+    // TODO: Content-Type
+    this.s3Upload = s3.upload({
+      Bucket: this.prepareResponse.bucketName,
+      Key: this.prepareResponse.objectKey,
+      Body: this.file,
+    });
 
-  task.on('httpUploadProgress', (evt): void => {
-    const s3Progress = evt.loaded / evt.total;
-    // s3Progress only spans the total fileProgress range [0.05, 0.9)
-    progress('uploading', OVERHEAD_PERCENT / 2 + s3Progress * (1 - OVERHEAD_PERCENT), evt.loaded, evt.total);
-  });
+    this.s3Upload.on('httpUploadProgress', (evt): void => {
+      const uploadFraction = evt.loaded / evt.total;
+      // The scaled upload portion of the total progress
+      const uploadProgressPercentage = (1 - (2* FileUploader.OVERHEAD_PERCENT)) * uploadFraction;
+      const progressPercentage = FileUploader.OVERHEAD_PERCENT + uploadProgressPercentage;
 
+      this.updateProgress(
+        ProgressState.Uploading,
+        progressPercentage
+      );
+    });
 
+    try {
+      await this.s3Upload.promise();
+    } catch (e) {
+      throw new Error(`Error uploading': ${e}`);
+    }
 
-  async function finalizeUpload(status: 'uploaded' | 'aborted' = 'uploaded'): Promise<FinalizeResponse> {
-    return fetchJson(`${baseUrl}/upload-finalize/`, {
-      ...fetchOptions(),
-      method: 'POST',
-      body: JSON.stringify({
-        name: file.name,
-        id: initUpload.objectKey,
-        status,
-        signature: initUpload.signature
+    // Finalize upload
+    this.updateProgress(ProgressState.Finishing, 1);
+    try {
+      this.finalizeResponse = await this.djangoApi.fetchJson(`upload-finalize/`, {
+        method: 'POST',
+        body: JSON.stringify({
+          id: this.prepareResponse.objectKey,
+          status: 'uploaded',
+          fieldValue: this.prepareResponse.fieldValue,
+          fieldSignature: this.prepareResponse.fieldSignature
+        }),
+      });
+    } catch (e) {
+      if (e.name === 'AbortError') {
+        throw e;
+      }
+      throw new Error(`Error finishing the upload': ${e}`);
+    }
+    if(!this.finalizeResponse){
+      // This is just to keep TypeScript happy
+      throw new Error();
+    }
+    this.updateProgress(ProgressState.Done, 1);
+
+    return {
+      ...this.finalizeResponse,
+      value: JSON.stringify({
+        name: this.finalizeResponse.name,
+        size: this.file.size,
+        id: this.finalizeResponse.id,
+        signature: this.finalizeResponse.signature
       }),
-    }) as Promise<FinalizeResponse>;
+    };
   }
 
-  return new Promise<UploadResult>((resolve) => {
-    abortSignal(() => {
-      task.abort();
-      progress('finishing', 1);
-      finalizeUpload('aborted').then((r) => {
-        progress('aborted', 1);
-        return {
-          ...r,
-          state: 'aborted',
-          msg: 'Upload aborted',
-        } as UploadResult;
-      }).then(resolve).catch((error) => {
-        resolve({
-          name: file.name,
-          state: 'error',
-          msg: 'Error occurred while aborting the upload',
-          error,
-          value: ''
-        });
-      });
-    });
+  public async abort(): Promise<void> {
+    this.updateProgress(ProgressState.Aborting, 0);
 
-    task.promise().then(() => {
-      progress('finishing', 1, size);
-      finalizeUpload().then((r) => {
-        progress('done', 1, size);
-        return {
-          ...r,
-          state: 'successful',
-          value: fileInfo(r, file)
-        } as UploadResult;
-      }).then(resolve).catch((error) => {
-        resolve({
-          name: file.name,
-          state: 'error',
-          msg: 'Error occurred while finishing the upload',
-          error,
-          value: ''
-        });
-      }).catch((error) => {
-        resolve({
-          name: file.name,
-          state: 'error',
-          msg: 'Error occurred while uploading',
-          error,
-          value: ''
-        });
+    if (this.s3Upload) {
+      try {
+        this.s3Upload.abort();
+      } catch (e) {
+        throw new Error(`Error aborting the upload': ${e}`);
+      }
+    }
+
+    this.djangoApi.abort();
+
+    if (this.prepareResponse) {
+      await this.djangoApi.fetchJson(`upload-finalize/`, {
+        method: 'POST',
+        body: JSON.stringify({
+          id: this.prepareResponse.objectKey,
+          status: 'aborted',
+          fieldValue: this.prepareResponse.fieldValue,
+          fieldSignature: this.prepareResponse.fieldSignature
+        }),
       });
-    });
-  });
+    }
+
+    this.updateProgress(ProgressState.Aborted, 1);
+  }
 }

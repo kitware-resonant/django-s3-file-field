@@ -113,7 +113,7 @@ MinIO support depends on the django-minio-storage config (see https://django-min
 django-s3-file-field sends out two signals when its REST api is called:
 
 ```python
-s3_file_field_upload_prepare(name: str, object_key: str)
+s3_file_field_upload_prepare(field_value: str, object_key: str)
 s3_file_field_upload_finalize(name: str, object_key: str, status: string)
 ```
 ### API Reference

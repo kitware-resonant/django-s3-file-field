@@ -48,6 +48,7 @@ class S3FileInput(ClearableFileInput):
 
     def get_context(self, name: str, value: str, attrs):
         context = super().get_context(name, value, attrs)
+        # TODO: set 'data-...' fields on attrs directly, instead of in template?
         context['widget'].update({'baseurl': get_base_url()})
         return context
 

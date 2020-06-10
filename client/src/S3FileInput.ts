@@ -1,5 +1,5 @@
-import { DEFAULT_BASE_URL, EVENT_UPLOAD_COMPLETE, EVENT_UPLOAD_STARTED } from "./constants";
-import { uploadFile, UploadResult } from "./uploader";
+import {DEFAULT_BASE_URL, EVENT_UPLOAD_COMPLETE, EVENT_UPLOAD_STARTED} from "./constants";
+import {FileUploader, Progress, ProgressState, UploadResult} from "./uploader";
 
 function cssClass(clazz: string): string {
   return `s3fileinput-${clazz}`;
@@ -134,78 +134,75 @@ export default class S3FileInput {
     );
   }
 
-  private uploadFile(file: File): Promise<UploadResult> {
+  private onUploadProgress(p: Progress) {
+    progress.dataset.state = p.state;
+    indicator.style.width = `${Math.round(p.percentage * 100)}%`;
+    progress.title = {
+      [ProgressState.Initializing]: `${file.name}: ${i18n('Initializing Upload')}`,
+      [ProgressState.Preparing]: `${file.name}: ${i18n('Requesting Upload Token')}`,
+      [ProgressState.Uploading]: `${file.name}: ${Math.round(
+          (100 * p.loaded) / p.total
+        )}% ${sized(p.loaded)}/${sized(p.total)}`,
+      [ProgressState.Finishing]: `${file.name}: ${i18n('Finishing Upload')}`,
+      [ProgressState.Done]: `${file.name}: ${i18n('Done ')} (${sized(p.total)})`,
+      [ProgressState.Aborting]: `${file.name}: ${i18n('Aborting Upload')}`,
+      [ProgressState.Aborted]: `${file.name}: ${i18n('Upload Aborted')}`,
+    }[p.state];
+  }
+
+  private async uploadFile(file: File): Promise<UploadResult> {
     const progress = this.node.ownerDocument!.createElement("div");
     progress.classList.add(cssClass("progress"));
     const indicator = this.node.ownerDocument!.createElement("div");
     progress.appendChild(indicator);
     this.node.appendChild(progress);
 
-    let abortHandler: null | ((evt: MouseEvent) => void) = null;
-
-    const event = new CustomEvent(EVENT_UPLOAD_STARTED, {
+    this.input.dispatchEvent(new CustomEvent(EVENT_UPLOAD_STARTED, {
       detail: file
-    });
-    this.input.dispatchEvent(event);
+    }));
 
-    return uploadFile(file, {
-      baseUrl: this.baseUrl,
-      onProgress: p => {
-        progress.dataset.state = p.state;
-        indicator.style.width = `${Math.round(p.percentage * 100)}%`;
-        switch (p.state) {
-          case "initial":
-            progress.title = `${file.name}: ${i18n('Initializing Upload')}`;
-            break;
-          case "preparing":
-            progress.title = `${file.name}: ${i18n('Requesting Upload Token')}`;
-            break;
-          case "uploading":
-            progress.title = `${file.name}: ${Math.round(
-              (100 * p.loaded) / p.total
-            )}% ${sized(p.loaded)}/${sized(p.total)}`;
-            break;
-          case "finishing":
-            progress.title = `${file.name}: ${i18n('Finishing Upload')}`;
-            break;
-          case "aborted":
-            progress.title = `${file.name}: ${i18n('Upload Aborted')}`;
-            break;
-          case "done":
-            progress.title = `${file.name}: ${i18n('Done ')} (${sized(p.total)})`;
-            break;
-        }
-      },
-      abortSignal: onAbort => {
-        abortHandler = (evt): void => {
-          evt.preventDefault();
-          onAbort();
-        };
-        this.abortButton.addEventListener("click", abortHandler);
+    const onProgress = (p: Progress): void => {
+      // progress.dataset.state = p.state;
+      indicator.style.width = `${Math.round(p.percentage * 100)}%`;
+      progress.title = {
+        [ProgressState.Initializing]: `${file.name}: ${i18n('Initializing Upload')}`,
+        [ProgressState.Preparing]: `${file.name}: ${i18n('Requesting Upload Token')}`,
+        [ProgressState.Uploading]:
+            `${file.name}: ${Math.round((100 * p.percentage) / file.size)}% ${sized(p.percentage * file.size)}/${sized(file.size)}`,
+        // [ProgressState.Uploading]: `${file.name}: ${Math.round(
+        //     (100 * p.percentage) / file.size
+        //   )}% ${sized(p.percentage * file.size)}/${sized(file.size)}`,
+        [ProgressState.Finishing]: `${file.name}: ${i18n('Finishing Upload')}`,
+        [ProgressState.Done]: `${file.name}: ${i18n('Done ')} (${sized(file.size)})`,
+        [ProgressState.Aborting]: `${file.name}: ${i18n('Aborting Upload')}`,
+        [ProgressState.Aborted]: `${file.name}: ${i18n('Upload Aborted')}`,
+      }[p.state];
+    };
+
+    const fileUploader = new FileUploader(file, this.baseUrl, onProgress);
+    const abortHandler = (evt: MouseEvent): void => {
+      evt.preventDefault();
+      fileUploader.abort();
+    };
+    this.abortButton.addEventListener("click", abortHandler);
+    try {
+      const r = await fileUploader.upload()
+    } catch (e) {
+      if (e.name === 'AbortError') {
+        progress.title = `${file.name}: ${i18n('Upload Aborted')}`;
+      } else {
+        progress.title = `${file.name}: ${i18n("Error occurred")}: ${e}`;
       }
-    }).then(r => {
-      if (abortHandler) {
-        this.abortButton.removeEventListener("click", abortHandler);
-      }
-      progress.dataset.state = r.state;
-      const event = new CustomEvent(EVENT_UPLOAD_COMPLETE, {
-        detail: r
-      });
-      this.input.dispatchEvent(event);
-      switch (r.state) {
-        case "successful":
-          progress.title = `${file.name}: ${i18n('Done')} (${sized(file.size)})`;
-          break;
-        case "aborted":
-          progress.title = `${file.name}: ${i18n('Upload Aborted')}`;
-          break;
-        case "error":
-          progress.title = `${file.name}: ${i18n("Error occurred")}: ${r.msg}`;
-          break;
-      }
-      // progress.remove();
-      return r;
-    });
+    }
+    this.abortButton.removeEventListener("click", abortHandler);
+
+    progress.dataset.state = r.state;
+    progress.title = `${file.name}: ${i18n('Done')} (${sized(file.size)})`;
+    this.input.dispatchEvent(new CustomEvent(EVENT_UPLOAD_COMPLETE, {
+      detail: r
+    }));
+    // progress.remove();
+    return r;
   }
 
   private uploadFiles(): Promise<void> | void {

@@ -47,12 +47,7 @@ class S3FileField(FileField):
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('max_length', 2000)
-        kwargs.setdefault('upload_to', self.uuid_prefix_filename)
         super().__init__(*args, **kwargs)
-
-    @staticmethod
-    def uuid_prefix_filename(instance: Any, filename: str):
-        return f'{uuid4()}/{filename}'
 
     def formfield(self, **kwargs) -> FormField:
         """
