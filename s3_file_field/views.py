@@ -9,10 +9,9 @@ from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import JSONParser
 from rest_framework.request import Request
 
-from . import settings
+from . import constants
 from . import signals
-from .boto import _get_endpoint_url, client_factory
-from .configuration import StorageProvider
+from .boto import client_factory
 
 
 # @authentication_classes([TokenAuthentication])
@@ -27,7 +26,7 @@ def upload_finalize(request: Request) -> HttpResponseBase:
 
     # check if upload_prepare signed this less than max age ago
     tsigner = TimestampSigner()
-    if object_id != tsigner.unsign(upload_sig, max_age=settings._S3FF_UPLOAD_DURATION):
+    if object_id != tsigner.unsign(upload_sig, max_age=constants.S3FF_UPLOAD_DURATION):
         raise BadSignature()
 
     signals.s3_file_field_upload_finalize.send(
@@ -49,9 +48,9 @@ def upload_finalize(request: Request) -> HttpResponseBase:
 @parser_classes([JSONParser])
 def upload_prepare(request: Request) -> HttpResponseBase:
     name = request.data['name']
-    object_key = str(settings.S3FF_UPLOAD_PREFIX / str(uuid.uuid4()) / name)
+    object_key = str(constants.S3FF_UPLOAD_PREFIX / str(uuid.uuid4()) / name)
 
-    bucket_arn = f'arn:aws:s3:::{settings._S3FF_BUCKET}'
+    bucket_arn = f'arn:aws:s3:::{constants.S3FF_BUCKET}'
     upload_policy = {
         'Version': '2012-10-17',
         'Statement': [
@@ -69,10 +68,10 @@ def upload_prepare(request: Request) -> HttpResponseBase:
     client = client_factory('sts')
 
     resp = client.assume_role(
-        RoleArn=settings.S3FF_UPLOAD_STS_ARN,
+        RoleArn=constants.S3FF_UPLOAD_STS_ARN,
         RoleSessionName=f'file-upload-{int(time.time())}',
         Policy=json.dumps(upload_policy),
-        DurationSeconds=settings._S3FF_UPLOAD_DURATION,
+        DurationSeconds=constants.S3FF_UPLOAD_DURATION,
     )
 
     credentials = resp['Credentials']
@@ -81,9 +80,9 @@ def upload_prepare(request: Request) -> HttpResponseBase:
         'accessKeyId': credentials['AccessKeyId'],
         'secretAccessKey': credentials['SecretAccessKey'],
         'sessionToken': credentials['SessionToken'],
-        'endpoint': _get_endpoint_url(),
+        'endpoint': constants.S3FF_ENDPOINT_URL,
         # MinIO uses path style URLs instead of the subdomain style typical of AWS
-        's3ForcePathStyle': settings._S3FF_STORAGE_PROVIDER == StorageProvider.MINIO,
+        's3ForcePathStyle': constants.S3FF_STORAGE_PROVIDER == constants.StorageProvider.MINIO,
     }
 
     signals.s3_file_field_upload_prepare.send(
@@ -96,7 +95,7 @@ def upload_prepare(request: Request) -> HttpResponseBase:
     return JsonResponse(
         {
             's3Options': s3_options,
-            'bucketName': settings._S3FF_BUCKET,
+            'bucketName': constants.S3FF_BUCKET,
             'objectKey': object_key,
             'signature': sig,
         }

@@ -4,8 +4,7 @@ from django.contrib.admin.widgets import AdminFileWidget
 from django.core.signing import BadSignature, Signer
 from django.forms import FileField, ValidationError, Widget
 
-from . import settings
-from .configuration import StorageProvider
+from .constants import S3FF_STORAGE_PROVIDER, StorageProvider
 from .widgets import S3AdminFileInput, S3FakeFile, S3FileInput
 
 
@@ -15,7 +14,7 @@ class S3FormFileField(FileField):
     widget = S3FileInput
 
     def __init__(self, widget: Optional[Union[Type[Widget], Widget]] = None, **kwargs):
-        if settings._S3FF_STORAGE_PROVIDER != StorageProvider.UNSUPPORTED:
+        if S3FF_STORAGE_PROVIDER != StorageProvider.UNSUPPORTED:
             # For form fields created under django.contrib.admin.options.BaseModelAdmin, any form
             # field representing a model.FileField subclass will request a
             # django.contrib.admin.widgets.AdminFileWidget as a 'widget' parameter override

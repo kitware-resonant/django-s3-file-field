@@ -1,10 +1,21 @@
+import functools
 import json
+import posixpath
 from typing import Any, Dict, Iterable, Mapping
 
 from django.forms import ClearableFileInput
+from django.urls import reverse
 
 from . import settings
-from .configuration import get_base_url, StorageProvider
+from .constants import S3FF_STORAGE_PROVIDER, StorageProvider
+
+
+@functools.lru_cache(maxsize=1)
+def get_base_url() -> str:
+    prepare_url = reverse('s3_file_field:upload-prepare')
+    finalize_url = reverse('s3_file_field:upload-finalize')
+    # Use posixpath to always parse URL paths with forward slashes
+    return posixpath.commonpath([prepare_url, finalize_url])
 
 
 class S3FakeFile:
@@ -41,7 +52,7 @@ class S3FileInput(ClearableFileInput):
 
     @property
     def template_name(self):
-        if settings._S3FF_STORAGE_PROVIDER == StorageProvider.UNSUPPORTED:
+        if S3FF_STORAGE_PROVIDER == StorageProvider.UNSUPPORTED:
             return 'django/forms/widgets/file.html'
         else:
             return 'joist/s3fileinput.html'

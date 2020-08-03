@@ -9,9 +9,9 @@ from botocore.client import Config
 from botocore.exceptions import ConnectionError
 from django.core.checks import Error, register, Warning
 
-from . import settings
+from . import constants
 from .boto import client_factory
-from .configuration import get_storage_provider, StorageProvider
+from .constants import S3FF_STORAGE_PROVIDER, StorageProvider
 
 
 # TODO: this should only add a handler when running the check command
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 
 
-TEST_OBJECT_KEY = str(settings.S3FF_UPLOAD_PREFIX / PurePosixPath('.s3-file-field-test-file'))
+TEST_OBJECT_KEY = str(constants.S3FF_UPLOAD_PREFIX / PurePosixPath('.s3-file-field-test-file'))
 
 
 W001 = Warning(
@@ -39,25 +39,25 @@ E005 = Error('Unable to determine the underlying storage provider.', id='s3_file
 
 @register(deploy=True)
 def check_supported_storage_provider(app_configs: Optional[List], **kwargs) -> List:
-    return [] if get_storage_provider() != StorageProvider.UNSUPPORTED else [E005]
+    return [] if S3FF_STORAGE_PROVIDER != StorageProvider.UNSUPPORTED else [E005]
 
 
 @register()
 def determine_storage_provider(app_configs: Optional[List], **kwargs) -> List:
-    return [] if get_storage_provider() != StorageProvider.UNSUPPORTED else [W001]
+    return [] if S3FF_STORAGE_PROVIDER != StorageProvider.UNSUPPORTED else [W001]
 
 
 @register()
 def test_bucket_access(app_configs: Optional[List], **kwargs) -> List:
     # ignore bucket access checks when in development mode
-    if get_storage_provider() == StorageProvider.UNSUPPORTED:
+    if S3FF_STORAGE_PROVIDER == StorageProvider.UNSUPPORTED:
         return []
 
     # Use a short timeout to quickly fail on connection misconfigurations
     client = client_factory('s3', config=Config(connect_timeout=5, retries={'max_attempts': 0}))
 
     try:
-        client.upload_fileobj(io.BytesIO(), settings._S3FF_BUCKET, TEST_OBJECT_KEY)
+        client.upload_fileobj(io.BytesIO(), constants.S3FF_BUCKET, TEST_OBJECT_KEY)
     except ConnectionError:
         logger.exception('Failed to connect to storage bucket')
         return [E001]
@@ -66,7 +66,7 @@ def test_bucket_access(app_configs: Optional[List], **kwargs) -> List:
         return [E002]
 
     try:
-        client.delete_object(Bucket=settings._S3FF_BUCKET, Key=TEST_OBJECT_KEY)
+        client.delete_object(Bucket=constants.S3FF_BUCKET, Key=TEST_OBJECT_KEY)
     except ConnectionError:
         logger.exception('Failed to connect to storage bucket')
         return [E001]
@@ -80,14 +80,14 @@ def test_bucket_access(app_configs: Optional[List], **kwargs) -> List:
 @register()
 def test_assume_role_configuration(app_configs: Optional[List], **kwargs) -> List:
     # ignore assume role checks when in development mode
-    if get_storage_provider() == StorageProvider.UNSUPPORTED:
+    if S3FF_STORAGE_PROVIDER == StorageProvider.UNSUPPORTED:
         return []
 
     client = client_factory('sts', config=Config(connect_timeout=5, retries={'max_attempts': 0}))
 
     try:
         client.assume_role(
-            RoleArn=settings.S3FF_UPLOAD_STS_ARN,
+            RoleArn=constants.S3FF_UPLOAD_STS_ARN,
             RoleSessionName=f'file-upload-{int(time())}',
             Policy=json.dumps(
                 {
@@ -96,12 +96,12 @@ def test_assume_role_configuration(app_configs: Optional[List], **kwargs) -> Lis
                         {
                             'Effect': 'Allow',
                             'Action': ['s3:PutObject'],
-                            'Resource': f'arn:aws:s3:::{settings._S3FF_BUCKET}/{TEST_OBJECT_KEY}',
+                            'Resource': f'arn:aws:s3:::{constants.S3FF_BUCKET}/{TEST_OBJECT_KEY}',
                         }
                     ],
                 }
             ),
-            DurationSeconds=settings._S3FF_UPLOAD_DURATION,
+            DurationSeconds=constants.S3FF_UPLOAD_DURATION,
         )
     except ConnectionError:
         logger.exception('Failed to connect to storage bucket')
