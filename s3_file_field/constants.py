@@ -1,6 +1,7 @@
 import enum
 from pathlib import PurePosixPath
 from typing import Optional
+from urllib.parse import urlsplit, urlunsplit
 
 from django.conf import settings
 from django.utils.module_loading import import_string
@@ -44,8 +45,9 @@ if S3FF_STORAGE_PROVIDER == StorageProvider.AWS:
     S3FF_SECRET_KEY: Optional[str] = getattr(settings, 'AWS_SECRET_ACCESS_KEY', None)
     S3FF_BUCKET: Optional[str] = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', None)
     S3FF_REGION: Optional[str] = getattr(settings, 'AWS_S3_REGION_NAME', None)
-    S3FF_USE_SSL: Optional[str] = getattr(settings, 'AWS_S3_USE_SSL', True)
-    S3FF_ENDPOINT: Optional[str] = getattr(settings, 'AWS_S3_ENDPOINT_URL', None)
+    # The boto3 client will default to using the standard AWS endpoint
+    S3FF_ENDPOINT_URL: Optional[str] = None
+    S3FF_PUBLIC_ENDPOINT_URL: Optional[str] = None
 
     S3FF_UPLOAD_STS_ARN: Optional[str] = getattr(settings, 'S3FF_UPLOAD_STS_ARN', None)
 elif S3FF_STORAGE_PROVIDER == StorageProvider.MINIO:
@@ -54,8 +56,20 @@ elif S3FF_STORAGE_PROVIDER == StorageProvider.MINIO:
     S3FF_BUCKET = getattr(settings, 'MINIO_STORAGE_MEDIA_BUCKET_NAME', None)
     # Boto needs some region to be set
     S3FF_REGION = 's3ff-minio-fake-region'
-    S3FF_USE_SSL = getattr(settings, 'MINIO_STORAGE_USE_HTTPS', False)
-    S3FF_ENDPOINT = getattr(settings, 'MINIO_STORAGE_ENDPOINT', None)
+
+    # The boto3 client needs to know the Minio URL
+    _use_ssl = getattr(settings, 'MINIO_STORAGE_USE_HTTPS', False)
+    _endpoint = settings.MINIO_STORAGE_ENDPOINT
+    S3FF_ENDPOINT_URL = f'http{"s" if _use_ssl else ""}://{_endpoint}'
+    # End users may need access the store through a different URL, i.e. running Minio in docker
+    _minio_storage_media_url = getattr(settings, 'MINIO_STORAGE_MEDIA_URL', None)
+    if _minio_storage_media_url:
+        # Try to parse the URL from MINIO_STORAGE_MEDIA_URL if it exists
+        _url_parts = urlsplit(_minio_storage_media_url)
+        S3FF_PUBLIC_ENDPOINT_URL = urlunsplit((_url_parts.scheme, _url_parts.netloc, '', '', ''))
+    else:
+        # Otherwise, default to using S3FF_ENDPOINT_URL
+        S3FF_PUBLIC_ENDPOINT_URL = S3FF_ENDPOINT_URL
 
     # MinIO needs a valid ARN format, but the content doesn't matter
     # See https://github.com/minio/minio/blob/master/docs/sts/assume-role.md#testing
@@ -65,23 +79,9 @@ else:
     S3FF_SECRET_KEY = None
     S3FF_BUCKET = None
     S3FF_REGION = None
-    S3FF_ENDPOINT = None
-    S3FF_USE_SSL = None
 
     S3FF_UPLOAD_STS_ARN = None
 
-
-# endpoint URLs are required to use boto3 clients
-if S3FF_ENDPOINT:
-    S3FF_ENDPOINT_URL: Optional[str] = f'http{"s" if S3FF_USE_SSL else ""}://{S3FF_ENDPOINT}'
-else:
-    S3FF_ENDPOINT_URL = None
-
-# users may need access the store through a different URL than S3FF, i.e. running Minio in docker
-# default to the private S3FF_ENDPOINT_URL if it isn't defined explicitly
-S3FF_PUBLIC_ENDPOINT_URL: Optional[str] = getattr(
-    settings, 'S3FF_PUBLIC_ENDPOINT_URL', S3FF_ENDPOINT_URL
-)
 
 # user configurable settings
 S3FF_UPLOAD_PREFIX = PurePosixPath(getattr(settings, 'S3FF_UPLOAD_PREFIX', ''))

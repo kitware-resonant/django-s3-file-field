@@ -80,10 +80,11 @@ def upload_prepare(request: Request) -> HttpResponseBase:
         'accessKeyId': credentials['AccessKeyId'],
         'secretAccessKey': credentials['SecretAccessKey'],
         'sessionToken': credentials['SessionToken'],
-        'endpoint': constants.S3FF_ENDPOINT_URL,
         # MinIO uses path style URLs instead of the subdomain style typical of AWS
         's3ForcePathStyle': constants.S3FF_STORAGE_PROVIDER == constants.StorageProvider.MINIO,
     }
+    if constants.S3FF_PUBLIC_ENDPOINT_URL:
+        s3_options['endpoint'] = constants.S3FF_PUBLIC_ENDPOINT_URL
 
     signals.s3_file_field_upload_prepare.send(
         sender=upload_prepare, name=name, object_key=object_key
