@@ -6,7 +6,6 @@ from typing import Any, Dict, Iterable, Mapping
 from django.forms import ClearableFileInput
 from django.urls import reverse
 
-from . import settings
 from .constants import S3FF_STORAGE_PROVIDER, StorageProvider
 
 
@@ -81,7 +80,7 @@ class S3AdminFileInput(S3FileInput):
 
     @property
     def template_name(self):
-        if settings._S3FF_STORAGE_PROVIDER == StorageProvider.UNSUPPORTED:
+        if S3FF_STORAGE_PROVIDER == StorageProvider.UNSUPPORTED:
             return 'admin/widgets/clearable_file_input.html'
         else:
             return 'joist/s3adminfileinput.html'
