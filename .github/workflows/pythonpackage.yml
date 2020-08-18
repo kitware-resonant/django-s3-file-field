@@ -34,3 +34,4 @@ jobs:
         MINIO_STORAGE_ENDPOINT: localhost:9000
         MINIO_STORAGE_ACCESS_KEY: minioUserAccessKey
         MINIO_STORAGE_SECRET_KEY: minioUserSecretKey
+        MINIO_STORAGE_MEDIA_BUCKET_NAME: s3-file-field-example
