@@ -2,10 +2,8 @@ import json
 
 import requests
 
-from s3_file_field import constants
 
-
-def test_multipart_upload(api_client, boto_client):
+def test_multipart_upload(api_client, boto_client, bucket):
     # Initialize the multipart upload
     resp = api_client.post(
         '/api/joist/multipart-upload-prepare/',
@@ -40,5 +38,5 @@ def test_multipart_upload(api_client, boto_client):
     assert resp.status_code == 201
 
     # Verify the object is present in the store
-    resp = boto_client.get_object(Bucket=constants.S3FF_BUCKET, Key=key)
+    resp = boto_client.get_object(Bucket=bucket, Key=key)
     assert resp['Body'].read() == contents
