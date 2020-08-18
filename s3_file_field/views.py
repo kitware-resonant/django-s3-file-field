@@ -3,7 +3,7 @@ import time
 import uuid
 
 from django.core.signing import BadSignature, Signer, TimestampSigner
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.http.response import HttpResponseBase
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import JSONParser
@@ -101,3 +101,54 @@ def upload_prepare(request: Request) -> HttpResponseBase:
             'signature': sig,
         }
     )
+
+
+# @authentication_classes([TokenAuthentication])
+# @permission_classes([IsAuthenticated])
+@api_view(['POST'])
+@parser_classes([JSONParser])
+def multipart_upload_prepare(request: Request) -> HttpResponseBase:
+    name = request.data['name']
+    parts = request.data['parts']
+    object_key = str(constants.S3FF_UPLOAD_PREFIX / str(uuid.uuid4()) / name)
+
+    client = client_factory('s3')
+
+    resp = client.create_multipart_upload(Bucket=constants.S3FF_BUCKET, Key=object_key)
+    upload_id = resp['UploadId']
+
+    upload_urls = []
+    for part_number in range(0, parts):
+        upload_url = client.generate_presigned_url(
+            'upload_part',
+            Params={
+                'Bucket': constants.S3FF_BUCKET,
+                'Key': object_key,
+                'UploadId': upload_id,
+                'PartNumber': part_number,
+            },
+        )
+        upload_urls.append({'url': upload_url, 'part_number': part_number})
+
+    return JsonResponse({'parts': upload_urls, 'key': object_key, 'upload_id': upload_id})
+
+
+# @authentication_classes([TokenAuthentication])
+# @permission_classes([IsAuthenticated])
+@api_view(['POST'])
+@parser_classes([JSONParser])
+def multipart_upload_finalize(request: Request) -> HttpResponseBase:
+    object_key = request.data['key']
+    upload_id = request.data['upload_id']
+    parts = request.data['parts']
+    parts = [{'PartNumber': part['part_number'], 'ETag': part['etag']} for part in parts]
+
+    client = client_factory('s3')
+
+    client.complete_multipart_upload(
+        Bucket=constants.S3FF_BUCKET,
+        Key=object_key,
+        UploadId=upload_id,
+        MultipartUpload={'Parts': parts},
+    )
+    return HttpResponse(status=201)
