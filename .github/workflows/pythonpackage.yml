@@ -10,6 +10,11 @@ jobs:
       max-parallel: 4
       matrix:
         python-version: [3.7, 3.8]
+    services:
+      minio:
+        image: girder/minio-nonroot:latest
+        ports:
+          - 9000:9000
 
     steps:
     - uses: actions/checkout@v1
@@ -24,3 +29,8 @@ jobs:
       run: |
         pip install tox
         tox
+      env:
+        MINIO_ACCESS_KEY: yes
+        MINIO_STORAGE_ENDPOINT: localhost:9000
+        MINIO_STORAGE_ACCESS_KEY: minioUserAccessKey
+        MINIO_STORAGE_SECRET_KEY: minioUserSecretKey
