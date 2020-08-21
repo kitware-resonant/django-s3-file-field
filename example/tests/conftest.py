@@ -17,8 +17,10 @@ def boto_client():
 
 @pytest.fixture
 def bucket(boto_client):
+    # Possibly due to lifecycle ordering, where a Boto instance is
+    # created before a Storage, MINIO_STORAGE_AUTO_CREATE_MEDIA_BUCKET
+    # does not trigger bucket creation as intended.
     resp = boto_client.list_buckets()
-    print(resp)
     for bucket in resp['Buckets']:
         if bucket['Name'] == constants.S3FF_BUCKET:
             return constants.S3FF_BUCKET
