@@ -109,7 +109,15 @@ def upload_prepare(request: Request) -> HttpResponseBase:
 @parser_classes([JSONParser])
 def multipart_upload_prepare(request: Request) -> HttpResponseBase:
     name = request.data['name']
-    parts = request.data['parts']
+    content_length = request.data['content_length']
+    max_part_length = request.data.get('max_part_length')
+    # Use 1GB parts as a default
+    if not max_part_length:
+        max_part_length = 1_000_000_000
+    # AWS does not allow part length less than 5MB
+    if max_part_length < 5_000_000:
+        raise ValueError('max_part_length must be greater than 5MB')
+
     object_key = str(constants.S3FF_UPLOAD_PREFIX / str(uuid.uuid4()) / name)
 
     client = client_factory('s3')
@@ -117,20 +125,29 @@ def multipart_upload_prepare(request: Request) -> HttpResponseBase:
     resp = client.create_multipart_upload(Bucket=constants.S3FF_BUCKET, Key=object_key)
     upload_id = resp['UploadId']
 
-    upload_urls = []
-    for part_number in range(0, parts):
-        upload_url = client.generate_presigned_url(
+    def presign_part(part_number, content_length):
+        url = client.generate_presigned_url(
             'upload_part',
             Params={
                 'Bucket': constants.S3FF_BUCKET,
+                'ContentLength': content_length,
                 'Key': object_key,
-                'UploadId': upload_id,
                 'PartNumber': part_number,
+                'UploadId': upload_id,
             },
         )
-        upload_urls.append({'url': upload_url, 'part_number': part_number})
+        return {'url': url, 'part_number': part_number, 'content_length': content_length}
 
-    return JsonResponse({'parts': upload_urls, 'key': object_key, 'upload_id': upload_id})
+    parts = []
+    # How many parts are filled to capacity
+    full_parts = content_length // max_part_length
+    for part_number in range(0, full_parts):
+        parts.append(presign_part(part_number, max_part_length))
+    # The last part contains any leftover bytes, if any
+    if content_length % max_part_length > 0:
+        parts.append(presign_part(full_parts, content_length % max_part_length))
+
+    return JsonResponse({'parts': parts, 'key': object_key, 'upload_id': upload_id})
 
 
 # @authentication_classes([TokenAuthentication])
@@ -142,7 +159,6 @@ def multipart_upload_finalize(request: Request) -> HttpResponseBase:
     upload_id = request.data['upload_id']
     parts = request.data['parts']
     parts = [{'PartNumber': part['part_number'], 'ETag': part['etag']} for part in parts]
-
     client = client_factory('s3')
 
     client.complete_multipart_upload(
