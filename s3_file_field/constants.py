@@ -4,7 +4,7 @@ from typing import Optional
 from urllib.parse import urlsplit, urlunsplit
 
 from django.conf import settings
-from django.utils.module_loading import import_string
+from django.core.files.storage import Storage, default_storage
 
 
 class StorageProvider(enum.Enum):
@@ -13,12 +13,14 @@ class StorageProvider(enum.Enum):
     UNSUPPORTED = enum.auto()
 
 
-def _get_storage_provider() -> StorageProvider:
-    _storage_class = import_string(settings.DEFAULT_FILE_STORAGE)
+def _get_storage_provider(storage: Storage = None) -> StorageProvider:
+    if storage is None:
+        storage = default_storage
+
     try:
         from storages.backends.s3boto3 import S3Boto3Storage
 
-        if _storage_class == S3Boto3Storage or issubclass(_storage_class, S3Boto3Storage):
+        if isinstance(storage, S3Boto3Storage):
             return StorageProvider.AWS
     except ImportError:
         pass
@@ -26,12 +28,16 @@ def _get_storage_provider() -> StorageProvider:
     try:
         from minio_storage.storage import MinioMediaStorage
 
-        if _storage_class == MinioMediaStorage or issubclass(_storage_class, MinioMediaStorage):
+        if isinstance(storage, MinioMediaStorage):
             return StorageProvider.MINIO
     except ImportError:
         pass
 
     return StorageProvider.UNSUPPORTED
+
+
+def supported_storage(storage: Storage = None) -> bool:
+    return _get_storage_provider(storage) != StorageProvider.UNSUPPORTED
 
 
 # internal settings

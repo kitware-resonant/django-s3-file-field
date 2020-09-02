@@ -11,7 +11,7 @@ from django.core.checks import Error, Warning, register
 
 from . import constants
 from .boto import client_factory
-from .constants import S3FF_STORAGE_PROVIDER, StorageProvider
+from .constants import supported_storage
 
 # TODO: this should only add a handler when running the check command
 logger = logging.getLogger(__name__)
@@ -38,18 +38,18 @@ E005 = Error('Unable to determine the underlying storage provider.', id='s3_file
 
 @register(deploy=True)
 def check_supported_storage_provider(app_configs: Optional[List], **kwargs) -> List:
-    return [] if S3FF_STORAGE_PROVIDER != StorageProvider.UNSUPPORTED else [E005]
+    return [] if supported_storage() else [E005]
 
 
 @register()
 def determine_storage_provider(app_configs: Optional[List], **kwargs) -> List:
-    return [] if S3FF_STORAGE_PROVIDER != StorageProvider.UNSUPPORTED else [W001]
+    return [] if supported_storage() else [W001]
 
 
 @register()
 def test_bucket_access(app_configs: Optional[List], **kwargs) -> List:
     # ignore bucket access checks when in development mode
-    if S3FF_STORAGE_PROVIDER == StorageProvider.UNSUPPORTED:
+    if not supported_storage():
         return []
 
     # Use a short timeout to quickly fail on connection misconfigurations
@@ -79,7 +79,7 @@ def test_bucket_access(app_configs: Optional[List], **kwargs) -> List:
 @register()
 def test_assume_role_configuration(app_configs: Optional[List], **kwargs) -> List:
     # ignore assume role checks when in development mode
-    if S3FF_STORAGE_PROVIDER == StorageProvider.UNSUPPORTED:
+    if not supported_storage():
         return []
 
     client = client_factory('sts', config=Config(connect_timeout=5, retries={'max_attempts': 0}))
