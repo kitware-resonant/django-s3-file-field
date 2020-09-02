@@ -1,27 +1,29 @@
 # -*- coding: utf-8 -*-
+from distutils import log
 import os
 import platform
+from subprocess import CalledProcessError, check_call
 import sys
 
 from setuptools import Command, find_packages, setup
-from setuptools.command.sdist import sdist
 from setuptools.command.build_py import build_py
 from setuptools.command.egg_info import egg_info
-from subprocess import check_call
-from distutils import log
-
+from setuptools.command.sdist import sdist
 
 here = os.path.dirname(os.path.abspath(__file__))
 node_root = os.path.join(here, 'client')
 is_repo = os.path.exists(os.path.join(here, '.git'))
 
 npm_path = os.pathsep.join(
-    [os.path.join(node_root, 'node_modules', '.bin'), os.environ.get('PATH', os.defpath),]
+    [
+        os.path.join(node_root, 'node_modules', '.bin'),
+        os.environ.get('PATH', os.defpath),
+    ]
 )
 
 
 def js_prerelease(command, strict=False):
-    """decorator for building minified js/css prior to another command"""
+    """Decorate a command to building minified js/css prior to execution."""
 
     class DecoratedCommand(command):
         def run(self):
@@ -50,8 +52,7 @@ def js_prerelease(command, strict=False):
 
 
 def update_package_data(distribution):
-    """update package_data to catch changes during setup"""
-
+    """Update package_data to catch changes during setup."""
     build_py = distribution.get_command_obj('build_py')
     # distribution.package_data = find_package_data()
     # re-init build_py options which load package_data
@@ -85,7 +86,7 @@ class NPM(Command):
         try:
             check_call([npm_name, '--version'])
             return True
-        except:
+        except CalledProcessError:
             return False
 
     def should_run_npm_install(self):
@@ -100,20 +101,21 @@ class NPM(Command):
         has_npm = self.has_npm()
         if not has_npm:
             log.error(
-                "`npm` unavailable.  If you're running this command using sudo, make sure `npm` is available to sudo"
+                '`npm` unavailable.  '
+                "If you're running this command using sudo, make sure `npm` is available to sudo"
             )
 
         env = os.environ.copy()
         env['PATH'] = npm_path
 
         if self.should_run_npm_install():
-            log.info("Installing build dependencies with npm.  This may take a while...")
+            log.info('Installing build dependencies with npm.  This may take a while...')
             npm_name = self.get_npm_name()
             check_call([npm_name, 'install'], cwd=node_root, stdout=sys.stdout, stderr=sys.stderr)
             os.utime(self.node_modules, None)
 
         if self.should_run_npm_build():
-            log.info("building with npm.  This may take a while...")
+            log.info('building with npm.  This may take a while...')
             npm_name = self.get_npm_name()
             check_call(
                 [npm_name, 'run', 'build:widget'],
@@ -134,7 +136,9 @@ class NPM(Command):
 
 
 def prerelease_local_scheme(version):
-    """Return local scheme version unless building on master in CircleCI.
+    """
+    Return local scheme version unless building on master in CircleCI.
+
     This function returns the local scheme version number
     (e.g. 0.0.0.dev<N>+g<HASH>) unless building on CircleCI for a
     pre-release in which case it ignores the hash and produces a

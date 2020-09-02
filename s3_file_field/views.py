@@ -9,8 +9,7 @@ from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import JSONParser
 from rest_framework.request import Request
 
-from . import constants
-from . import signals
+from . import constants, signals
 from .boto import client_factory
 
 

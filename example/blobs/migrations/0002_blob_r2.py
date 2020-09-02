@@ -11,6 +11,8 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name='blob', name='r2', field=models.FileField(null=True, upload_to=''),
+            model_name='blob',
+            name='r2',
+            field=models.FileField(null=True, upload_to=''),
         ),
     ]
