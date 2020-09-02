@@ -59,7 +59,7 @@ class S3FileField(FileField):
 
         This is an instance of "form_class", with a widget of "widget".
         """
-        if supported_storage():
+        if supported_storage(self.storage):
             # Use S3FormFileField as a default, instead of forms.FileField from the superclass
             kwargs.setdefault('form_class', S3FormFileField)
         return super().formfield(**kwargs)
