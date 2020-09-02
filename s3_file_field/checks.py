@@ -7,12 +7,11 @@ from typing import List, Optional
 
 from botocore.client import Config
 from botocore.exceptions import ConnectionError
-from django.core.checks import Error, register, Warning
+from django.core.checks import Error, Warning, register
 
 from . import constants
 from .boto import client_factory
 from .constants import S3FF_STORAGE_PROVIDER, StorageProvider
-
 
 # TODO: this should only add a handler when running the check command
 logger = logging.getLogger(__name__)

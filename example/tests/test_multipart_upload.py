@@ -1,6 +1,6 @@
 import json
 
-from fuzzy import Re, URL_RE, UUID_RE
+from fuzzy import URL_RE, UUID_RE, Re
 import pytest
 import requests
 
