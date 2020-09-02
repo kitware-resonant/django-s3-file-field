@@ -36,6 +36,10 @@ def _get_storage_provider(storage: Storage = None) -> StorageProvider:
     return StorageProvider.UNSUPPORTED
 
 
+def supported_storage(storage: Storage = None) -> bool:
+    return _get_storage_provider(storage) != StorageProvider.UNSUPPORTED
+
+
 # internal settings
 S3FF_UPLOAD_DURATION = 60 * 60 * 12
 # TODO move this here
