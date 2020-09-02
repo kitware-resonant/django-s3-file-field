@@ -6,8 +6,6 @@ from typing import Any, Dict, Iterable, Mapping
 from django.forms import ClearableFileInput
 from django.urls import reverse
 
-from .constants import S3FF_STORAGE_PROVIDER, StorageProvider
-
 
 @functools.lru_cache(maxsize=1)
 def get_base_url() -> str:
@@ -46,15 +44,10 @@ class S3FakeFile:
 class S3FileInput(ClearableFileInput):
     """widget to render the S3 File Input."""
 
+    template_name = 'joist/s3fileinput.html'
+
     class Media:
         js = ['joist/joist.js']
-
-    @property
-    def template_name(self):
-        if S3FF_STORAGE_PROVIDER == StorageProvider.UNSUPPORTED:
-            return 'django/forms/widgets/file.html'
-        else:
-            return 'joist/s3fileinput.html'
 
     def get_context(self, name: str, value: str, attrs):
         context = super().get_context(name, value, attrs)
@@ -78,9 +71,4 @@ class S3FileInput(ClearableFileInput):
 class S3AdminFileInput(S3FileInput):
     """widget used by the admin page."""
 
-    @property
-    def template_name(self):
-        if S3FF_STORAGE_PROVIDER == StorageProvider.UNSUPPORTED:
-            return 'admin/widgets/clearable_file_input.html'
-        else:
-            return 'joist/s3adminfileinput.html'
+    template_name = 'joist/s3adminfileinput.html'
