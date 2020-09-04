@@ -4,6 +4,7 @@ from uuid import uuid4
 from django.db.models.fields.files import FieldFile, FileField
 from django.forms import Field as FormField
 
+from ._registry import register_field
 from .constants import supported_storage
 from .forms import S3FormFileField
 from .widgets import S3FakeFile
@@ -48,6 +49,13 @@ class S3FileField(FileField):
         kwargs.setdefault('max_length', 2000)
         kwargs.setdefault('upload_to', self.uuid_prefix_filename)
         super().__init__(*args, **kwargs)
+
+    def contribute_to_class(self, cls, name, **kwargs):
+        # This is executed when the Field is formally added to its containing class.
+        # As a side effect, self.name is set and self.__str__ becomes usable as a unique
+        # identifier for the Field.
+        super().contribute_to_class(cls, name, **kwargs)
+        register_field(self)
 
     @staticmethod
     def uuid_prefix_filename(instance: Any, filename: str):
