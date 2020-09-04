@@ -2,14 +2,18 @@ import json
 import time
 import uuid
 
+from django.core.files.storage import default_storage
 from django.core.signing import BadSignature, Signer, TimestampSigner
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.http.response import HttpResponseBase
+from rest_framework import serializers
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import JSONParser
 from rest_framework.request import Request
+from rest_framework.response import Response
 
-from . import constants, signals
+from . import _multipart, constants, signals
+from ._multipart import MultipartFinalization, PartFinalization
 from .boto import client_factory
 
 
@@ -29,7 +33,7 @@ def upload_finalize(request: Request) -> HttpResponseBase:
         raise BadSignature()
 
     signals.s3_file_field_upload_finalize.send(
-        sender=upload_finalize, name=name, status=status, object_key=object_id
+        sender=upload_finalize, name=name, object_key=object_id
     )
 
     signer = Signer()
@@ -102,6 +106,40 @@ def upload_prepare(request: Request) -> HttpResponseBase:
     )
 
 
+class PartInitializationSerializer(serializers.Serializer):
+    part_number = serializers.IntegerField(min_value=1)
+    size = serializers.IntegerField(min_value=1)
+    upload_url = serializers.URLField()
+
+
+class MultipartInitializationSerializer(serializers.Serializer):
+    object_key = serializers.CharField(trim_whitespace=False)
+    upload_id = serializers.CharField()
+    parts = PartInitializationSerializer(many=True, allow_empty=False)
+
+
+class PartFinalizationSerializer(serializers.Serializer):
+    part_number = serializers.IntegerField(min_value=1)
+    size = serializers.IntegerField(min_value=1)
+    etag = serializers.CharField()
+
+    def create(self, validated_data) -> PartFinalization:
+        return PartFinalization(**validated_data)
+
+
+class MultipartFinalizationSerializer(serializers.Serializer):
+    object_key = serializers.CharField(trim_whitespace=False)
+    upload_id = serializers.CharField()
+    parts = PartFinalizationSerializer(many=True, allow_empty=False)
+
+    def create(self, validated_data) -> MultipartFinalization:
+        parts = [
+            PartFinalization(**part)
+            for part in sorted(validated_data.pop('parts'), key=lambda part: part['part_number'])
+        ]
+        return MultipartFinalization(parts=parts, **validated_data)
+
+
 # @authentication_classes([TokenAuthentication])
 # @permission_classes([IsAuthenticated])
 @api_view(['POST'])
@@ -110,43 +148,22 @@ def multipart_upload_prepare(request: Request) -> HttpResponseBase:
     name = request.data['name']
     content_length = request.data['content_length']
     max_part_length = request.data.get('max_part_length')
-    # Use 1GB parts as a default
-    if not max_part_length:
-        max_part_length = 1_000_000_000
-    # AWS does not allow part length less than 5MB
-    if max_part_length < 5_000_000:
-        raise ValueError('max_part_length must be greater than 5MB')
 
     object_key = str(constants.S3FF_UPLOAD_PREFIX / str(uuid.uuid4()) / name)
 
-    client = client_factory('s3')
+    multipart_initialization = _multipart.MultipartManager.from_storage(
+        default_storage
+    ).initialize_upload(object_key, content_length, max_part_length)
 
-    resp = client.create_multipart_upload(Bucket=constants.S3FF_BUCKET, Key=object_key)
-    upload_id = resp['UploadId']
+    # signals.s3_file_field_upload_prepare.send(
+    #     sender=upload_prepare, name=name, object_key=object_key
+    # )
 
-    def presign_part(part_number, content_length):
-        url = client.generate_presigned_url(
-            'upload_part',
-            Params={
-                'Bucket': constants.S3FF_BUCKET,
-                'ContentLength': content_length,
-                'Key': object_key,
-                'PartNumber': part_number,
-                'UploadId': upload_id,
-            },
-        )
-        return {'url': url, 'part_number': part_number, 'content_length': content_length}
+    # signer = TimestampSigner()
+    # sig = signer.sign(object_key)
 
-    parts = []
-    # How many parts are filled to capacity
-    full_parts = content_length // max_part_length
-    for part_number in range(0, full_parts):
-        parts.append(presign_part(part_number, max_part_length))
-    # The last part contains any leftover bytes, if any
-    if content_length % max_part_length > 0:
-        parts.append(presign_part(full_parts, content_length % max_part_length))
-
-    return JsonResponse({'parts': parts, 'key': object_key, 'upload_id': upload_id})
+    serializer = MultipartInitializationSerializer(multipart_initialization)
+    return Response(serializer.data)
 
 
 # @authentication_classes([TokenAuthentication])
@@ -154,16 +171,22 @@ def multipart_upload_prepare(request: Request) -> HttpResponseBase:
 @api_view(['POST'])
 @parser_classes([JSONParser])
 def multipart_upload_finalize(request: Request) -> HttpResponseBase:
-    object_key = request.data['key']
-    upload_id = request.data['upload_id']
-    parts = request.data['parts']
-    parts = [{'PartNumber': part['part_number'], 'ETag': part['etag']} for part in parts]
-    client = client_factory('s3')
+    serializer = MultipartFinalizationSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    finalization = serializer.save()
 
-    client.complete_multipart_upload(
-        Bucket=constants.S3FF_BUCKET,
-        Key=object_key,
-        UploadId=upload_id,
-        MultipartUpload={'Parts': parts},
-    )
-    return HttpResponse(status=201)
+    # check if upload_prepare signed this less than max age ago
+    # tsigner = TimestampSigner()
+    # if object_key != tsigner.unsign(upload_sig, max_age=constants.S3FF_UPLOAD_DURATION):
+    #     raise BadSignature()
+
+    _multipart.MultipartManager.from_storage(default_storage).finalize_upload(finalization)
+
+    # signals.s3_file_field_upload_finalize.send(
+    #     sender=multipart_upload_finalize, name=name, object_key=object_key
+    # )
+
+    # signer = Signer()
+    # sig = signer.sign(object_key)
+
+    return Response(status=201)
