@@ -26,9 +26,9 @@ def _get_storage_provider(storage: Storage = None) -> StorageProvider:
         pass
 
     try:
-        from minio_storage.storage import MinioMediaStorage
+        from minio_storage.storage import MinioStorage
 
-        if isinstance(storage, MinioMediaStorage):
+        if isinstance(storage, MinioStorage):
             return StorageProvider.MINIO
     except ImportError:
         pass
