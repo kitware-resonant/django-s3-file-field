@@ -116,7 +116,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 STATIC_URL = '/static/'
 
 
-if 'MINIO_ACCESS_KEY' in os.environ:
+if 'MINIO_STORAGE_ACCESS_KEY' in os.environ:
     DEFAULT_FILE_STORAGE = 'minio_storage.storage.MinioMediaStorage'
     MINIO_STORAGE_ENDPOINT = os.environ.get('MINIO_STORAGE_ENDPOINT', 'localhost:9000')
     MINIO_STORAGE_USE_HTTPS = 'MINIO_STORAGE_USE_HTTPS' in os.environ
