@@ -30,7 +30,6 @@ jobs:
         pip install tox
         tox
       env:
-        MINIO_ACCESS_KEY: yes
         MINIO_STORAGE_ENDPOINT: localhost:9000
         MINIO_STORAGE_ACCESS_KEY: minioUserAccessKey
         MINIO_STORAGE_SECRET_KEY: minioUserSecretKey
