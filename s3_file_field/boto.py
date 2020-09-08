@@ -3,7 +3,7 @@ import boto3
 from . import constants
 
 
-def client_factory(service: str, **kwargs):
+def client_factory(service, **kwargs):
     client_kwargs = {
         'region_name': constants.S3FF_REGION,
         'aws_access_key_id': constants.S3FF_ACCESS_KEY,
@@ -15,4 +15,4 @@ def client_factory(service: str, **kwargs):
 
     client_kwargs.update(kwargs)
 
-    return boto3.client(service, **client_kwargs)
+    return boto3.client(service, **client_kwargs)  # type: ignore

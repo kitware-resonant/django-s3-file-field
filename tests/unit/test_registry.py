@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, Type, cast
 
 from django.core.files.storage import default_storage
 from django.db import models
@@ -28,7 +28,7 @@ def s3ff_class(django_settings_init) -> Type[models.Model]:
 
 @pytest.fixture
 def s3ff_field(s3ff_class: Type[models.Model]) -> 'S3FileField':
-    return s3ff_class._meta.get_field('blob')
+    return cast('S3FileField', s3ff_class._meta.get_field('blob'))
 
 
 def test_registry_get_field(s3ff_field: 'S3FileField'):
