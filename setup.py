@@ -188,7 +188,14 @@ setup(
     package_data={'': ['*.html', '*.js']},
     include_package_data=True,
     zip_safe=False,
-    install_requires=['django>=2', 'boto3', 'djangorestframework'],
+    install_requires=[
+        'django>=3',
+        'djangorestframework',
+    ],
+    extras_require={
+        'boto3': ['django-storages', 'boto3', 'boto3-stubs[s3]'],
+        'minio': ['django-minio-storage', 'minio'],
+    },
     cmdclass={
         'build_py': js_prerelease(build_py),
         'egg_info': js_prerelease(egg_info),

@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Type
 
+from django.core.files.storage import default_storage
 from django.db import models
 import pytest
 
@@ -20,6 +21,7 @@ def s3ff_class(django_settings_init) -> Type[models.Model]:
             app_label = 's3ff_test'
 
         blob = S3FileField()
+        blob_2 = S3FileField()
 
     return Resource
 
@@ -42,5 +44,15 @@ def test_registry_iter_fields(s3ff_field: 'S3FileField'):
 
     fields = list(iter_fields())
 
+    assert len(fields) == 2
+    assert any(field is s3ff_field for field in fields)
+
+
+def test_registry_iter_storages(s3ff_field: 'S3FileField'):
+    # s3_file_field requires Django settings to be available at import time
+    from s3_file_field._registry import iter_storages
+
+    fields = list(iter_storages())
+
     assert len(fields) == 1
-    assert fields[0] is s3ff_field
+    assert fields[0] is default_storage

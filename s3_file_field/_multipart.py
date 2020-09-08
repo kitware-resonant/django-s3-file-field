@@ -1,0 +1,144 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import timedelta
+import math
+from typing import Iterator, List, Tuple
+
+from django.core.files.storage import Storage
+
+from .constants import StorageProvider, _get_storage_provider
+
+
+@dataclass
+class PartInitialization:
+    part_number: int
+    size: int
+    upload_url: str
+
+
+@dataclass
+class MultipartInitialization:
+    object_key: str
+    upload_id: str
+    parts: List[PartInitialization]
+
+
+@dataclass
+class PartFinalization:
+    part_number: int
+    size: int
+    etag: str
+
+
+@dataclass
+class MultipartFinalization:
+    object_key: str
+    upload_id: str
+    parts: List[PartFinalization]
+
+
+class MultipartManager:
+    """A facade providing management of S3 multipart uploads to multiple Storages."""
+
+    def initialize_upload(
+        self, object_key: str, file_size: int, part_size: int = None
+    ) -> MultipartInitialization:
+        upload_id = self._create_upload_id(object_key)
+        parts = [
+            PartInitialization(
+                part_number=part_number,
+                size=part_size,
+                upload_url=self._generate_presigned_part_url(
+                    object_key, upload_id, part_number, part_size
+                ),
+            )
+            for part_number, part_size in self._iter_part_sizes(file_size, part_size)
+        ]
+        return MultipartInitialization(object_key=object_key, upload_id=upload_id, parts=parts)
+
+    def finalize_upload(self, finalization: MultipartFinalization) -> None:
+        raise NotImplementedError
+
+    def test_upload(self):
+        object_key = '.s3-file-field-test-file'
+        try:
+            # TODO: is it possible to use a shorter timeout?
+            upload_id = self._create_upload_id(object_key)
+            self._abort_upload_id(object_key, upload_id)
+        except Exception:
+            # TODO: Capture and raise more specific exceptions, abstracted over the clients
+            raise
+
+    @classmethod
+    def from_storage(cls, storage: Storage) -> MultipartManager:
+        # TODO: Guard these imports to allow optional dependencies
+        from ._multipart_boto3 import Boto3MultipartManager
+        from ._multipart_minio import MinioMultipartManager
+
+        storage_provider = _get_storage_provider(storage)
+
+        try:
+            multipart_class = {
+                StorageProvider.AWS: Boto3MultipartManager,
+                StorageProvider.MINIO: MinioMultipartManager,
+            }[storage_provider]
+        except KeyError:
+            raise Exception('Unsupported storage provider.')
+
+        return multipart_class(storage)
+
+    # The AWS default expiration of 1 hour may not be enough for large uploads to complete
+    _url_expiration = timedelta(hours=24)
+
+    def _create_upload_id(self, object_key: str) -> str:
+        raise NotImplementedError
+
+    def _abort_upload_id(self, object_key: str, upload_id: str) -> None:
+        raise NotImplementedError
+
+    def _generate_presigned_part_url(
+        self, object_key: str, upload_id: str, part_number: int, part_size: int
+    ) -> str:
+        raise NotImplementedError
+
+    @staticmethod
+    def _iter_part_sizes(file_size: int, part_size: int = None) -> Iterator[Tuple[int, int]]:
+        if part_size is None:
+            # 5 MB
+            # TODO: pick a sane default; 1GB?
+            part_size = 5 * 2 ** 20
+
+        # S3 multipart limits: https://docs.aws.amazon.com/AmazonS3/latest/dev/qfacts.html
+
+        if file_size > 5 * 2 ** 40:
+            raise Exception('File is larger than the S3 maximum object size.')
+
+        # 10k is the maximum number of allowed parts
+        max_parts = 10_000
+        if math.ceil(file_size / part_size) >= max_parts:
+            part_size = math.ceil(file_size / max_parts)
+
+        # 5MB is the minimum part size
+        min_part_size = 5 * 2 ** 20
+        if part_size < min_part_size:
+            part_size = min_part_size
+
+        # 5GB is the maximum part size
+        max_part_size = 5 * 2 ** 30
+        if part_size > max_part_size:
+            part_size = max_part_size
+
+        remaining_file_size = file_size
+        part_num = 1
+        while remaining_file_size > 0:
+            current_part_size = (
+                part_size if remaining_file_size - part_size > 0 else remaining_file_size
+            )
+
+            yield part_num, current_part_size
+
+            part_num += 1
+            remaining_file_size -= part_size
+
+    # TODO: key name encoding...
