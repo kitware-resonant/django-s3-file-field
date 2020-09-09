@@ -35,6 +35,8 @@ def check_supported_storage_provider(
 @register()
 def test_bucket_access(app_configs: Optional[Iterable[AppConfig]], **kwargs) -> List[CheckMessage]:
     for storage in iter_storages():
+        if not MultipartManager.supported_storage(storage):
+            continue
         multipart = MultipartManager.from_storage(storage)
         try:
             multipart.test_upload()
