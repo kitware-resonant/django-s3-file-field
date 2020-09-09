@@ -1,17 +1,17 @@
 import pytest
 
 from s3_file_field._multipart import (
-    MultipartFinalization,
-    MultipartInitialization,
     PartFinalization,
     PartInitialization,
+    UploadFinalization,
+    UploadInitialization,
 )
-from s3_file_field.views import MultipartFinalizationSerializer, MultipartInitializationSerializer
+from s3_file_field.views import UploadFinalizationSerializer, UploadInitializationSerializer
 
 
 @pytest.fixture
-def multipart_initialization() -> MultipartInitialization:
-    return MultipartInitialization(
+def initialization() -> UploadInitialization:
+    return UploadInitialization(
         object_key='test-object-key',
         upload_id='test-upload-id',
         parts=[
@@ -29,15 +29,15 @@ def multipart_initialization() -> MultipartInitialization:
     )
 
 
-def test_multipart_initialization_serialization(
-    multipart_initialization: MultipartInitialization,
+def test_upload_initialization_serialization(
+    initialization: UploadInitialization,
 ):
-    serializer = MultipartInitializationSerializer(multipart_initialization)
+    serializer = UploadInitializationSerializer(initialization)
     assert isinstance(serializer.data, dict)
 
 
-def test_multipart_finalization_deserialization():
-    serializer = MultipartFinalizationSerializer(
+def test_upload_finalization_deserialization():
+    serializer = UploadFinalizationSerializer(
         data={
             'object_key': 'test-object-key',
             'upload_id': 'test-upload-id',
@@ -50,5 +50,5 @@ def test_multipart_finalization_deserialization():
 
     assert serializer.is_valid(raise_exception=True)
     finalization = serializer.save()
-    assert isinstance(finalization, MultipartFinalization)
+    assert isinstance(finalization, UploadFinalization)
     assert all(isinstance(part, PartFinalization) for part in finalization.parts)
