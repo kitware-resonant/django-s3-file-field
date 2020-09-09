@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    # mypy_boto3_s3 may not be installed in downstream projects
+    # mypy_boto3_s3 only provides types
     import mypy_boto3_s3 as s3
 
     # S3Boto3Storage requires Django settings to be available at import time
