@@ -5,9 +5,11 @@ from typing import TYPE_CHECKING, Optional
 from botocore.exceptions import ClientError
 from minio import Minio
 from minio_storage.storage import MinioStorage
-import mypy_boto3_s3 as s3
 
 if TYPE_CHECKING:
+    # mypy_boto3_s3 only provides types
+    import mypy_boto3_s3 as s3
+
     # S3Boto3Storage requires Django settings to be available at import time
     from storages.backends.s3boto3 import S3Boto3Storage
 
