@@ -1,5 +1,6 @@
 import json
 
+from django.core.files.storage import default_storage
 import pytest
 import requests
 
@@ -10,7 +11,7 @@ def mb(bytes_size: int) -> int:
     return bytes_size * 2 ** 20
 
 
-def test_prepare(api_client, boto_client, bucket):
+def test_prepare(api_client):
     resp = api_client.post(
         '/api/joist/multipart-upload-prepare/',
         json.dumps({'name': 'test.txt', 'content_length': 10}),
@@ -24,7 +25,7 @@ def test_prepare(api_client, boto_client, bucket):
     }
 
 
-def test_prepare_two_parts(api_client, boto_client, bucket):
+def test_prepare_two_parts(api_client):
     resp = api_client.post(
         '/api/joist/multipart-upload-prepare/',
         json.dumps({'name': 'test.txt', 'content_length': mb(10), 'max_part_length': mb(5)}),
@@ -42,7 +43,7 @@ def test_prepare_two_parts(api_client, boto_client, bucket):
     }
 
 
-def test_prepare_three_parts(api_client, boto_client, bucket):
+def test_prepare_three_parts(api_client):
     resp = api_client.post(
         '/api/joist/multipart-upload-prepare/',
         json.dumps({'name': 'test.txt', 'content_length': mb(20), 'max_part_length': mb(7)}),
@@ -61,7 +62,7 @@ def test_prepare_three_parts(api_client, boto_client, bucket):
 
 
 @pytest.mark.skip
-def test_prepare_small_max_part_length_fails(api_client, boto_client, bucket):
+def test_prepare_small_max_part_length_fails(api_client):
     contents = b'File contents!\n'
 
     with pytest.raises(ValueError, match='max_part_length must be greater than 5MB'):
@@ -75,7 +76,7 @@ def test_prepare_small_max_part_length_fails(api_client, boto_client, bucket):
 
 
 @pytest.mark.parametrize('content_size', [10, mb(10), mb(100)], ids=['10B', '10MB', '10GB'])
-def test_full_upload_flow(api_client, boto_client, bucket, content_size):
+def test_full_upload_flow(api_client, content_size):
     # Initialize the multipart upload
     resp = api_client.post(
         '/api/joist/multipart-upload-prepare/',
@@ -106,5 +107,4 @@ def test_full_upload_flow(api_client, boto_client, bucket, content_size):
     assert resp.status_code == 201
 
     # Verify the object is present in the store
-    resp = boto_client.get_object(Bucket=bucket, Key=multipart_initialization['object_key'])
-    assert resp['Body'].read(10) == b'ten bytes\n'
+    assert default_storage.exists(multipart_initialization['object_key'])

@@ -1,10 +1,11 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    # mypy_boto3_s3 may not be installed in downstream projects
+    import mypy_boto3_s3 as s3
+
     # S3Boto3Storage requires Django settings to be available at import time
     from storages.backends.s3boto3 import S3Boto3Storage
-
-import mypy_boto3_s3 as s3
 
 from ._multipart import MultipartFinalization, MultipartManager
 
