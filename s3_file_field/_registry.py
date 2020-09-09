@@ -16,19 +16,20 @@ _storages: 'StoragesDictType' = WeakValueDictionary()
 
 
 def register_field(field: 'S3FileField') -> None:
-    field_label = str(field)
-    if field_label in _fields:
-        raise Exception(f'Duplicate S3FileField declaration: {field_label}')
-    _fields[field_label] = field
+    field_id = field.id
+    if field_id in _fields and not (_fields[field_id] is field):
+        # This might be called multiple times, but it should always be consistent
+        raise Exception(f'Cannot overwrite existing S3FileField declaration for {field_id}')
+    _fields[field_id] = field
 
     storage = field.storage
     storage_label = id(storage)
     _storages[storage_label] = storage
 
 
-def get_field(field_name: str) -> 'S3FileField':
+def get_field(field_id: str) -> 'S3FileField':
     """Get an S3FileFields by its __str__."""
-    return _fields[field_name]
+    return _fields[field_id]
 
 
 def iter_fields() -> Iterator['S3FileField']:
