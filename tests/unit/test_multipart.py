@@ -1,43 +1,38 @@
-from typing import TYPE_CHECKING
-
+from django.core.files.storage import FileSystemStorage, Storage
 from minio_storage.storage import MinioStorage
 import pytest
+from storages.backends.s3boto3 import S3Boto3Storage
 
-if TYPE_CHECKING:
-    # S3Boto3Storage requires Django settings to be available at import time
-    from storages.backends.s3boto3 import S3Boto3Storage
-
-    # TODO: s3_file_field is not importable without available Django settings
-    from s3_file_field._multipart import MultipartManager
-    from s3_file_field._multipart_boto3 import Boto3MultipartManager
-    from s3_file_field._multipart_minio import MinioMultipartManager
+from s3_file_field._multipart import MultipartFinalization, MultipartManager, PartFinalization
+from s3_file_field._multipart_boto3 import Boto3MultipartManager
+from s3_file_field._multipart_minio import MinioMultipartManager
 
 
 @pytest.fixture
-def boto3_multipart_manager(s3boto3_storage: 'S3Boto3Storage') -> 'Boto3MultipartManager':
-    # TODO: s3_file_field is not importable without available Django settings
-    from s3_file_field._multipart_boto3 import Boto3MultipartManager
-
+def boto3_multipart_manager(s3boto3_storage: S3Boto3Storage) -> Boto3MultipartManager:
     return Boto3MultipartManager(s3boto3_storage)
 
 
 @pytest.fixture
-def minio_multipart_manager(minio_storage: MinioStorage) -> 'MinioMultipartManager':
-    # TODO: s3_file_field is not importable without available Django settings
-    from s3_file_field._multipart_minio import MinioMultipartManager
-
+def minio_multipart_manager(minio_storage: MinioStorage) -> MinioMultipartManager:
     return MinioMultipartManager(minio_storage)
 
 
 @pytest.fixture
-def multipart_manager(storage: MinioStorage) -> 'MultipartManager':
-    # TODO: s3_file_field is not importable without available Django settings
-    from s3_file_field._multipart import MultipartManager
-
+def multipart_manager(storage: Storage) -> MultipartManager:
     return MultipartManager.from_storage(storage)
 
 
-def test_multipart_manager_initialize_upload(multipart_manager: 'MultipartManager'):
+def test_multipart_manager_supported_storage(storage: Storage):
+    assert MultipartManager.supported_storage(storage)
+
+
+def test_multipart_manager_supported_storage_unsupported():
+    storage = FileSystemStorage()
+    assert not MultipartManager.supported_storage(storage)
+
+
+def test_multipart_manager_initialize_upload(multipart_manager: MultipartManager):
     initialization = multipart_manager.initialize_upload(
         'new-object',
         100,
@@ -47,10 +42,7 @@ def test_multipart_manager_initialize_upload(multipart_manager: 'MultipartManage
 
 
 @pytest.mark.xfail
-def test_multipart_manager_finalize_upload(multipart_manager: 'MultipartManager'):
-    # TODO: s3_file_field is not importable without available Django settings
-    from s3_file_field._multipart import MultipartFinalization, PartFinalization
-
+def test_multipart_manager_finalize_upload(multipart_manager: MultipartManager):
     multipart_manager.finalize_upload(
         MultipartFinalization(
             object_key='new-object',
@@ -71,16 +63,16 @@ def test_multipart_manager_finalize_upload(multipart_manager: 'MultipartManager'
     )
 
 
-def test_multipart_manager_test_upload(multipart_manager: 'MultipartManager'):
+def test_multipart_manager_test_upload(multipart_manager: MultipartManager):
     multipart_manager.test_upload()
 
 
-def test_multipart_manager_create_upload_id(multipart_manager: 'MultipartManager'):
+def test_multipart_manager_create_upload_id(multipart_manager: MultipartManager):
     upload_id = multipart_manager._create_upload_id('new-object')
     assert isinstance(upload_id, str)
 
 
-def test_multipart_manager_generate_presigned_part_url(multipart_manager: 'MultipartManager'):
+def test_multipart_manager_generate_presigned_part_url(multipart_manager: MultipartManager):
     upload_url = multipart_manager._generate_presigned_part_url(
         'new-object', 'fake-upload-id', 1, 100
     )
@@ -90,7 +82,7 @@ def test_multipart_manager_generate_presigned_part_url(multipart_manager: 'Multi
 
 @pytest.mark.skip
 def test_multipart_manager_generate_presigned_part_url_content_length(
-    multipart_manager: 'MultipartManager',
+    multipart_manager: MultipartManager,
 ):
     # TODO: make this work for Minio
     upload_url = multipart_manager._generate_presigned_part_url(
@@ -137,9 +129,6 @@ def gb(bytes_size: int) -> int:
 def test_multipart_manager_iter_part_sizes(
     file_size, requested_part_size, initial_part_size, final_part_size, part_count
 ):
-    # TODO: s3_file_field is not importable without available Django settings
-    from s3_file_field._multipart import MultipartManager
-
     part_nums, part_sizes = zip(*MultipartManager._iter_part_sizes(file_size, requested_part_size))
 
     # TOOD: zip(*) returns a tuple, but semantically this should be a list

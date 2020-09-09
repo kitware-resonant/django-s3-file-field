@@ -7,8 +7,6 @@ from typing import Iterator, List, Tuple
 
 from django.core.files.storage import Storage
 
-from .constants import StorageProvider, _get_storage_provider
-
 
 @dataclass
 class PartInitialization:
@@ -72,21 +70,37 @@ class MultipartManager:
 
     @classmethod
     def from_storage(cls, storage: Storage) -> MultipartManager:
-        # TODO: Guard these imports to allow optional dependencies
-        from ._multipart_boto3 import Boto3MultipartManager
-        from ._multipart_minio import MinioMultipartManager
+        try:
+            from storages.backends.s3boto3 import S3Boto3Storage
+        except ImportError:
+            pass
+        else:
+            if isinstance(storage, S3Boto3Storage):
+                from ._multipart_boto3 import Boto3MultipartManager
 
-        storage_provider = _get_storage_provider(storage)
+                return Boto3MultipartManager(storage)
 
         try:
-            multipart_class = {
-                StorageProvider.AWS: Boto3MultipartManager,
-                StorageProvider.MINIO: MinioMultipartManager,
-            }[storage_provider]
-        except KeyError:
-            raise Exception('Unsupported storage provider.')
+            from minio_storage.storage import MinioStorage
+        except ImportError:
+            pass
+        else:
+            if isinstance(storage, MinioStorage):
+                from ._multipart_minio import MinioMultipartManager
 
-        return multipart_class(storage)
+                return MinioMultipartManager(storage)
+
+        # TODO: Raise a more specific exception
+        raise Exception('Unsupported storage provider.')
+
+    @classmethod
+    def supported_storage(cls, storage: Storage) -> bool:
+        try:
+            cls.from_storage(storage)
+        except Exception:
+            return False
+        else:
+            return True
 
     # The AWS default expiration of 1 hour may not be enough for large uploads to complete
     _url_expiration = timedelta(hours=24)

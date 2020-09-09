@@ -4,8 +4,8 @@ from uuid import uuid4
 from django.db.models.fields.files import FieldFile, FileField
 from django.forms import Field as FormField
 
+from ._multipart import MultipartManager
 from ._registry import register_field
-from .constants import supported_storage
 from .forms import S3FormFileField
 from .widgets import S3FakeFile
 
@@ -67,7 +67,7 @@ class S3FileField(FileField):
 
         This is an instance of "form_class", with a widget of "widget".
         """
-        if supported_storage(self.storage):
+        if MultipartManager.supported_storage(self.storage):
             # Use S3FormFileField as a default, instead of forms.FileField from the superclass
             kwargs.setdefault('form_class', S3FormFileField)
         return super().formfield(**kwargs)

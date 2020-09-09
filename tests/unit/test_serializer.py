@@ -1,17 +1,16 @@
-from typing import TYPE_CHECKING
-
 import pytest
 
-if TYPE_CHECKING:
-    # s3_file_field requires Django settings to be available at import time
-    from s3_file_field._multipart import MultipartInitialization
+from s3_file_field._multipart import (
+    MultipartFinalization,
+    MultipartInitialization,
+    PartFinalization,
+    PartInitialization,
+)
+from s3_file_field.views import MultipartFinalizationSerializer, MultipartInitializationSerializer
 
 
 @pytest.fixture
-def multipart_initialization() -> 'MultipartInitialization':
-    # s3_file_field requires Django settings to be available at import time
-    from s3_file_field._multipart import MultipartInitialization, PartInitialization
-
+def multipart_initialization() -> MultipartInitialization:
     return MultipartInitialization(
         object_key='test-object-key',
         upload_id='test-upload-id',
@@ -31,20 +30,13 @@ def multipart_initialization() -> 'MultipartInitialization':
 
 
 def test_multipart_initialization_serialization(
-    multipart_initialization: 'MultipartInitialization',
+    multipart_initialization: MultipartInitialization,
 ):
-    # s3_file_field requires Django settings to be available at import time
-    from s3_file_field.views import MultipartInitializationSerializer
-
     serializer = MultipartInitializationSerializer(multipart_initialization)
     assert isinstance(serializer.data, dict)
 
 
 def test_multipart_finalization_deserialization():
-    # s3_file_field requires Django settings to be available at import time
-    from s3_file_field._multipart import MultipartFinalization, PartFinalization
-    from s3_file_field.views import MultipartFinalizationSerializer
-
     serializer = MultipartFinalizationSerializer(
         data={
             'object_key': 'test-object-key',

@@ -7,7 +7,6 @@ from django.core.checks import CheckMessage, Error, register
 
 from ._multipart import MultipartManager
 from ._registry import iter_storages
-from .constants import supported_storage
 
 # TODO: this should only add a handler when running the check command
 logger = logging.getLogger(__name__)
@@ -26,7 +25,11 @@ def check_supported_storage_provider(
 ) -> List[CheckMessage]:
     # TODO: call this from S3FileField.check:
     # https://docs.djangoproject.com/en/3.1/topics/checks/#field-model-manager-and-database-checks
-    return [] if all(supported_storage(storage) for storage in iter_storages()) else [E001]
+    return (
+        []
+        if all(MultipartManager.supported_storage(storage) for storage in iter_storages())
+        else [E001]
+    )
 
 
 @register()

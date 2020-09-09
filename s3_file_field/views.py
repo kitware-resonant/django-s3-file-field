@@ -1,5 +1,7 @@
+from pathlib import PurePosixPath
 import uuid
 
+from django.conf import settings
 from django.core.files.storage import default_storage
 from django.http.response import HttpResponseBase
 from rest_framework import serializers
@@ -8,7 +10,7 @@ from rest_framework.parsers import JSONParser
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from . import _multipart, constants
+from . import _multipart
 from ._multipart import MultipartFinalization, PartFinalization
 
 
@@ -55,7 +57,8 @@ def multipart_upload_prepare(request: Request) -> HttpResponseBase:
     content_length = request.data['content_length']
     max_part_length = request.data.get('max_part_length')
 
-    object_key = str(constants.S3FF_UPLOAD_PREFIX / str(uuid.uuid4()) / name)
+    s3ff_upload_prefix = PurePosixPath(getattr(settings, 'S3FF_UPLOAD_PREFIX', ''))
+    object_key = str(s3ff_upload_prefix / str(uuid.uuid4()) / name)
 
     multipart_initialization = _multipart.MultipartManager.from_storage(
         default_storage
@@ -83,7 +86,9 @@ def multipart_upload_finalize(request: Request) -> HttpResponseBase:
 
     # check if upload_prepare signed this less than max age ago
     # tsigner = TimestampSigner()
-    # if object_key != tsigner.unsign(upload_sig, max_age=constants.S3FF_UPLOAD_DURATION):
+    # if object_key != tsigner.unsign(
+    #     upload_sig, max_age=int(MultipartManager._url_expiration.total_seconds())
+    # ):
     #     raise BadSignature()
 
     _multipart.MultipartManager.from_storage(default_storage).finalize_upload(finalization)
