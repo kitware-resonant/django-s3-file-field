@@ -1,11 +1,20 @@
 from django.core.files.storage import FileSystemStorage, Storage
 from minio_storage.storage import MinioStorage
 import pytest
+import requests
 from storages.backends.s3boto3 import S3Boto3Storage
 
 from s3_file_field._multipart import MultipartFinalization, MultipartManager, PartFinalization
 from s3_file_field._multipart_boto3 import Boto3MultipartManager
 from s3_file_field._multipart_minio import MinioMultipartManager
+
+
+def mb(bytes_size: int) -> int:
+    return bytes_size * 2 ** 20
+
+
+def gb(bytes_size: int) -> int:
+    return bytes_size * 2 ** 30
 
 
 @pytest.fixture
@@ -41,26 +50,27 @@ def test_multipart_manager_initialize_upload(multipart_manager: MultipartManager
     assert initialization
 
 
-@pytest.mark.xfail
-def test_multipart_manager_finalize_upload(multipart_manager: MultipartManager):
-    multipart_manager.finalize_upload(
-        MultipartFinalization(
-            object_key='new-object',
-            upload_id='fake-upload-id',
-            parts=[
-                PartFinalization(
-                    part_number=1,
-                    size=10_000,
-                    etag='fake-etag-1',
-                ),
-                PartFinalization(
-                    part_number=2,
-                    size=500,
-                    etag='fake-etag-2',
-                ),
-            ],
-        )
+@pytest.mark.parametrize('file_size', [10, mb(10), mb(25)], ids=['10B', '10MB', '25MB'])
+def test_multipart_manager_finalize_upload(multipart_manager: MultipartManager, file_size: int):
+    initialization = multipart_manager.initialize_upload(
+        'new-object',
+        file_size,
     )
+
+    finalization = MultipartFinalization(
+        object_key=initialization.object_key, upload_id=initialization.upload_id, parts=[]
+    )
+
+    for part in initialization.parts:
+        resp = requests.put(part.upload_url, data=b'a' * part.size)
+        resp.raise_for_status()
+        finalization.parts.append(
+            PartFinalization(
+                part_number=part.part_number, size=part.size, etag=resp.headers['ETag']
+            )
+        )
+
+    multipart_manager.finalize_upload(finalization)
 
 
 def test_multipart_manager_test_upload(multipart_manager: MultipartManager):
@@ -90,14 +100,6 @@ def test_multipart_manager_generate_presigned_part_url_content_length(
     )
     # Ensure Content-Length is a signed header
     assert 'content-length' in upload_url
-
-
-def mb(bytes_size: int) -> int:
-    return bytes_size * 2 ** 20
-
-
-def gb(bytes_size: int) -> int:
-    return bytes_size * 2 ** 30
 
 
 @pytest.mark.parametrize(
