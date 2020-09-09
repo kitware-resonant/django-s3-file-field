@@ -9,7 +9,7 @@ from django.urls import reverse
 
 @functools.lru_cache(maxsize=1)
 def get_base_url() -> str:
-    prepare_url = reverse('s3_file_field:upload-prepare')
+    prepare_url = reverse('s3_file_field:upload-initialize')
     finalize_url = reverse('s3_file_field:upload-finalize')
     # Use posixpath to always parse URL paths with forward slashes
     return posixpath.commonpath([prepare_url, finalize_url])
