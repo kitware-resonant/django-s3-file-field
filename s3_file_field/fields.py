@@ -50,12 +50,23 @@ class S3FileField(FileField):
         kwargs.setdefault('upload_to', self.uuid_prefix_filename)
         super().__init__(*args, **kwargs)
 
+    @property
+    def id(self) -> str:
+        """Return the unique identifier for this field instance."""
+        if not hasattr(self, 'model'):
+            # TODO: raise a more specific exception
+            raise Exception('contribute_to_class has not been called yet on this field.')
+        return str(self)
+
     def contribute_to_class(self, cls, name, **kwargs):
         # This is executed when the Field is formally added to its containing class.
         # As a side effect, self.name is set and self.__str__ becomes usable as a unique
         # identifier for the Field.
         super().contribute_to_class(cls, name, **kwargs)
-        register_field(self)
+        if cls.__module__ != '__fake__':
+            # Django's makemigrations iteratively creates fake model instances.
+            # To avoid registration collisions, don't register these.
+            register_field(self)
 
     @staticmethod
     def uuid_prefix_filename(instance: Any, filename: str):
