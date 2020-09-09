@@ -14,7 +14,7 @@ def mb(bytes_size: int) -> int:
 
 def test_prepare(api_client):
     resp = api_client.post(
-        '/api/joist/multipart-upload-prepare/',
+        '/api/joist/upload-initialize/',
         json.dumps({'name': 'test.txt', 'content_length': 10}),
         content_type='application/json',
     )
@@ -28,7 +28,7 @@ def test_prepare(api_client):
 
 def test_prepare_two_parts(api_client):
     resp = api_client.post(
-        '/api/joist/multipart-upload-prepare/',
+        '/api/joist/upload-initialize/',
         json.dumps({'name': 'test.txt', 'content_length': mb(10), 'max_part_length': mb(5)}),
         content_type='application/json',
     )
@@ -46,7 +46,7 @@ def test_prepare_two_parts(api_client):
 
 def test_prepare_three_parts(api_client):
     resp = api_client.post(
-        '/api/joist/multipart-upload-prepare/',
+        '/api/joist/upload-initialize/',
         json.dumps({'name': 'test.txt', 'content_length': mb(20), 'max_part_length': mb(7)}),
         content_type='application/json',
     )
@@ -68,7 +68,7 @@ def test_prepare_small_max_part_length_fails(api_client):
 
     with pytest.raises(ValueError, match='max_part_length must be greater than 5MB'):
         api_client.post(
-            '/api/joist/multipart-upload-prepare/',
+            '/api/joist/upload-initialize/',
             json.dumps(
                 {'name': 'test.txt', 'content_length': len(contents), 'max_part_length': 4_999_999}
             ),
@@ -80,15 +80,15 @@ def test_prepare_small_max_part_length_fails(api_client):
 def test_full_upload_flow(api_client: APIClient, file_size: int):
     # Initialize the multipart upload
     resp = api_client.post(
-        '/api/joist/multipart-upload-prepare/',
+        '/api/joist/upload-initialize/',
         json.dumps({'name': 'test.txt', 'content_length': file_size, 'max_part_length': mb(5)}),
         content_type='application/json',
     )
     assert resp.status_code == 200
-    multipart_initialization = resp.data
+    initialization = resp.data
 
     # Perform the upload
-    for part in multipart_initialization['parts']:
+    for part in initialization['parts']:
         # Ensure the test is sane, with multiple-of-10 part sizes
         assert part['size'] % 10 == 0
         part_content = b'ten bytes\n' * int(part['size'] / 10)
@@ -101,11 +101,11 @@ def test_full_upload_flow(api_client: APIClient, file_size: int):
 
     # Finalize the upload
     resp = api_client.post(
-        '/api/joist/multipart-upload-finalize/',
-        json.dumps(multipart_initialization),
+        '/api/joist/upload-finalize/',
+        json.dumps(initialization),
         content_type='application/json',
     )
     assert resp.status_code == 201
 
     # Verify the object is present in the store
-    assert default_storage.exists(multipart_initialization['object_key'])
+    assert default_storage.exists(initialization['object_key'])

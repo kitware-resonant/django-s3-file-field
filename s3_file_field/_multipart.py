@@ -16,7 +16,7 @@ class PartInitialization:
 
 
 @dataclass
-class MultipartInitialization:
+class UploadInitialization:
     object_key: str
     upload_id: str
     parts: List[PartInitialization]
@@ -30,7 +30,7 @@ class PartFinalization:
 
 
 @dataclass
-class MultipartFinalization:
+class UploadFinalization:
     object_key: str
     upload_id: str
     parts: List[PartFinalization]
@@ -41,7 +41,7 @@ class MultipartManager:
 
     def initialize_upload(
         self, object_key: str, file_size: int, part_size: int = None
-    ) -> MultipartInitialization:
+    ) -> UploadInitialization:
         upload_id = self._create_upload_id(object_key)
         parts = [
             PartInitialization(
@@ -53,9 +53,9 @@ class MultipartManager:
             )
             for part_number, part_size in self._iter_part_sizes(file_size, part_size)
         ]
-        return MultipartInitialization(object_key=object_key, upload_id=upload_id, parts=parts)
+        return UploadInitialization(object_key=object_key, upload_id=upload_id, parts=parts)
 
-    def finalize_upload(self, finalization: MultipartFinalization) -> None:
+    def finalize_upload(self, finalization: UploadFinalization) -> None:
         raise NotImplementedError
 
     def test_upload(self):
