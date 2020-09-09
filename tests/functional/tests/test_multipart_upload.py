@@ -3,6 +3,7 @@ import json
 from django.core.files.storage import default_storage
 import pytest
 import requests
+from rest_framework.test import APIClient
 
 from .fuzzy import URL_RE, UUID_RE, Re
 
@@ -75,12 +76,12 @@ def test_prepare_small_max_part_length_fails(api_client):
         )
 
 
-@pytest.mark.parametrize('content_size', [10, mb(10), mb(100)], ids=['10B', '10MB', '10GB'])
-def test_full_upload_flow(api_client, content_size):
+@pytest.mark.parametrize('file_size', [10, mb(10), mb(25)], ids=['10B', '10MB', '25MB'])
+def test_full_upload_flow(api_client: APIClient, file_size: int):
     # Initialize the multipart upload
     resp = api_client.post(
         '/api/joist/multipart-upload-prepare/',
-        json.dumps({'name': 'test.txt', 'content_length': content_size, 'max_part_length': mb(5)}),
+        json.dumps({'name': 'test.txt', 'content_length': file_size, 'max_part_length': mb(5)}),
         content_type='application/json',
     )
     assert resp.status_code == 200
@@ -92,7 +93,7 @@ def test_full_upload_flow(api_client, content_size):
         assert part['size'] % 10 == 0
         part_content = b'ten bytes\n' * int(part['size'] / 10)
         resp = requests.put(part['upload_url'], data=part_content)
-        assert resp.status_code == 200
+        resp.raise_for_status()
 
         # Modify the part to transform it from an initialization to a finalization
         del part['upload_url']
