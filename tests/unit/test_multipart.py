@@ -50,7 +50,7 @@ def test_multipart_manager_initialize_upload(multipart_manager: MultipartManager
     assert initialization
 
 
-@pytest.mark.parametrize('file_size', [10, mb(10), mb(25)], ids=['10B', '10MB', '25MB'])
+@pytest.mark.parametrize('file_size', [10, mb(10), mb(12)], ids=['10B', '10MB', '12MB'])
 def test_multipart_manager_finalize_upload(multipart_manager: MultipartManager, file_size: int):
     initialization = multipart_manager.initialize_upload(
         'new-object',

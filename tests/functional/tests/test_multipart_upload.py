@@ -1,5 +1,3 @@
-import json
-
 from django.core.files.storage import default_storage
 import pytest
 import requests
@@ -15,8 +13,8 @@ def mb(bytes_size: int) -> int:
 def test_prepare(api_client):
     resp = api_client.post(
         '/api/joist/upload-initialize/',
-        json.dumps({'name': 'test.txt', 'content_length': 10}),
-        content_type='application/json',
+        {'file_name': 'test.txt', 'file_size': 10},
+        format='json',
     )
     assert resp.status_code == 200
     assert resp.data == {
@@ -29,8 +27,8 @@ def test_prepare(api_client):
 def test_prepare_two_parts(api_client):
     resp = api_client.post(
         '/api/joist/upload-initialize/',
-        json.dumps({'name': 'test.txt', 'content_length': mb(10), 'max_part_length': mb(5)}),
-        content_type='application/json',
+        {'file_name': 'test.txt', 'file_size': mb(10)},
+        format='json',
     )
     assert resp.status_code == 200
     assert resp.data == {
@@ -47,52 +45,35 @@ def test_prepare_two_parts(api_client):
 def test_prepare_three_parts(api_client):
     resp = api_client.post(
         '/api/joist/upload-initialize/',
-        json.dumps({'name': 'test.txt', 'content_length': mb(20), 'max_part_length': mb(7)}),
-        content_type='application/json',
+        {'file_name': 'test.txt', 'file_size': mb(12)},
+        format='json',
     )
     assert resp.status_code == 200
     assert resp.data == {
         'object_key': Re(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt'),
         'upload_id': UUID_RE,
         'parts': [
-            {'part_number': 1, 'size': mb(7), 'upload_url': URL_RE},
-            {'part_number': 2, 'size': mb(7), 'upload_url': URL_RE},
-            {'part_number': 3, 'size': mb(6), 'upload_url': URL_RE},
+            {'part_number': 1, 'size': mb(5), 'upload_url': URL_RE},
+            {'part_number': 2, 'size': mb(5), 'upload_url': URL_RE},
+            {'part_number': 3, 'size': mb(2), 'upload_url': URL_RE},
         ],
     }
 
 
-@pytest.mark.skip
-def test_prepare_small_max_part_length_fails(api_client):
-    contents = b'File contents!\n'
-
-    with pytest.raises(ValueError, match='max_part_length must be greater than 5MB'):
-        api_client.post(
-            '/api/joist/upload-initialize/',
-            json.dumps(
-                {'name': 'test.txt', 'content_length': len(contents), 'max_part_length': 4_999_999}
-            ),
-            content_type='application/json',
-        )
-
-
-@pytest.mark.parametrize('file_size', [10, mb(10), mb(25)], ids=['10B', '10MB', '25MB'])
+@pytest.mark.parametrize('file_size', [10, mb(10), mb(12)], ids=['10B', '10MB', '12MB'])
 def test_full_upload_flow(api_client: APIClient, file_size: int):
     # Initialize the multipart upload
     resp = api_client.post(
         '/api/joist/upload-initialize/',
-        json.dumps({'name': 'test.txt', 'content_length': file_size, 'max_part_length': mb(5)}),
-        content_type='application/json',
+        {'file_name': 'test.txt', 'file_size': file_size},
+        format='json',
     )
     assert resp.status_code == 200
     initialization = resp.data
 
     # Perform the upload
     for part in initialization['parts']:
-        # Ensure the test is sane, with multiple-of-10 part sizes
-        assert part['size'] % 10 == 0
-        part_content = b'ten bytes\n' * int(part['size'] / 10)
-        resp = requests.put(part['upload_url'], data=part_content)
+        resp = requests.put(part['upload_url'], data=b'a' * part['size'])
         resp.raise_for_status()
 
         # Modify the part to transform it from an initialization to a finalization
@@ -102,8 +83,8 @@ def test_full_upload_flow(api_client: APIClient, file_size: int):
     # Finalize the upload
     resp = api_client.post(
         '/api/joist/upload-finalize/',
-        json.dumps(initialization),
-        content_type='application/json',
+        initialization,
+        format='json',
     )
     assert resp.status_code == 201
 

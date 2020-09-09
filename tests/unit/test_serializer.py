@@ -6,7 +6,11 @@ from s3_file_field._multipart import (
     UploadFinalization,
     UploadInitialization,
 )
-from s3_file_field.views import UploadFinalizationSerializer, UploadInitializationSerializer
+from s3_file_field.views import (
+    UploadFinalizationSerializer,
+    UploadInitializationSerializer,
+    UploadRequestSerializer,
+)
 
 
 @pytest.fixture
@@ -27,6 +31,18 @@ def initialization() -> UploadInitialization:
             ),
         ],
     )
+
+
+def test_upload_request_deserialization():
+    serializer = UploadRequestSerializer(
+        data={
+            'file_name': 'test-name.jpg',
+            'file_size': 15,
+        }
+    )
+    assert serializer.is_valid(raise_exception=True)
+    request = serializer.validated_data
+    assert isinstance(request, dict)
 
 
 def test_upload_initialization_serialization(
