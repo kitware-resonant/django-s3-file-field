@@ -1,5 +1,0 @@
-django
-django-storages
-django-minio-storage
-django-cors-headers
-django-dotenv

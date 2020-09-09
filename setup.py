@@ -4,6 +4,7 @@ import os
 import platform
 from subprocess import CalledProcessError, check_call
 import sys
+from typing import List, Tuple
 
 from setuptools import Command, find_packages, setup
 from setuptools.command.build_py import build_py
@@ -62,7 +63,7 @@ def update_package_data(distribution):
 class NPM(Command):
     description = 'install package.json dependencies using npm'
 
-    user_options = []
+    user_options: List[Tuple[str, str, str]] = []
 
     node_modules = os.path.join(node_root, 'node_modules')
 
