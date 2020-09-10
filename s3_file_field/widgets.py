@@ -42,17 +42,18 @@ class S3FakeFile:
 
 
 class S3FileInput(ClearableFileInput):
-    """widget to render the S3 File Input."""
-
-    template_name = 'joist/s3fileinput.html'
+    """Widget to render the S3 File Input."""
 
     class Media:
         js = ['joist/joist.js']
 
-    def get_context(self, name: str, value: str, attrs):
-        context = super().get_context(name, value, attrs)
-        context['widget'].update({'baseurl': get_base_url()})
-        return context
+    def get_context(self, *args, **kwargs):
+        # The base URL cannot be determined at the time the widget is instantiated
+        # (when S3FormFileField.widget_attrs is called).
+        # Additionally, because this method is called on a deep copy of the widget each
+        # time it's rendered, this assignment to an instance variable is not persisted.
+        self.attrs['data-s3fileinput'] = get_base_url()
+        return super().get_context(*args, **kwargs)
 
     def value_from_datadict(
         self, data: Dict[str, Any], files: Mapping[str, Iterable[Any]], name: str
@@ -68,7 +69,7 @@ class S3FileInput(ClearableFileInput):
         )
 
 
-class S3AdminFileInput(S3FileInput):
-    """widget used by the admin page."""
+class AdminS3FileInput(S3FileInput):
+    """Widget used by the admin page."""
 
-    template_name = 'joist/s3adminfileinput.html'
+    template_name = 'admin/widgets/clearable_file_input.html'

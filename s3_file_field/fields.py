@@ -81,4 +81,6 @@ class S3FileField(FileField):
         if MultipartManager.supported_storage(self.storage):
             # Use S3FormFileField as a default, instead of forms.FileField from the superclass
             kwargs.setdefault('form_class', S3FormFileField)
+            # Allow the form and widget to lookup this field instance later, using its id
+            kwargs.setdefault('model_field_id', self.id)
         return super().formfield(**kwargs)
