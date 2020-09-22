@@ -1,5 +1,5 @@
 import { DEFAULT_BASE_URL, EVENT_UPLOAD_COMPLETE, EVENT_UPLOAD_STARTED } from "./constants";
-import { uploadFile, UploadResult } from "./uploader";
+import { uploadFile, UploadResult } from "./client";
 
 function cssClass(clazz: string): string {
   return `s3fileinput-${clazz}`;
