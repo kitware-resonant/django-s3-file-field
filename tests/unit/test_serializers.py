@@ -36,6 +36,7 @@ def initialization() -> UploadInitialization:
 def test_upload_request_deserialization():
     serializer = UploadRequestSerializer(
         data={
+            'field_id': 'package.Class.field',
             'file_name': 'test-name.jpg',
             'file_size': 15,
         }
@@ -55,6 +56,7 @@ def test_upload_initialization_serialization(
 def test_upload_finalization_deserialization():
     serializer = UploadFinalizationSerializer(
         data={
+            'field_id': 'package.Class.field',
             'object_key': 'test-object-key',
             'upload_id': 'test-upload-id',
             'parts': [

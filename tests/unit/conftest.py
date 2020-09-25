@@ -1,13 +1,8 @@
-from typing import TYPE_CHECKING, Type, cast
+from typing import Type, cast
 
-from django.core.files.storage import Storage
+from django.core.files.storage import FileSystemStorage, Storage
 from django.db import models
-from minio_storage.storage import MinioStorage
 import pytest
-
-if TYPE_CHECKING:
-    # S3Boto3Storage requires Django settings to be available at import time
-    from storages.backends.s3boto3 import S3Boto3Storage
 
 from s3_file_field.fields import S3FileField
 
@@ -19,16 +14,6 @@ def pytest_configure():
     from django.conf import settings
 
     settings.configure()
-
-
-@pytest.fixture
-def s3boto3_storage() -> 'S3Boto3Storage':
-    return s3boto3_storage_factory()
-
-
-@pytest.fixture
-def minio_storage() -> MinioStorage:
-    return minio_storage_factory()
 
 
 @pytest.fixture(params=[s3boto3_storage_factory, minio_storage_factory], ids=['s3boto3', 'minio'])
@@ -45,12 +30,18 @@ def s3ff_class() -> Type[models.Model]:
             # Necessary since the class is defined outside of a real app
             app_label = 's3ff_test'
 
-        blob = S3FileField()
-        blob_2 = S3FileField()
+        blob_minio = S3FileField(storage=minio_storage_factory())
+        blob_s3 = S3FileField(storage=s3boto3_storage_factory())
+        blob_file = S3FileField(storage=FileSystemStorage())
 
     return Resource
 
 
+@pytest.fixture(params=['blob_minio', 'blob_s3'], ids=['minio', 's3boto3'])
+def s3ff_field(request, s3ff_class: Type[models.Model]) -> S3FileField:
+    return cast(S3FileField, s3ff_class._meta.get_field(request.param))
+
+
 @pytest.fixture
-def s3ff_field(s3ff_class: Type[models.Model]) -> S3FileField:
-    return cast(S3FileField, s3ff_class._meta.get_field('blob'))
+def s3ff_field_invalid(request, s3ff_class: Type[models.Model]) -> S3FileField:
+    return cast(S3FileField, s3ff_class._meta.get_field('blob_file'))

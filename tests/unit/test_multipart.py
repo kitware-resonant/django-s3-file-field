@@ -1,12 +1,8 @@
-from django.core.files.storage import FileSystemStorage, Storage
-from minio_storage.storage import MinioStorage
 import pytest
 import requests
-from storages.backends.s3boto3 import S3Boto3Storage
 
 from s3_file_field._multipart import MultipartManager, PartFinalization, UploadFinalization
-from s3_file_field._multipart_boto3 import Boto3MultipartManager
-from s3_file_field._multipart_minio import MinioMultipartManager
+from s3_file_field.fields import S3FileField
 
 
 def mb(bytes_size: int) -> int:
@@ -18,27 +14,16 @@ def gb(bytes_size: int) -> int:
 
 
 @pytest.fixture
-def boto3_multipart_manager(s3boto3_storage: S3Boto3Storage) -> Boto3MultipartManager:
-    return Boto3MultipartManager(s3boto3_storage)
+def multipart_manager(s3ff_field: S3FileField) -> MultipartManager:
+    return MultipartManager.from_field(s3ff_field)
 
 
-@pytest.fixture
-def minio_multipart_manager(minio_storage: MinioStorage) -> MinioMultipartManager:
-    return MinioMultipartManager(minio_storage)
+def test_multipart_manager_supported_field_storage(s3ff_field: S3FileField):
+    assert MultipartManager.supported_field_storage(s3ff_field)
 
 
-@pytest.fixture
-def multipart_manager(storage: Storage) -> MultipartManager:
-    return MultipartManager.from_storage(storage)
-
-
-def test_multipart_manager_supported_storage(storage: Storage):
-    assert MultipartManager.supported_storage(storage)
-
-
-def test_multipart_manager_supported_storage_unsupported():
-    storage = FileSystemStorage()
-    assert not MultipartManager.supported_storage(storage)
+def test_multipart_manager_supported_field_storage_unsupported(s3ff_field_invalid):
+    assert not MultipartManager.supported_field_storage(s3ff_field_invalid)
 
 
 def test_multipart_manager_initialize_upload(multipart_manager: MultipartManager):

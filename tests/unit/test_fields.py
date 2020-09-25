@@ -4,7 +4,7 @@ from s3_file_field.fields import S3FileField
 
 
 def test_field_id(s3ff_field: S3FileField):
-    assert s3ff_field.id == 's3ff_test.Resource.blob'
+    assert s3ff_field.id.startswith('s3ff_test.Resource.blob_')
 
 
 def test_field_id_premature():
