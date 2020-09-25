@@ -6,7 +6,7 @@ from django.apps import AppConfig
 from django.core.checks import CheckMessage, Error, register
 
 from ._multipart import MultipartManager
-from ._registry import iter_storages
+from ._registry import iter_fields
 
 # TODO: this should only add a handler when running the check command
 logger = logging.getLogger(__name__)
@@ -27,17 +27,17 @@ def check_supported_storage_provider(
     # https://docs.djangoproject.com/en/3.1/topics/checks/#field-model-manager-and-database-checks
     return (
         []
-        if all(MultipartManager.supported_storage(storage) for storage in iter_storages())
+        if all(MultipartManager.supported_field_storage(field) for field in iter_fields())
         else [E001]
     )
 
 
 @register()
 def test_bucket_access(app_configs: Optional[Iterable[AppConfig]], **kwargs) -> List[CheckMessage]:
-    for storage in iter_storages():
-        if not MultipartManager.supported_storage(storage):
+    for field in iter_fields():
+        if not MultipartManager.supported_field_storage(field):
             continue
-        multipart = MultipartManager.from_storage(storage)
+        multipart = MultipartManager.from_field(field)
         try:
             multipart.test_upload()
         except ConnectionError:

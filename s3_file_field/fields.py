@@ -78,7 +78,7 @@ class S3FileField(FileField):
 
         This is an instance of "form_class", with a widget of "widget".
         """
-        if MultipartManager.supported_storage(self.storage):
+        if MultipartManager.supported_field_storage(self):
             # Use S3FormFileField as a default, instead of forms.FileField from the superclass
             kwargs.setdefault('form_class', S3FormFileField)
             # Allow the form and widget to lookup this field instance later, using its id
