@@ -13,7 +13,7 @@ def mb(bytes_size: int) -> int:
 def test_prepare(api_client):
     resp = api_client.post(
         '/api/joist/upload-initialize/',
-        {'file_name': 'test.txt', 'file_size': 10},
+        {'field_id': 'blobs.Blob.resource', 'file_name': 'test.txt', 'file_size': 10},
         format='json',
     )
     assert resp.status_code == 200
@@ -27,7 +27,7 @@ def test_prepare(api_client):
 def test_prepare_two_parts(api_client):
     resp = api_client.post(
         '/api/joist/upload-initialize/',
-        {'file_name': 'test.txt', 'file_size': mb(10)},
+        {'field_id': 'blobs.Blob.resource', 'file_name': 'test.txt', 'file_size': mb(10)},
         format='json',
     )
     assert resp.status_code == 200
@@ -45,7 +45,7 @@ def test_prepare_two_parts(api_client):
 def test_prepare_three_parts(api_client):
     resp = api_client.post(
         '/api/joist/upload-initialize/',
-        {'file_name': 'test.txt', 'file_size': mb(12)},
+        {'field_id': 'blobs.Blob.resource', 'file_name': 'test.txt', 'file_size': mb(12)},
         format='json',
     )
     assert resp.status_code == 200
@@ -65,7 +65,7 @@ def test_full_upload_flow(api_client: APIClient, file_size: int):
     # Initialize the multipart upload
     resp = api_client.post(
         '/api/joist/upload-initialize/',
-        {'file_name': 'test.txt', 'file_size': file_size},
+        {'field_id': 'blobs.Blob.resource', 'file_name': 'test.txt', 'file_size': file_size},
         format='json',
     )
     assert resp.status_code == 200
@@ -79,6 +79,8 @@ def test_full_upload_flow(api_client: APIClient, file_size: int):
         # Modify the part to transform it from an initialization to a finalization
         del part['upload_url']
         part['etag'] = resp.headers['ETag']
+
+    initialization['field_id'] = 'blobs.Blob.resource'
 
     # Finalize the upload
     resp = api_client.post(
