@@ -5,7 +5,9 @@ from ._multipart import MultipartManager, UploadFinalization
 
 
 class MinioMultipartManager(MultipartManager):
-    def __init__(self, storage: MinioStorage):
+    def __init__(self, field: 'S3FileField'):
+        super().__init__(field)
+        storage: MinioStorage = field.storage
         self._client: minio.Minio = storage.client
         self._bucket_name: str = storage.bucket_name
         # To support MinioStorage's "base_url" functionality, an alternative client must be used

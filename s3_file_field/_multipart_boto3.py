@@ -11,7 +11,9 @@ from ._multipart import MultipartManager, UploadFinalization
 
 
 class Boto3MultipartManager(MultipartManager):
-    def __init__(self, storage: 'S3Boto3Storage'):
+    def __init__(self, field: 'S3FileField'):
+        super().__init__(field)
+        storage: 'S3Boto3Storage' = field.storage
         resource: s3.ServiceResource = storage.connection
         self._client: s3.Client = resource.meta.client
         self._bucket_name: str = storage.bucket_name

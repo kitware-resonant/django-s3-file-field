@@ -5,8 +5,6 @@ from datetime import timedelta
 import math
 from typing import Iterator, List, Tuple
 
-from django.core.files.storage import Storage
-
 
 @dataclass
 class PartInitialization:
@@ -39,6 +37,9 @@ class UploadFinalization:
 class MultipartManager:
     """A facade providing management of S3 multipart uploads to multiple Storages."""
 
+    def __init__(self, field: 'S3FileField'):
+        self.field = field
+
     def initialize_upload(
         self, object_key: str, file_size: int, part_size: int = None
     ) -> UploadInitialization:
@@ -69,34 +70,34 @@ class MultipartManager:
             raise
 
     @classmethod
-    def from_storage(cls, storage: Storage) -> MultipartManager:
+    def from_field(cls, field: 'S3FileField') -> MultipartManager:
         try:
             from storages.backends.s3boto3 import S3Boto3Storage
         except ImportError:
             pass
         else:
-            if isinstance(storage, S3Boto3Storage):
+            if isinstance(field.storage, S3Boto3Storage):
                 from ._multipart_boto3 import Boto3MultipartManager
 
-                return Boto3MultipartManager(storage)
+                return Boto3MultipartManager(field)
 
         try:
             from minio_storage.storage import MinioStorage
         except ImportError:
             pass
         else:
-            if isinstance(storage, MinioStorage):
+            if isinstance(field.storage, MinioStorage):
                 from ._multipart_minio import MinioMultipartManager
 
-                return MinioMultipartManager(storage)
+                return MinioMultipartManager(field)
 
         # TODO: Raise a more specific exception
         raise Exception('Unsupported storage provider.')
 
     @classmethod
-    def supported_storage(cls, storage: Storage) -> bool:
+    def supported_field_storage(cls, field: 'S3FileField') -> bool:
         try:
-            cls.from_storage(storage)
+            cls.from_field(field)
         except Exception:
             return False
         else:
