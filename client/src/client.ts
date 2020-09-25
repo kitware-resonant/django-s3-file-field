@@ -41,8 +41,8 @@ export interface UploadResult {
  * @param options the upload options
  * @returns MultipartResponse
  */
-async function initializeUpload(file: File, options: UploadOptions): Promise<MultipartInfo> {
-  const response = await axios.post(`${options.baseUrl}/upload-initialize/`, {'file_name': file.name, 'file_size': file.size});
+async function initializeUpload(file: File, fieldId: string, options: UploadOptions): Promise<MultipartInfo> {
+  const response = await axios.post(`${options.baseUrl}/upload-initialize/`, {'field_id': fieldId, 'file_name': file.name, 'file_size': file.size});
   return response.data;
 }
 
@@ -93,8 +93,9 @@ async function uploadParts(file: File, parts: PartInfo[]): Promise<UploadedPart[
  * @param parts the parts that were uploaded
  * @returns UploadResult
  */
-async function finalizeUpload(multipartInfo: MultipartInfo, parts: UploadedPart[], options: UploadOptions): Promise<undefined> {
+async function finalizeUpload(multipartInfo: MultipartInfo, parts: UploadedPart[], fieldId: string, options: UploadOptions): Promise<undefined> {
   await axios.post(`${options.baseUrl}/upload-finalize/`, {
+    field_id: fieldId,
     object_key: multipartInfo.object_key,
     upload_id: multipartInfo.upload_id,
     parts: parts,
@@ -108,11 +109,11 @@ async function finalizeUpload(multipartInfo: MultipartInfo, parts: UploadedPart[
  * @param file the file to upload
  * @param options the upload options
  */
-export async function uploadFile(file: File, options: UploadOptions): Promise<UploadResult> {
+export async function uploadFile(file: File, fieldId: string, options: UploadOptions): Promise<UploadResult> {
   // TODO most options are unused, but maintained for reverse compatibility
-  const multipartInfo = await initializeUpload(file, options);
+  const multipartInfo = await initializeUpload(file, fieldId, options);
   const parts = await uploadParts(file, multipartInfo.parts);
-  await finalizeUpload(multipartInfo, parts, options);
+  await finalizeUpload(multipartInfo, parts, fieldId, options);
   return {
     name: file.name,
     value: '',
