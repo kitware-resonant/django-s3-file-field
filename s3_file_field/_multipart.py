@@ -3,7 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import timedelta
 import math
-from typing import Iterator, List, Tuple
+from typing import TYPE_CHECKING, Iterator, List, Tuple
+
+if TYPE_CHECKING:
+    from .fields import S3FileField
 
 
 @dataclass

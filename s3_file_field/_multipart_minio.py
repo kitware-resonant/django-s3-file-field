@@ -1,3 +1,8 @@
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .fields import S3FileField
+
 import minio
 from minio_storage.storage import MinioStorage
 

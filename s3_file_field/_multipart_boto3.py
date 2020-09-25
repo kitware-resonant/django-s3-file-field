@@ -6,6 +6,7 @@ if TYPE_CHECKING:
 
     # S3Boto3Storage requires Django settings to be available at import time
     from storages.backends.s3boto3 import S3Boto3Storage
+    from .fields import S3FileField
 
 from ._multipart import MultipartManager, UploadFinalization
 
