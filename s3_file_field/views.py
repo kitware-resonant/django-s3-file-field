@@ -53,7 +53,7 @@ class UploadFinalizationSerializer(serializers.Serializer):
             PartFinalization(**part)
             for part in sorted(validated_data.pop('parts'), key=lambda part: part['part_number'])
         ]
-        validated_data.pop('field_id')
+        del validated_data['field_id']
         return UploadFinalization(parts=parts, **validated_data)
 
 
