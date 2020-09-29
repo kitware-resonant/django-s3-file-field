@@ -3,7 +3,6 @@ from typing import Dict
 import uuid
 
 from django.conf import settings
-from django.core.files.storage import default_storage
 from django.http.response import HttpResponseBase
 from rest_framework import serializers
 from rest_framework.decorators import api_view, parser_classes
@@ -11,11 +10,12 @@ from rest_framework.parsers import JSONParser
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from . import _multipart
+from . import _multipart, _registry
 from ._multipart import PartFinalization, UploadFinalization
 
 
 class UploadRequestSerializer(serializers.Serializer):
+    field_id = serializers.CharField()
     file_name = serializers.CharField(trim_whitespace=False)
     file_size = serializers.IntegerField(min_value=1)
     # part_size = serializers.IntegerField(min_value=1)
@@ -43,6 +43,7 @@ class PartFinalizationSerializer(serializers.Serializer):
 
 
 class UploadFinalizationSerializer(serializers.Serializer):
+    field_id = serializers.CharField()
     object_key = serializers.CharField(trim_whitespace=False)
     upload_id = serializers.CharField()
     parts = PartFinalizationSerializer(many=True, allow_empty=False)
@@ -52,6 +53,7 @@ class UploadFinalizationSerializer(serializers.Serializer):
             PartFinalization(**part)
             for part in sorted(validated_data.pop('parts'), key=lambda part: part['part_number'])
         ]
+        del validated_data['field_id']
         return UploadFinalization(parts=parts, **validated_data)
 
 
@@ -63,11 +65,12 @@ def upload_initialize(request: Request) -> HttpResponseBase:
     request_serializer = UploadRequestSerializer(data=request.data)
     request_serializer.is_valid(raise_exception=True)
     upload_request: Dict = request_serializer.validated_data
+    field = _registry.get_field(upload_request['field_id'])
 
     s3ff_upload_prefix = PurePosixPath(getattr(settings, 'S3FF_UPLOAD_PREFIX', ''))
     object_key = str(s3ff_upload_prefix / str(uuid.uuid4()) / upload_request['file_name'])
 
-    initialization = _multipart.MultipartManager.from_storage(default_storage).initialize_upload(
+    initialization = _multipart.MultipartManager.from_storage(field.storage).initialize_upload(
         object_key, upload_request['file_size']
     )
 
@@ -89,6 +92,7 @@ def upload_initialize(request: Request) -> HttpResponseBase:
 def upload_finalize(request: Request) -> HttpResponseBase:
     finalization_serializer = UploadFinalizationSerializer(data=request.data)
     finalization_serializer.is_valid(raise_exception=True)
+    field = _registry.get_field(finalization_serializer.validated_data['field_id'])
     finalization = finalization_serializer.save()
 
     # check if upload_prepare signed this less than max age ago
@@ -98,7 +102,7 @@ def upload_finalize(request: Request) -> HttpResponseBase:
     # ):
     #     raise BadSignature()
 
-    _multipart.MultipartManager.from_storage(default_storage).finalize_upload(finalization)
+    _multipart.MultipartManager.from_storage(field.storage).finalize_upload(finalization)
 
     # signals.s3_file_field_upload_finalize.send(
     #     sender=multipart_upload_finalize, name=name, object_key=object_key

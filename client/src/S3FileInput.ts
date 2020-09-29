@@ -42,6 +42,7 @@ export default class S3FileInput {
 
   private readonly baseUrl: string;
   private readonly autoUpload: boolean;
+  private readonly fieldId: string;
 
   constructor(input: HTMLInputElement, options: Partial<S3FileInputOptions> = {}) {
     this.input = input;
@@ -52,6 +53,7 @@ export default class S3FileInput {
       options.autoUpload != null
         ? options.autoUpload
         : this.input.dataset.autoUpload != null;
+    this.fieldId = this.input.dataset?.fieldId || ''; // TODO this should error out
 
     this.node = input.ownerDocument!.createElement("div");
     this.node.classList.add(cssClass("wrapper"));
@@ -148,7 +150,7 @@ export default class S3FileInput {
     });
     this.input.dispatchEvent(event);
 
-    return uploadFile(file, {
+    return uploadFile(file, this.fieldId, {
       baseUrl: this.baseUrl,
       onProgress: p => {
         progress.dataset.state = p.state;
