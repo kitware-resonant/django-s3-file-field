@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     # S3Boto3Storage requires Django settings to be available at import time
     from storages.backends.s3boto3 import S3Boto3Storage
 
-from ._multipart import MultipartManager, UploadFinalization
+from ._multipart import MultipartManager, UploadFinalizationRequest
 
 
 class Boto3MultipartManager(MultipartManager):
@@ -50,7 +50,7 @@ class Boto3MultipartManager(MultipartManager):
             ExpiresIn=int(self._url_expiration.total_seconds()),
         )
 
-    def finalize_upload(self, finalization: UploadFinalization) -> None:
+    def finalize_upload(self, finalization: UploadFinalizationRequest) -> None:
         # TODO: from
         # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.complete_multipart_upload
         # "Processing of a Complete Multipart Upload request could

@@ -9,31 +9,37 @@ from django.core.files.storage import Storage
 
 
 @dataclass
-class PartInitialization:
+class PartInitializationResponse:
     part_number: int
     size: int
     upload_url: str
 
 
 @dataclass
-class UploadInitialization:
+class UploadInitializationResponse:
     object_key: str
     upload_id: str
-    parts: List[PartInitialization]
+    parts: List[PartInitializationResponse]
 
 
 @dataclass
-class PartFinalization:
+class PartFinalizationRequest:
     part_number: int
     size: int
     etag: str
 
 
 @dataclass
-class UploadFinalization:
+class UploadFinalizationRequest:
     object_key: str
     upload_id: str
-    parts: List[PartFinalization]
+    parts: List[PartFinalizationRequest]
+
+
+@dataclass
+class UploadFinalizationResponse:
+    # TODO: this will be necessary for presigining finalization
+    pass
 
 
 class MultipartManager:
@@ -41,10 +47,10 @@ class MultipartManager:
 
     def initialize_upload(
         self, object_key: str, file_size: int, part_size: int = None
-    ) -> UploadInitialization:
+    ) -> UploadInitializationResponse:
         upload_id = self._create_upload_id(object_key)
         parts = [
-            PartInitialization(
+            PartInitializationResponse(
                 part_number=part_number,
                 size=part_size,
                 upload_url=self._generate_presigned_part_url(
@@ -53,9 +59,9 @@ class MultipartManager:
             )
             for part_number, part_size in self._iter_part_sizes(file_size, part_size)
         ]
-        return UploadInitialization(object_key=object_key, upload_id=upload_id, parts=parts)
+        return UploadInitializationResponse(object_key=object_key, upload_id=upload_id, parts=parts)
 
-    def finalize_upload(self, finalization: UploadFinalization) -> None:
+    def finalize_upload(self, finalization: UploadFinalizationRequest) -> None:
         raise NotImplementedError
 
     def test_upload(self):

@@ -1,7 +1,7 @@
 import minio
 from minio_storage.storage import MinioStorage
 
-from ._multipart import MultipartManager, UploadFinalization
+from ._multipart import MultipartManager, UploadFinalizationRequest
 
 
 class MinioMultipartManager(MultipartManager):
@@ -46,7 +46,7 @@ class MinioMultipartManager(MultipartManager):
             # }
         )
 
-    def finalize_upload(self, finalization: UploadFinalization) -> None:
+    def finalize_upload(self, finalization: UploadFinalizationRequest) -> None:
         uploaded_parts = {
             part.part_number: minio.definitions.UploadPart(
                 bucket_name=self._bucket_name,

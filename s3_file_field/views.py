@@ -8,50 +8,55 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from . import _multipart, _registry
-from ._multipart import PartFinalization, UploadFinalization
+from ._multipart import PartFinalizationRequest, UploadFinalizationRequest
 
 
-class UploadRequestSerializer(serializers.Serializer):
+class UploadInitializationRequestSerializer(serializers.Serializer):
     field_id = serializers.CharField()
     file_name = serializers.CharField(trim_whitespace=False)
     file_size = serializers.IntegerField(min_value=1)
     # part_size = serializers.IntegerField(min_value=1)
 
 
-class PartInitializationSerializer(serializers.Serializer):
+class PartInitializationResponseSerializer(serializers.Serializer):
     part_number = serializers.IntegerField(min_value=1)
     size = serializers.IntegerField(min_value=1)
     upload_url = serializers.URLField()
 
 
-class UploadInitializationSerializer(serializers.Serializer):
+class UploadInitializationResponseSerializer(serializers.Serializer):
     object_key = serializers.CharField(trim_whitespace=False)
     upload_id = serializers.CharField()
-    parts = PartInitializationSerializer(many=True, allow_empty=False)
+    parts = PartInitializationResponseSerializer(many=True, allow_empty=False)
 
 
-class PartFinalizationSerializer(serializers.Serializer):
+class PartFinalizationRequestSerializer(serializers.Serializer):
     part_number = serializers.IntegerField(min_value=1)
     size = serializers.IntegerField(min_value=1)
     etag = serializers.CharField()
 
-    def create(self, validated_data) -> PartFinalization:
-        return PartFinalization(**validated_data)
+    def create(self, validated_data) -> PartFinalizationRequest:
+        return PartFinalizationRequest(**validated_data)
 
 
-class UploadFinalizationSerializer(serializers.Serializer):
+class UploadFinalizationRequestSerializer(serializers.Serializer):
     field_id = serializers.CharField()
     object_key = serializers.CharField(trim_whitespace=False)
     upload_id = serializers.CharField()
-    parts = PartFinalizationSerializer(many=True, allow_empty=False)
+    parts = PartFinalizationRequestSerializer(many=True, allow_empty=False)
 
-    def create(self, validated_data) -> UploadFinalization:
+    def create(self, validated_data) -> UploadFinalizationRequest:
         parts = [
-            PartFinalization(**part)
+            PartFinalizationRequest(**part)
             for part in sorted(validated_data.pop('parts'), key=lambda part: part['part_number'])
         ]
         del validated_data['field_id']
-        return UploadFinalization(parts=parts, **validated_data)
+        return UploadFinalizationRequest(parts=parts, **validated_data)
+
+
+class UploadFinalizationResponseSerializer(serializers.Serializer):
+    # TODO: this will be necessary for presigining finalization
+    pass
 
 
 # @authentication_classes([TokenAuthentication])
@@ -59,7 +64,7 @@ class UploadFinalizationSerializer(serializers.Serializer):
 @api_view(['POST'])
 @parser_classes([JSONParser])
 def upload_initialize(request: Request) -> HttpResponseBase:
-    request_serializer = UploadRequestSerializer(data=request.data)
+    request_serializer = UploadInitializationRequestSerializer(data=request.data)
     request_serializer.is_valid(raise_exception=True)
     upload_request: Dict = request_serializer.validated_data
     field = _registry.get_field(upload_request['field_id'])
@@ -80,7 +85,7 @@ def upload_initialize(request: Request) -> HttpResponseBase:
     # signer = TimestampSigner()
     # sig = signer.sign(object_key)
 
-    initialization_serializer = UploadInitializationSerializer(initialization)
+    initialization_serializer = UploadInitializationResponseSerializer(initialization)
     return Response(initialization_serializer.data)
 
 
@@ -89,7 +94,7 @@ def upload_initialize(request: Request) -> HttpResponseBase:
 @api_view(['POST'])
 @parser_classes([JSONParser])
 def upload_finalize(request: Request) -> HttpResponseBase:
-    finalization_serializer = UploadFinalizationSerializer(data=request.data)
+    finalization_serializer = UploadFinalizationRequestSerializer(data=request.data)
     finalization_serializer.is_valid(raise_exception=True)
     field = _registry.get_field(finalization_serializer.validated_data['field_id'])
     finalization = finalization_serializer.save()

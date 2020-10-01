@@ -1,30 +1,30 @@
 import pytest
 
 from s3_file_field._multipart import (
-    PartFinalization,
-    PartInitialization,
-    UploadFinalization,
-    UploadInitialization,
+    PartFinalizationRequest,
+    PartInitializationResponse,
+    UploadFinalizationRequest,
+    UploadInitializationResponse,
 )
 from s3_file_field.views import (
-    UploadFinalizationSerializer,
-    UploadInitializationSerializer,
-    UploadRequestSerializer,
+    UploadFinalizationRequestSerializer,
+    UploadInitializationRequestSerializer,
+    UploadInitializationResponseSerializer,
 )
 
 
 @pytest.fixture
-def initialization() -> UploadInitialization:
-    return UploadInitialization(
+def initialization() -> UploadInitializationResponse:
+    return UploadInitializationResponse(
         object_key='test-object-key',
         upload_id='test-upload-id',
         parts=[
-            PartInitialization(
+            PartInitializationResponse(
                 part_number=1,
                 size=10_000,
                 upload_url='http://minio.test/test-bucket/1',
             ),
-            PartInitialization(
+            PartInitializationResponse(
                 part_number=2,
                 size=3_500,
                 upload_url='http://minio.test/test-bucket/2',
@@ -34,7 +34,7 @@ def initialization() -> UploadInitialization:
 
 
 def test_upload_request_deserialization():
-    serializer = UploadRequestSerializer(
+    serializer = UploadInitializationRequestSerializer(
         data={
             'field_id': 'package.Class.field',
             'file_name': 'test-name.jpg',
@@ -47,14 +47,14 @@ def test_upload_request_deserialization():
 
 
 def test_upload_initialization_serialization(
-    initialization: UploadInitialization,
+    initialization: UploadInitializationResponse,
 ):
-    serializer = UploadInitializationSerializer(initialization)
+    serializer = UploadInitializationResponseSerializer(initialization)
     assert isinstance(serializer.data, dict)
 
 
 def test_upload_finalization_deserialization():
-    serializer = UploadFinalizationSerializer(
+    serializer = UploadFinalizationRequestSerializer(
         data={
             'field_id': 'package.Class.field',
             'object_key': 'test-object-key',
@@ -68,5 +68,5 @@ def test_upload_finalization_deserialization():
 
     assert serializer.is_valid(raise_exception=True)
     finalization = serializer.save()
-    assert isinstance(finalization, UploadFinalization)
-    assert all(isinstance(part, PartFinalization) for part in finalization.parts)
+    assert isinstance(finalization, UploadFinalizationRequest)
+    assert all(isinstance(part, PartFinalizationRequest) for part in finalization.parts)
