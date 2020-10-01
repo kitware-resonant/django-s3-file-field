@@ -1,10 +1,9 @@
 from typing import Dict, Optional, Type, Union
 
 from django.contrib.admin.widgets import AdminFileWidget
-from django.core.signing import BadSignature, Signer
-from django.forms import FileField, ValidationError, Widget
+from django.forms import FileField, Widget
 
-from .widgets import AdminS3FileInput, S3FakeFile, S3FileInput
+from .widgets import AdminS3FileInput, S3FileInput
 
 
 class S3FormFileField(FileField):
