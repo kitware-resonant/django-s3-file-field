@@ -116,7 +116,12 @@ export async function uploadFile(file: File, fieldId: string, options: UploadOpt
   await finalizeUpload(multipartInfo, parts, fieldId, options);
   return {
     name: file.name,
-    value: '',
+    value: JSON.stringify({
+      name: multipartInfo.object_key,
+      size: file.size,
+      id: multipartInfo.object_key,
+      signature: '',
+    }),
     state: 'successful',
     msg: '',
   }
