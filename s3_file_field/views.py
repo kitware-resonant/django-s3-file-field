@@ -66,13 +66,10 @@ def upload_initialize(request: Request) -> HttpResponseBase:
     upload_request: Dict = request_serializer.validated_data
     field = _registry.get_field(upload_request['field_id'])
 
-    s3ff_upload_prefix = PurePosixPath(getattr(settings, 'S3FF_UPLOAD_PREFIX', ''))
     # TODO The first argument to generate_filename() is an instance of the model.
     # We do not and will never have an instance of the model during field upload.
     # Maybe we need a different generate method/upload_to with a different signature?
-    object_key = str(
-        s3ff_upload_prefix / field.generate_filename(None, upload_request['file_name'])
-    )
+    object_key = str(field.generate_filename(None, upload_request['file_name']))
 
     initialization = _multipart.MultipartManager.from_storage(field.storage).initialize_upload(
         object_key, upload_request['file_size']
