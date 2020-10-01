@@ -1,10 +1,9 @@
 from typing import Dict, Optional, Type, Union
 
 from django.contrib.admin.widgets import AdminFileWidget
-from django.core.signing import BadSignature, Signer
-from django.forms import FileField, ValidationError, Widget
+from django.forms import FileField, Widget
 
-from .widgets import AdminS3FileInput, S3FakeFile, S3FileInput
+from .widgets import AdminS3FileInput, S3FileInput
 
 
 class S3FormFileField(FileField):
@@ -50,15 +49,15 @@ class S3FormFileField(FileField):
         # It will be added at render-time by "S3FileInput.get_context".
         return attrs
 
-    def validate(self, value):
-        super().validate(value)
+    # def validate(self, value):
+    #     super().validate(value)
 
-        if isinstance(value, S3FakeFile):
-            # verify signature
-            signer = Signer()
-            try:
-                expected = signer.unsign(value.signature)
-                if value.name != expected:
-                    raise ValidationError('Signature tempering detected')
-            except BadSignature:
-                raise ValidationError('Signature tempering detected')
+    #     if isinstance(value, S3FakeFile):
+    #         # verify signature
+    #         signer = Signer()
+    #         try:
+    #             expected = signer.unsign(value.signature)
+    #             if value.name != expected:
+    #                 raise ValidationError('Signature tempering detected')
+    #         except BadSignature:
+    #             raise ValidationError('Signature tempering detected')
