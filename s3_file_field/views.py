@@ -1,7 +1,5 @@
-from pathlib import PurePosixPath
 from typing import Dict
 
-from django.conf import settings
 from django.http.response import HttpResponseBase
 from rest_framework import serializers
 from rest_framework.decorators import api_view, parser_classes
@@ -69,7 +67,7 @@ def upload_initialize(request: Request) -> HttpResponseBase:
     # TODO The first argument to generate_filename() is an instance of the model.
     # We do not and will never have an instance of the model during field upload.
     # Maybe we need a different generate method/upload_to with a different signature?
-    object_key = str(field.generate_filename(None, upload_request['file_name']))
+    object_key = field.generate_filename(None, upload_request['file_name'])
 
     initialization = _multipart.MultipartManager.from_storage(field.storage).initialize_upload(
         object_key, upload_request['file_size']
