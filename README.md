@@ -68,7 +68,6 @@ your configuration is correct, run:
 | Key                  | Default          | Description                                 |
 | -------------------  | ---------------- | ------------------------------------------- |
 | S3FF_UPLOAD_STS_ARN  | none             | ...                                         |
-| S3FF_UPLOAD_PREFIX   | none             | Prefix where files should be stored         |
 
 
 #### STS configuration
