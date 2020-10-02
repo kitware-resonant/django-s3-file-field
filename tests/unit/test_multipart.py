@@ -4,11 +4,7 @@ import pytest
 import requests
 from storages.backends.s3boto3 import S3Boto3Storage
 
-from s3_file_field._multipart import (
-    MultipartManager,
-    PartFinalizationRequest,
-    UploadFinalizationRequest,
-)
+from s3_file_field._multipart import MultipartManager, PartFinalization, UploadFinalization
 from s3_file_field._multipart_boto3 import Boto3MultipartManager
 from s3_file_field._multipart_minio import MinioMultipartManager
 
@@ -61,7 +57,7 @@ def test_multipart_manager_finalize_upload(multipart_manager: MultipartManager, 
         file_size,
     )
 
-    finalization = UploadFinalizationRequest(
+    finalization = UploadFinalization(
         object_key=initialization.object_key, upload_id=initialization.upload_id, parts=[]
     )
 
@@ -69,7 +65,7 @@ def test_multipart_manager_finalize_upload(multipart_manager: MultipartManager, 
         resp = requests.put(part.upload_url, data=b'a' * part.size)
         resp.raise_for_status()
         finalization.parts.append(
-            PartFinalizationRequest(
+            PartFinalization(
                 part_number=part.part_number, size=part.size, etag=resp.headers['ETag']
             )
         )

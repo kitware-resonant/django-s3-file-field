@@ -1,10 +1,10 @@
 import pytest
 
 from s3_file_field._multipart import (
-    PartFinalizationRequest,
-    PartInitializationResponse,
-    UploadFinalizationRequest,
-    UploadInitializationResponse,
+    InitializedPart,
+    InitializedUpload,
+    PartFinalization,
+    UploadFinalization,
 )
 from s3_file_field.views import (
     UploadFinalizationRequestSerializer,
@@ -14,17 +14,17 @@ from s3_file_field.views import (
 
 
 @pytest.fixture
-def initialization() -> UploadInitializationResponse:
-    return UploadInitializationResponse(
+def initialization() -> InitializedUpload:
+    return InitializedUpload(
         object_key='test-object-key',
         upload_id='test-upload-id',
         parts=[
-            PartInitializationResponse(
+            InitializedPart(
                 part_number=1,
                 size=10_000,
                 upload_url='http://minio.test/test-bucket/1',
             ),
-            PartInitializationResponse(
+            InitializedPart(
                 part_number=2,
                 size=3_500,
                 upload_url='http://minio.test/test-bucket/2',
@@ -47,7 +47,7 @@ def test_upload_request_deserialization():
 
 
 def test_upload_initialization_serialization(
-    initialization: UploadInitializationResponse,
+    initialization: InitializedUpload,
 ):
     serializer = UploadInitializationResponseSerializer(initialization)
     assert isinstance(serializer.data, dict)
@@ -68,5 +68,5 @@ def test_upload_finalization_deserialization():
 
     assert serializer.is_valid(raise_exception=True)
     finalization = serializer.save()
-    assert isinstance(finalization, UploadFinalizationRequest)
-    assert all(isinstance(part, PartFinalizationRequest) for part in finalization.parts)
+    assert isinstance(finalization, UploadFinalization)
+    assert all(isinstance(part, PartFinalization) for part in finalization.parts)

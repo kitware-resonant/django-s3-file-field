@@ -8,7 +8,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from . import _multipart, _registry
-from ._multipart import PartFinalizationRequest, UploadFinalizationRequest
+from ._multipart import PartFinalization, UploadFinalization
 
 
 class UploadInitializationRequestSerializer(serializers.Serializer):
@@ -35,8 +35,8 @@ class PartFinalizationRequestSerializer(serializers.Serializer):
     size = serializers.IntegerField(min_value=1)
     etag = serializers.CharField()
 
-    def create(self, validated_data) -> PartFinalizationRequest:
-        return PartFinalizationRequest(**validated_data)
+    def create(self, validated_data) -> PartFinalization:
+        return PartFinalization(**validated_data)
 
 
 class UploadFinalizationRequestSerializer(serializers.Serializer):
@@ -45,13 +45,13 @@ class UploadFinalizationRequestSerializer(serializers.Serializer):
     upload_id = serializers.CharField()
     parts = PartFinalizationRequestSerializer(many=True, allow_empty=False)
 
-    def create(self, validated_data) -> UploadFinalizationRequest:
+    def create(self, validated_data) -> UploadFinalization:
         parts = [
-            PartFinalizationRequest(**part)
+            PartFinalization(**part)
             for part in sorted(validated_data.pop('parts'), key=lambda part: part['part_number'])
         ]
         del validated_data['field_id']
-        return UploadFinalizationRequest(parts=parts, **validated_data)
+        return UploadFinalization(parts=parts, **validated_data)
 
 
 class UploadFinalizationResponseSerializer(serializers.Serializer):
