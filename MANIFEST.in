@@ -1,6 +1,5 @@
 prune .github
 prune client
-prune terraform
 prune example
 prune example-client
 prune tests
