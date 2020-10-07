@@ -1,30 +1,30 @@
 import pytest
 
 from s3_file_field._multipart import (
+    InitializedPart,
+    InitializedUpload,
     PartFinalization,
-    PartInitialization,
     UploadFinalization,
-    UploadInitialization,
 )
 from s3_file_field.views import (
-    UploadFinalizationSerializer,
-    UploadInitializationSerializer,
-    UploadRequestSerializer,
+    UploadFinalizationRequestSerializer,
+    UploadInitializationRequestSerializer,
+    UploadInitializationResponseSerializer,
 )
 
 
 @pytest.fixture
-def initialization() -> UploadInitialization:
-    return UploadInitialization(
+def initialization() -> InitializedUpload:
+    return InitializedUpload(
         object_key='test-object-key',
         upload_id='test-upload-id',
         parts=[
-            PartInitialization(
+            InitializedPart(
                 part_number=1,
                 size=10_000,
                 upload_url='http://minio.test/test-bucket/1',
             ),
-            PartInitialization(
+            InitializedPart(
                 part_number=2,
                 size=3_500,
                 upload_url='http://minio.test/test-bucket/2',
@@ -34,7 +34,7 @@ def initialization() -> UploadInitialization:
 
 
 def test_upload_request_deserialization():
-    serializer = UploadRequestSerializer(
+    serializer = UploadInitializationRequestSerializer(
         data={
             'field_id': 'package.Class.field',
             'file_name': 'test-name.jpg',
@@ -47,14 +47,14 @@ def test_upload_request_deserialization():
 
 
 def test_upload_initialization_serialization(
-    initialization: UploadInitialization,
+    initialization: InitializedUpload,
 ):
-    serializer = UploadInitializationSerializer(initialization)
+    serializer = UploadInitializationResponseSerializer(initialization)
     assert isinstance(serializer.data, dict)
 
 
 def test_upload_finalization_deserialization():
-    serializer = UploadFinalizationSerializer(
+    serializer = UploadFinalizationRequestSerializer(
         data={
             'field_id': 'package.Class.field',
             'object_key': 'test-object-key',

@@ -9,17 +9,17 @@ from django.core.files.storage import Storage
 
 
 @dataclass
-class PartInitialization:
+class InitializedPart:
     part_number: int
     size: int
     upload_url: str
 
 
 @dataclass
-class UploadInitialization:
+class InitializedUpload:
     object_key: str
     upload_id: str
-    parts: List[PartInitialization]
+    parts: List[InitializedPart]
 
 
 @dataclass
@@ -36,15 +36,21 @@ class UploadFinalization:
     parts: List[PartFinalization]
 
 
+@dataclass
+class FinalizedUpload:
+    # TODO: this will be necessary for presigining finalization
+    pass
+
+
 class MultipartManager:
     """A facade providing management of S3 multipart uploads to multiple Storages."""
 
     def initialize_upload(
         self, object_key: str, file_size: int, part_size: int = None
-    ) -> UploadInitialization:
+    ) -> InitializedUpload:
         upload_id = self._create_upload_id(object_key)
         parts = [
-            PartInitialization(
+            InitializedPart(
                 part_number=part_number,
                 size=part_size,
                 upload_url=self._generate_presigned_part_url(
@@ -53,7 +59,7 @@ class MultipartManager:
             )
             for part_number, part_size in self._iter_part_sizes(file_size, part_size)
         ]
-        return UploadInitialization(object_key=object_key, upload_id=upload_id, parts=parts)
+        return InitializedUpload(object_key=object_key, upload_id=upload_id, parts=parts)
 
     def finalize_upload(self, finalization: UploadFinalization) -> None:
         raise NotImplementedError
