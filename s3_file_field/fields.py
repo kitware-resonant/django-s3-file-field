@@ -2,6 +2,8 @@ from typing import Any, cast
 from uuid import uuid4
 
 from django.db.models.fields.files import FieldFile, FileField
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.forms import Field as FormField
 
 from ._multipart import MultipartManager
@@ -84,3 +86,18 @@ class S3FileField(FileField):
             # Allow the form and widget to lookup this field instance later, using its id
             kwargs.setdefault('model_field_id', self.id)
         return super().formfield(**kwargs)
+
+
+@receiver(post_save)
+def refresh_fake_files_on_save(sender, instance, **kwargs):
+    """
+    Refresh models from the DB after form submissions to replace S3FakeFiles with S3FieldFiles.
+
+    Models which override the save() method and are created with a form submission will still have
+    a reference to the S3FakeFile instead of the freshly saved S3FieldFile. This hook will refresh
+    the field values from the database whenever a model with a S3FileField is saved.
+    """
+    for field in instance._meta.fields:
+        if type(field) is S3FileField:
+            instance.refresh_from_db()
+            return
