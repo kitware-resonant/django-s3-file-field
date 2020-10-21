@@ -1,2 +1,0 @@
-SECRET_KEY = 'test'
-MINIO_STORAGE_ENDPOINT = 't'
