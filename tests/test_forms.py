@@ -37,7 +37,6 @@ def test_form_validation(storage_object_key):
     assert form.is_valid()
 
 
-@pytest.mark.xfail
 def test_form_instance(storage_object_key):
     data = json.dumps(
         {
