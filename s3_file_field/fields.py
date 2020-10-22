@@ -1,6 +1,9 @@
-from typing import Any, cast
+import logging
+from typing import Any, List, cast
 from uuid import uuid4
 
+from django.core import checks
+from django.core.checks import CheckMessage
 from django.db.models.fields.files import FieldFile, FileField
 from django.forms import Field as FormField
 
@@ -8,6 +11,8 @@ from ._multipart import MultipartManager
 from ._registry import register_field
 from .forms import S3FormFileField
 from .widgets import S3FakeFile
+
+logger = logging.getLogger(__name__)
 
 
 class S3FieldFile(FieldFile):
@@ -84,3 +89,18 @@ class S3FileField(FileField):
             # Allow the form and widget to lookup this field instance later, using its id
             kwargs.setdefault('model_field_id', self.id)
         return super().formfield(**kwargs)
+
+    # Ignore type due to: https://github.com/typeddjango/django-stubs/pull/497
+    def check(self, **kwargs) -> List[CheckMessage]:  # type: ignore
+        return [
+            *super().check(**kwargs),
+            *self._check_supported_storage_provider(),
+        ]
+
+    def _check_supported_storage_provider(self) -> List[checks.CheckMessage]:
+        if not MultipartManager.supported_storage(self.storage):
+            msg = f'Incompatible storage type used with an {self.__class__.__name__}.'
+            logger.warning(msg)
+            return [checks.Warning(msg, obj=self, id='s3_file_field.W001')]
+        else:
+            return []
