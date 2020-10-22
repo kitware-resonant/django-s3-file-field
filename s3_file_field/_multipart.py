@@ -42,6 +42,12 @@ class FinalizedUpload:
     pass
 
 
+class UnsupportedStorageException(Exception):
+    """Raised when MultipartManager does not support the given Storage."""
+
+    pass
+
+
 class MultipartManager:
     """A facade providing management of S3 multipart uploads to multiple Storages."""
 
@@ -96,15 +102,15 @@ class MultipartManager:
 
                 return MinioMultipartManager(storage)
 
-        # TODO: Raise a more specific exception
-        raise Exception('Unsupported storage provider.')
+        raise UnsupportedStorageException('Unsupported storage provider.')
 
     @classmethod
     def supported_storage(cls, storage: Storage) -> bool:
         try:
             cls.from_storage(storage)
-        except Exception:
+        except UnsupportedStorageException:
             return False
+        # Allow other exceptions to propagate
         else:
             return True
 
