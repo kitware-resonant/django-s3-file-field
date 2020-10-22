@@ -194,7 +194,7 @@ setup(
         'djangorestframework',
     ],
     extras_require={
-        'boto3': ['django-storages', 'boto3'],
+        'boto3': ['django-storages[boto3]', 'boto3'],
         'minio': ['django-minio-storage', 'minio'],
     },
     cmdclass={
