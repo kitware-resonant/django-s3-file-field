@@ -67,7 +67,7 @@ class NPM(Command):
 
     node_modules = os.path.join(node_root, 'node_modules')
 
-    targets = [os.path.join(here, 's3_file_field', 'static', 'joist', 'joist.js')]
+    targets = [os.path.join(here, 's3_file_field')]
 
     def initialize_options(self):
         pass
@@ -156,10 +156,14 @@ def prerelease_local_scheme(version):
 with open('README.md') as f:
     readme = f.read()
 
+version = {}
+with open("s3_file_field/version.py") as fp:
+    exec(fp.read(), version)
+
 # perform the install
 setup(
     name='django-s3-file-field',
-    version='0.0.3',
+    version=version["__version__"],
     use_scm_version={'local_scheme': prerelease_local_scheme},
     setup_requires=['setuptools-scm'],
     description='A django widget library for securely uploading files directly to S3 (or MinIO).',
