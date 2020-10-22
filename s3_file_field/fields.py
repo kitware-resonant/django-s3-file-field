@@ -4,6 +4,7 @@ from uuid import uuid4
 
 from django.core import checks
 from django.core.checks import CheckMessage
+from django.db import models
 from django.db.models.fields.files import FieldFile, FileField
 from django.forms import Field as FormField
 
@@ -89,6 +90,18 @@ class S3FileField(FileField):
             # Allow the form and widget to lookup this field instance later, using its id
             kwargs.setdefault('model_field_id', self.id)
         return super().formfield(**kwargs)
+
+    def save_form_data(self, instance: models.Model, data):
+        """Coerce a form field value and assign it to a model instance's field."""
+        # The FileField's FileDescriptor behavior provides that when a File object is
+        # assigned to the field, the content is considered uncommitted, and is saved.
+        # If a string is assigned to the field, it is considered to be the value in the
+        # database, and no save occurs, which is desirable here.
+        # However, we don't want the S3FileInput or S3FormFileField to emit a string value,
+        # since that will break most of the default validation.
+        # TODO: data might be False, if the field is being cleared
+        file: str = data.name
+        super().save_form_data(instance, file)
 
     # Ignore type due to: https://github.com/typeddjango/django-stubs/pull/497
     def check(self, **kwargs) -> List[CheckMessage]:  # type: ignore
