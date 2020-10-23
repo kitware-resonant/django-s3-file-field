@@ -5,8 +5,12 @@ from .fields import S3FileField  # noqa: F401
 
 default_app_config = 's3_file_field.apps.S3FileFieldConfig'
 
-version = {}
-with open("s3_file_field/version.py") as fp:
-    exec(fp.read(), version)
+try:
+    from importlib import metadata
+except ImportError:
+    # Running on pre-3.8 Python; use importlib-metadata package
+    import importlib_metadata as metadata
 
-__version__ = version["__version__"]
+assert metadata.version('django-s3-file-field') == '0.0.14'
+
+__version__ = metadata.version('django-s3-file-field')

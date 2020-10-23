@@ -5,6 +5,7 @@ import platform
 from subprocess import CalledProcessError, check_call
 import sys
 from typing import List, Tuple
+import re
 
 from setuptools import Command, find_packages, setup
 from setuptools.command.build_py import build_py
@@ -67,7 +68,7 @@ class NPM(Command):
 
     node_modules = os.path.join(node_root, 'node_modules')
 
-    targets = [os.path.join(here, 's3_file_field', 'static', 'joist', 'joist.js')]
+    targets = [os.path.join(here, 's3_file_field')]
 
     def initialize_options(self):
         pass
@@ -156,14 +157,21 @@ def prerelease_local_scheme(version):
 with open('README.md') as f:
     readme = f.read()
 
-version = {}
-with open("s3_file_field/version.py") as fp:
-    exec(fp.read(), version)
+
+def get_version(package):
+    """
+    Return package version as listed in `__version__` in `init.py`.
+    """
+    init_py = open(os.path.join(package, '__init__.py')).read()
+    return re.search("__version__ = ['\"]([^'\"]+)['\"]", init_py).group(1)
+
+version = get_version('s3_file_field')
+
 
 # perform the install
 setup(
     name='django-s3-file-field',
-    version=version["__version__"],
+    version=version,
     use_scm_version={'local_scheme': prerelease_local_scheme},
     setup_requires=['setuptools-scm'],
     description='A django widget library for securely uploading files directly to S3 (or MinIO).',
