@@ -68,7 +68,7 @@ class NPM(Command):
 
     node_modules = os.path.join(node_root, 'node_modules')
 
-    targets = [os.path.join(here, 's3_file_field')]
+    targets = [os.path.join(here, 's3_file_field', 'static', 'joist', 'joist.js')]
 
     def initialize_options(self):
         pass
