@@ -42,7 +42,7 @@ export interface UploadResult {
  * @returns MultipartResponse
  */
 async function initializeUpload(file: File, fieldId: string, options: UploadOptions): Promise<MultipartInfo> {
-  const response = await axios.post(`${options.baseUrl}/upload-initialize/`, {'field_id': fieldId,'file_name': file.name, 'file_size': file.size});
+  const response = await axios.post(`${options.baseUrl}/upload-initialize/`, { 'field_id': fieldId, 'file_name': file.name, 'file_size': file.size });
   return response.data;
 }
 
