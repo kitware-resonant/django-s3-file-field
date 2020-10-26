@@ -1,5 +1,5 @@
 from distutils import log
-from functools import cached_property
+from functools import lru_cache
 import os
 import platform
 from subprocess import CalledProcessError, check_call
@@ -62,13 +62,15 @@ class NPM(Command):
     def finalize_options(self):
         pass
 
-    @cached_property
+    @property
+    @lru_cache(maxsize=1)
     def npm_name(self):
         if platform.system() == 'Windows':
             return 'npm.cmd'
         return 'npm'
 
-    @cached_property
+    @property
+    @lru_cache(maxsize=1)
     def has_npm(self):
         try:
             check_call([self.npm_name, '--version'])

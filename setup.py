@@ -6,7 +6,7 @@ from setuptools.command.build_py import build_py
 from setuptools.command.egg_info import egg_info
 from setuptools.command.sdist import sdist
 
-from build_js import js_prerelease, NPM
+from build_js import NPM, js_prerelease
 
 
 def prerelease_local_scheme(version):
