@@ -1,19 +1,9 @@
 import { DEFAULT_BASE_URL, EVENT_UPLOAD_COMPLETE, EVENT_UPLOAD_STARTED } from "./constants";
-import { uploadFile, UploadResult } from "django-s3-file-field-client";
+import S3Client from "django-s3-file-field-client";
+import { UploadResult } from "django-s3-file-field-client";
 
 function cssClass(clazz: string): string {
   return `s3fileinput-${clazz}`;
-}
-
-function sized(val: number): string {
-  const units = ["bytes", "KiB", "MiB", "GiB", "TiB"];
-  const factor = 1024;
-  let v = val;
-  while (v > factor && units.length > 0) {
-    v /= factor;
-    units.shift();
-  }
-  return `${Math.round(v * 100) / 100}${units[0]}`;
 }
 
 export interface S3FileInputOptions {
@@ -36,7 +26,6 @@ export default class S3FileInput {
   private readonly input: HTMLInputElement;
   private readonly info: HTMLElement;
   private readonly uploadButton: HTMLButtonElement;
-  private readonly abortButton: HTMLButtonElement;
   private readonly clearButton: HTMLButtonElement;
   private readonly spinnerWrapper: HTMLElement;
 
@@ -62,9 +51,6 @@ export default class S3FileInput {
     <button type="button" class="${cssClass("upload")}" disabled>
       ${i18n("Upload to S3")}
     </button>
-    <button type="button" class="${cssClass("abort")}" title="${i18n('Abort Upload')}">
-      ${i18n("Abort")}
-    </button>
     <button type="button" class="${cssClass("clear")}" title="${i18n('Clear (file was already uploaded tho)')}">
       ${i18n("x")}
     </button>
@@ -88,9 +74,6 @@ export default class S3FileInput {
       this.uploadButton.classList.add(cssClass('autoupload'));
     }
     this.uploadButton.insertAdjacentElement("beforebegin", this.input);
-    this.abortButton = this.node.querySelector<HTMLButtonElement>(
-      `.${cssClass("abort")}`
-    )!;
     this.spinnerWrapper = this.node.querySelector<HTMLElement>(
       `.${cssClass("spinner-wrapper")}`
     )!;
@@ -136,81 +119,21 @@ export default class S3FileInput {
     );
   }
 
-  private uploadFile(file: File): Promise<UploadResult> {
-    const progress = this.node.ownerDocument!.createElement("div");
-    progress.classList.add(cssClass("progress"));
-    const indicator = this.node.ownerDocument!.createElement("div");
-    progress.appendChild(indicator);
-    this.node.appendChild(progress);
-
-    let abortHandler: null | ((evt: MouseEvent) => void) = null;
-
-    const event = new CustomEvent(EVENT_UPLOAD_STARTED, {
+  private async uploadFile(file: File): Promise<UploadResult> {
+    const startedEvent = new CustomEvent(EVENT_UPLOAD_STARTED, {
       detail: file
     });
-    this.input.dispatchEvent(event);
+    this.input.dispatchEvent(startedEvent);
 
-    return uploadFile(file, this.fieldId, {
-      baseUrl: this.baseUrl,
-      onProgress: p => {
-        progress.dataset.state = p.state;
-        indicator.style.width = `${Math.round(p.percentage * 100)}%`;
-        switch (p.state) {
-          case "initial":
-            progress.title = `${file.name}: ${i18n('Initializing Upload')}`;
-            break;
-          case "preparing":
-            progress.title = `${file.name}: ${i18n('Requesting Upload Token')}`;
-            break;
-          case "uploading":
-            progress.title = `${file.name}: ${Math.round(
-              (100 * p.loaded) / p.total
-            )}% ${sized(p.loaded)}/${sized(p.total)}`;
-            break;
-          case "finishing":
-            progress.title = `${file.name}: ${i18n('Finishing Upload')}`;
-            break;
-          case "aborted":
-            progress.title = `${file.name}: ${i18n('Upload Aborted')}`;
-            break;
-          case "done":
-            progress.title = `${file.name}: ${i18n('Done ')} (${sized(p.total)})`;
-            break;
-        }
-      },
-      abortSignal: onAbort => {
-        abortHandler = (evt): void => {
-          evt.preventDefault();
-          onAbort();
-        };
-        this.abortButton.addEventListener("click", abortHandler);
-      }
-    }).then(r => {
-      if (abortHandler) {
-        this.abortButton.removeEventListener("click", abortHandler);
-      }
-      progress.dataset.state = r.state;
-      const event = new CustomEvent(EVENT_UPLOAD_COMPLETE, {
-        detail: r
-      });
-      this.input.dispatchEvent(event);
-      switch (r.state) {
-        case "successful":
-          progress.title = `${file.name}: ${i18n('Done')} (${sized(file.size)})`;
-          break;
-        case "aborted":
-          progress.title = `${file.name}: ${i18n('Upload Aborted')}`;
-          break;
-        case "error":
-          progress.title = `${file.name}: ${i18n("Error occurred")}: ${r.msg}`;
-          break;
-      }
-      // progress.remove();
-      return r;
+    const result = await new S3Client(this.baseUrl).uploadFile(file, this.fieldId);
+    const completedEvent = new CustomEvent(EVENT_UPLOAD_COMPLETE, {
+      detail: result
     });
+    this.input.dispatchEvent(completedEvent);
+    return result;
   }
 
-  private uploadFiles(): Promise<void> | void {
+  private async uploadFiles(): Promise<void> {
     const files = Array.from(this.input.files || []);
     if (files.length === 0) {
       return;
@@ -227,15 +150,14 @@ export default class S3FileInput {
 
     const file = files[0];
 
-    return this.uploadFile(file).then(result => {
-      this.node.classList.remove(cssClass("uploading"));
-      if (result.state === "successful") {
-        this.node.classList.add(cssClass("set"));
-        this.input.setCustomValidity(""); // no error
-        this.input.type = "hidden";
-        this.input.value = result.value;
-        this.info.innerText = file.name;
-      }
-    });
+    const result = await this.uploadFile(file);
+    this.node.classList.remove(cssClass("uploading"));
+    if (result.state === "successful") {
+      this.node.classList.add(cssClass("set"));
+      this.input.setCustomValidity(""); // no error
+      this.input.type = "hidden";
+      this.input.value = result.value;
+      this.info.innerText = file.name;
+    }
   }
 }
