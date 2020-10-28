@@ -52,7 +52,7 @@ class S3FormFileField(FileField):
     # def validate(self, value):
     #     super().validate(value)
 
-    #     if isinstance(value, S3FakeFile):
+    #     if isinstance(value, S3PlaceholderFile):
     #         # verify signature
     #         signer = Signer()
     #         try:

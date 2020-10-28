@@ -11,7 +11,7 @@ from django.forms import Field as FormField
 from ._multipart import MultipartManager
 from ._registry import register_field
 from .forms import S3FormFileField
-from .widgets import S3FakeFile
+from .widgets import S3PlaceholderFile
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class S3FieldFile(FieldFile):
     """
 
     def save(self, name: str, content: Any, save=True):
-        if not isinstance(content, S3FakeFile):
+        if not isinstance(content, S3PlaceholderFile):
             return super().save(name, content, save)
 
         self.name = content.name
@@ -99,9 +99,9 @@ class S3FileField(FileField):
         # database, and no save occurs, which is desirable here.
         # However, we don't want the S3FileInput or S3FormFileField to emit a string value,
         # since that will break most of the default validation.
-        # TODO: data might be False, if the field is being cleared
-        file: str = data.name
-        super().save_form_data(instance, file)
+        if isinstance(data, S3PlaceholderFile):
+            data = data.name
+        super().save_form_data(instance, data)
 
     # Ignore type due to: https://github.com/typeddjango/django-stubs/pull/497
     def check(self, **kwargs) -> List[CheckMessage]:  # type: ignore
