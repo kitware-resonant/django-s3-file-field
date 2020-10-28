@@ -73,3 +73,11 @@ def test_form_instance_saved(storage_object_key):
 
     with resource.blob.open() as blob_stream:
         assert blob_stream.read() == b'test content'
+
+
+@pytest.mark.parametrize('value', ['', '""', 'null', '{}', json.dumps({'id': ''})])
+@pytest.mark.django_db
+def test_form_empty(storage_object_key, value):
+    form = ResourceForm(data={'blob': value})
+
+    assert not form.is_valid()
