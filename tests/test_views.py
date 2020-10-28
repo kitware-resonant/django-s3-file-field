@@ -90,7 +90,10 @@ def test_full_upload_flow(api_client: APIClient, file_size: int):
         initialization,
         format='json',
     )
-    assert resp.status_code == 201
+    assert resp.status_code == 200
+    assert resp.data == {
+        'field_value': Re(r'.*:.*'),
+    }
 
     # Verify the object is present in the store
     assert default_storage.exists(initialization['object_key'])

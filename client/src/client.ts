@@ -26,6 +26,10 @@ interface UploadedPart {
   size: number;
   etag: string;
 }
+// Description of the upload from finalizeUpload()
+interface UploadFinalization {
+  field_value: string;
+}
 // Return value from uploadFile()
 export interface UploadResult {
   name: string;
@@ -93,14 +97,14 @@ async function uploadParts(file: File, parts: PartInfo[]): Promise<UploadedPart[
  * @param parts the parts that were uploaded
  * @returns UploadResult
  */
-async function finalizeUpload(multipartInfo: MultipartInfo, parts: UploadedPart[], fieldId: string, options: UploadOptions): Promise<undefined> {
-  await axios.post(`${options.baseUrl}/upload-finalize/`, {
+async function finalizeUpload(multipartInfo: MultipartInfo, parts: UploadedPart[], fieldId: string, options: UploadOptions): Promise<UploadFinalization> {
+  const response = await axios.post(`${options.baseUrl}/upload-finalize/`, {
     field_id: fieldId,
     object_key: multipartInfo.object_key,
     upload_id: multipartInfo.upload_id,
     parts: parts,
   });
-  return;
+  return response.data;
 }
 
 /**
@@ -113,15 +117,10 @@ export async function uploadFile(file: File, fieldId: string, options: UploadOpt
   // TODO most options are unused, but maintained for reverse compatibility
   const multipartInfo = await initializeUpload(file, fieldId, options);
   const parts = await uploadParts(file, multipartInfo.parts);
-  await finalizeUpload(multipartInfo, parts, fieldId, options);
+  const finalization = await finalizeUpload(multipartInfo, parts, fieldId, options);
   return {
     name: file.name,
-    value: JSON.stringify({
-      name: multipartInfo.object_key,
-      size: file.size,
-      id: multipartInfo.object_key,
-      signature: '',
-    }),
+    value: finalization.field_value,
     state: 'successful',
     msg: '',
   }
