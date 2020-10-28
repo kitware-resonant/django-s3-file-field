@@ -18,6 +18,10 @@ interface UploadedPart {
   size: number;
   etag: string;
 }
+// Description of the upload from finalizeUpload()
+interface UploadFinalization {
+  field_value: string;
+}
 // Return value from uploadFile()
 export interface UploadResult {
   value: string;
@@ -90,14 +94,14 @@ export default class S3FFClient {
    * @param parts the parts that were uploaded
    * @returns UploadResult
    */
-  protected async finalizeUpload(multipartInfo: MultipartInfo, parts: UploadedPart[], fieldId: string): Promise<undefined> {
-    await axios.post(`${this.baseUrl}/upload-finalize/`, {
+  protected async finalizeUpload(multipartInfo: MultipartInfo, parts: UploadedPart[], fieldId: string): Promise<UploadFinalization> {
+    const response = await axios.post(`${this.baseUrl}/upload-finalize/`, {
       field_id: fieldId,
       object_key: multipartInfo.object_key,
       upload_id: multipartInfo.upload_id,
       parts: parts,
     });
-    return;
+    return response.data;
   }
 
   /**
@@ -109,14 +113,9 @@ export default class S3FFClient {
   public async uploadFile(file: File, fieldId: string): Promise<UploadResult> {
     const multipartInfo = await this.initializeUpload(file, fieldId);
     const parts = await this.uploadParts(file, multipartInfo.parts);
-    await this.finalizeUpload(multipartInfo, parts, fieldId);
+    const finalization = await this.finalizeUpload(multipartInfo, parts, fieldId);
     return {
-      value: JSON.stringify({
-        name: multipartInfo.object_key,
-        size: file.size,
-        id: multipartInfo.object_key,
-        signature: '',
-      }),
+      value: finalization.field_value,
       state: 'successful',
     }
   }

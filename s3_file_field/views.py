@@ -1,5 +1,6 @@
 from typing import Dict
 
+from django.core import signing
 from django.http.response import HttpResponseBase
 from rest_framework import serializers
 from rest_framework.decorators import api_view, parser_classes
@@ -55,8 +56,7 @@ class UploadFinalizationRequestSerializer(serializers.Serializer):
 
 
 class UploadFinalizationResponseSerializer(serializers.Serializer):
-    # TODO: this will be necessary for presigining finalization
-    pass
+    field_value = serializers.CharField(trim_whitespace=False)
 
 
 # @authentication_classes([TokenAuthentication])
@@ -85,8 +85,8 @@ def upload_initialize(request: Request) -> HttpResponseBase:
     # signer = TimestampSigner()
     # sig = signer.sign(object_key)
 
-    initialization_serializer = UploadInitializationResponseSerializer(initialization)
-    return Response(initialization_serializer.data)
+    response_serializer = UploadInitializationResponseSerializer(initialization)
+    return Response(response_serializer.data)
 
 
 # @authentication_classes([TokenAuthentication])
@@ -94,10 +94,10 @@ def upload_initialize(request: Request) -> HttpResponseBase:
 @api_view(['POST'])
 @parser_classes([JSONParser])
 def upload_finalize(request: Request) -> HttpResponseBase:
-    finalization_serializer = UploadFinalizationRequestSerializer(data=request.data)
-    finalization_serializer.is_valid(raise_exception=True)
-    field = _registry.get_field(finalization_serializer.validated_data['field_id'])
-    finalization = finalization_serializer.save()
+    request_serializer = UploadFinalizationRequestSerializer(data=request.data)
+    request_serializer.is_valid(raise_exception=True)
+    field = _registry.get_field(request_serializer.validated_data['field_id'])
+    finalization: UploadFinalization = request_serializer.save()
 
     # check if upload_prepare signed this less than max age ago
     # tsigner = TimestampSigner()
@@ -112,7 +112,16 @@ def upload_finalize(request: Request) -> HttpResponseBase:
     #     sender=multipart_upload_finalize, name=name, object_key=object_key
     # )
 
-    # signer = Signer()
-    # sig = signer.sign(object_key)
+    field_value = signing.dumps(
+        {
+            'object_key': finalization.object_key,
+            'file_size': sum(part.size for part in finalization.parts),
+        }
+    )
 
-    return Response(status=201)
+    response_serializer = UploadFinalizationResponseSerializer(
+        {
+            'field_value': field_value,
+        }
+    )
+    return Response(response_serializer.data)
