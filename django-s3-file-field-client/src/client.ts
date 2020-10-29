@@ -24,7 +24,7 @@ export interface UploadResult {
   state: 'aborted' | 'successful' | 'error';
 }
 
-export default class Client {
+export default class S3FFClient {
   protected baseUrl: string;
 
   constructor(baseUrl: string) {
