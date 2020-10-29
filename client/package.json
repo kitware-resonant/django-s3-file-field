@@ -48,6 +48,6 @@
     "aws-sdk": "^2.693.0",
     "axios": "^0.20.0",
     "js-cookie": "^2.2.1",
-    "django-s3-file-field-client": "file:../django-s3-file-field-client"
+    "django-s3-file-field": "file:../django-s3-file-field-client"
   }
 }

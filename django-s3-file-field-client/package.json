@@ -1,6 +1,6 @@
 {
-  "name": "django-s3-file-field-client",
-  "version": "0.0.1",
+  "name": "django-s3-file-field",
+  "version": "0.0.15",
   "description": "",
   "author": "Girder",
   "license": "MIT",

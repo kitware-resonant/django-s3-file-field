@@ -1,6 +1,6 @@
 import { DEFAULT_BASE_URL, EVENT_UPLOAD_COMPLETE, EVENT_UPLOAD_STARTED } from "./constants";
-import S3Client from "django-s3-file-field-client";
-import { UploadResult } from "django-s3-file-field-client";
+import S3FFClient from "django-s3-file-field";
+import { UploadResult } from "django-s3-file-field";
 
 function cssClass(clazz: string): string {
   return `s3fileinput-${clazz}`;
@@ -125,7 +125,7 @@ export default class S3FileInput {
     });
     this.input.dispatchEvent(startedEvent);
 
-    const result = await new S3Client(this.baseUrl).uploadFile(file, this.fieldId);
+    const result = await new S3FFClient(this.baseUrl).uploadFile(file, this.fieldId);
     const completedEvent = new CustomEvent(EVENT_UPLOAD_COMPLETE, {
       detail: result
     });
