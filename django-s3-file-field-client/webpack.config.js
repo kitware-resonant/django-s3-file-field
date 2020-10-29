@@ -5,8 +5,8 @@ module.exports = {
   entry: "./src/client.ts",
   output: {
     path: path.resolve("build"),
-    filename: "joiist.js",
-    libraryExport: "Joiist",
+    filename: "s3ff-client.js",
+    libraryExport: "S3FF Client",
     libraryTarget: "umd"
   },
   resolve: {
@@ -22,18 +22,7 @@ module.exports = {
         options: {
           configFile: "tsconfig.lib.json"
         }
-      },
-      {
-        test: /\.s[ac]ss$/i,
-        use: [
-          { loader: MiniCssExtractPlugin.loader },
-          "css-loader",
-          "sass-loader"
-        ]
       }
     ]
   },
-  plugins: [
-    new MiniCssExtractPlugin(),
-  ],
 };
