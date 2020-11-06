@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Resource{% endblock %}
+
+{% block content %}
+<a href="{% url "resource-list" %}">[Back to List]</a>
+<h1>Resource</h1>
+
+{# multipart/form-data is required to submit legacy files #}
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="Save">
+</form>
+{% endblock %}

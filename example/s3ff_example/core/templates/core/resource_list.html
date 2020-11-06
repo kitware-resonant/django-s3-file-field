@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Resource List{% endblock %}
+
+{% block content %}
+<h1>Resource List</h1>
+
+<ul>
+{% for resource in object_list %}
+    <li>
+        <a href="{{ resource.get_absolute_url }}">
+            {{ resource.pk }}
+        </a>
+        <br>
+        <a href="{% url "resource-delete" pk=resource.pk %}">
+            [Delete]
+        </a>
+    </li>
+{% endfor %}
+</ul>
+
+<a href="{% url "resource-create" %}">Create New Resource</a>
+{% endblock %}
