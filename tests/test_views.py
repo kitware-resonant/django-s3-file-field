@@ -71,7 +71,7 @@ def test_full_upload_flow(api_client: APIClient, file_size: int):
     )
     assert resp.status_code == 200
     initialization = resp.data
-    assert initialization
+    assert isinstance(initialization, dict)
 
     # Perform the upload
     for part in initialization['parts']:
