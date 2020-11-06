@@ -103,8 +103,7 @@ class S3FileField(FileField):
             data = data.name
         super().save_form_data(instance, data)
 
-    # Ignore type due to: https://github.com/typeddjango/django-stubs/pull/497
-    def check(self, **kwargs) -> List[CheckMessage]:  # type: ignore
+    def check(self, **kwargs) -> List[CheckMessage]:
         return [
             *super().check(**kwargs),
             *self._check_supported_storage_provider(),
