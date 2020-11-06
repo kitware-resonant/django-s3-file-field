@@ -1,28 +1,21 @@
 {
-  "name": "joist",
-  "version": "0.0.2",
+  "name": "django-s3-file-field",
+  "version": "0.0.15",
   "description": "",
-  "author": "Samuel Gratzl",
-  "license": "MIT",
-  "main": "build/joist.js",
-  "module": "build/index.js",
-  "types": "build/index.d.ts",
+  "author": "Kitware, Inc.",
+  "license": "Apache 2.0",
+  "main": "build/client.js",
+  "module": "build/client.js",
+  "types": "build/client.d.ts",
   "files": [
     "build",
     "src"
   ],
   "scripts": {
     "clean": "rimraf build",
-    "dev": "webpack --mode=development",
-    "dev:widget": "webpack --mode=development --config webpack.config.widget.js",
     "compile": "tsc -p tsconfig.lib.json",
     "lint": "eslint src/**.ts",
-    "watch": "webpack -w --mode=development",
-    "watch:widget": "webpack -w --mode=development --config webpack.config.widget.js",
     "build": "npm run clean && npm run compile && webpack --mode=production",
-    "build:widget": "webpack --mode=production --config webpack.config.widget.js",
-    "pretest": "npm run lint",
-    "test": "echo \"Error: no test specified\"",
     "prepare": "echo 'dummy prepare since prepack has no dev dependencies'",
     "prepack": "npm run build"
   },
@@ -43,11 +36,20 @@
     "webpack-cli": "^3.3.11"
   },
   "dependencies": {
-    "@types/js-cookie": "^2.2.6",
-    "@types/node": "^14.0.13",
-    "aws-sdk": "^2.693.0",
-    "axios": "^0.20.0",
-    "js-cookie": "^2.2.1",
-    "django-s3-file-field": "file:../django-s3-file-field-client"
+    "axios": "^0.20.0"
+  },
+  "eslintConfig": {
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+      "@typescript-eslint"
+    ],
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/eslint-recommended",
+      "plugin:@typescript-eslint/recommended"
+    ],
+    "rules": {
+      "@typescript-eslint/no-non-null-assertion": 0
+    }
   }
 }
