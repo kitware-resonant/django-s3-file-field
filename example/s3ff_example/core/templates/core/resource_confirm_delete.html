@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Resource{% endblock %}
+
+{% block content %}
+<a href="{% url "resource-list" %}">[Back to List]</a>
+<h1>Delete Resource</h1>
+
+<form method="post">
+    {% csrf_token %}
+    <p>Are you sure you want to delete "{{ object }}"?</p>
+    <input type="submit" value="Confirm">
+</form>
+{% endblock %}
+
+
+
