@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import functools
-import json
 import posixpath
 from typing import Any, Dict, Iterable, Mapping, Optional
 
+from django.core import signing
 from django.core.files import File
 from django.forms import ClearableFileInput
 from django.forms.widgets import FILE_INPUT_CONTRADICTION, CheckboxInput  # type: ignore
@@ -44,17 +44,11 @@ class S3PlaceholderFile(File):
     @classmethod
     def from_field(cls, field_value: str) -> Optional[S3PlaceholderFile]:
         try:
-            parsed_field = json.loads(field_value)
-        except json.JSONDecodeError:
-            pass
-        else:
-            if isinstance(parsed_field, dict) and 'id' in parsed_field:
-                file_name = parsed_field['id']
-                if isinstance(file_name, str):
-                    # TODO: validate size
-                    size = int(parsed_field.get('size', 1))
-                    return cls(file_name, size)
-        return None
+            parsed_field = signing.loads(field_value)
+        except signing.BadSignature:
+            return None
+        # Since the field is signed, we know the content is structurally valid
+        return cls(parsed_field['object_key'], parsed_field['file_size'])
 
 
 class S3FileInput(ClearableFileInput):
