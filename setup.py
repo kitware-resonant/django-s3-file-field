@@ -156,7 +156,6 @@ def prerelease_local_scheme(version):
 with open('README.md') as f:
     readme = f.read()
 
-
 # perform the install
 setup(
     name='django-s3-file-field',
