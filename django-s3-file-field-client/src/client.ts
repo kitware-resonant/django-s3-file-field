@@ -101,7 +101,11 @@ export default class S3FFClient {
       upload_id: multipartInfo.upload_id,
       parts: parts,
     });
-    return response.data;
+    const { finalize_url, body, field_value } = response.data;
+    await axios.post(finalize_url, body);
+    return {
+      field_value: field_value,
+    };
   }
 
   /**
