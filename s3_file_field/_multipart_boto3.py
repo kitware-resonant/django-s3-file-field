@@ -49,22 +49,13 @@ class Boto3MultipartManager(MultipartManager):
             ExpiresIn=int(self._url_expiration.total_seconds()),
         )
 
-    def finalize_upload(self, finalization: UploadFinalization) -> None:
-        # TODO: from
-        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.complete_multipart_upload
-        # "Processing of a Complete Multipart Upload request could
-        # take several minutes to complete."
-        self._client.complete_multipart_upload(
-            Bucket=self._bucket_name,
-            Key=finalization.object_key,
-            UploadId=finalization.upload_id,
-            MultipartUpload={
-                'Parts': [
-                    {
-                        'PartNumber': part.part_number,
-                        'ETag': part.etag,
-                    }
-                    for part in finalization.parts
-                ],
+    def _generate_presigned_finalize_url(self, finalization: UploadFinalization) -> str:
+        return self._client.generate_presigned_url(
+            ClientMethod='complete_multipart_upload',
+            Params={
+                'Bucket': self._bucket_name,
+                'Key': finalization.object_key,
+                'UploadId': finalization.upload_id,
             },
+            ExpiresIn=int(self._url_expiration.total_seconds()),
         )

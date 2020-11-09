@@ -56,6 +56,8 @@ class UploadFinalizationRequestSerializer(serializers.Serializer):
 
 
 class UploadFinalizationResponseSerializer(serializers.Serializer):
+    finalize_url = serializers.URLField()
+    body = serializers.CharField(trim_whitespace=False)
     field_value = serializers.CharField(trim_whitespace=False)
 
 
@@ -106,7 +108,9 @@ def upload_finalize(request: Request) -> HttpResponseBase:
     # ):
     #     raise BadSignature()
 
-    _multipart.MultipartManager.from_storage(field.storage).finalize_upload(finalization)
+    finalized_upload = _multipart.MultipartManager.from_storage(field.storage).finalize_upload(
+        finalization
+    )
 
     # signals.s3_file_field_upload_finalize.send(
     #     sender=multipart_upload_finalize, name=name, object_key=object_key
@@ -121,6 +125,8 @@ def upload_finalize(request: Request) -> HttpResponseBase:
 
     response_serializer = UploadFinalizationResponseSerializer(
         {
+            'finalize_url': finalized_upload.finalize_url,
+            'body': finalized_upload.body,
             'field_value': field_value,
         }
     )

@@ -6,6 +6,7 @@ import math
 from typing import Iterator, List, Tuple
 
 from django.core.files.storage import Storage
+from minio.xml_marshal import marshal_complete_multipart
 
 
 @dataclass
@@ -38,8 +39,8 @@ class UploadFinalization:
 
 @dataclass
 class FinalizedUpload:
-    # TODO: this will be necessary for presigining finalization
-    pass
+    finalize_url: str
+    body: str
 
 
 class UnsupportedStorageException(Exception):
@@ -67,8 +68,19 @@ class MultipartManager:
         ]
         return InitializedUpload(object_key=object_key, upload_id=upload_id, parts=parts)
 
-    def finalize_upload(self, finalization: UploadFinalization) -> None:
-        raise NotImplementedError
+    def finalize_upload(self, finalization: UploadFinalization) -> FinalizedUpload:
+        finalize_url = self._generate_presigned_finalize_url(finalization)
+        body = self.marshal_finalize_body(finalization)
+        return FinalizedUpload(finalize_url=finalize_url, body=body)
+
+    def marshal_finalize_body(self, finalization: UploadFinalization) -> str:
+        """
+        Generate the body of a presigned finalize request.
+
+        We use the internal minio implementation to generate the XML body of the request
+        the client will send.
+        """
+        return marshal_complete_multipart(finalization.parts)
 
     def test_upload(self):
         object_key = '.s3-file-field-test-file'
@@ -126,6 +138,9 @@ class MultipartManager:
     def _generate_presigned_part_url(
         self, object_key: str, upload_id: str, part_number: int, part_size: int
     ) -> str:
+        raise NotImplementedError
+
+    def _generate_presigned_finalize_url(self, finalization: UploadFinalization) -> str:
         raise NotImplementedError
 
     @staticmethod

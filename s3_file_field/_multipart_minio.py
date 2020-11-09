@@ -46,24 +46,13 @@ class MinioMultipartManager(MultipartManager):
             # }
         )
 
-    def finalize_upload(self, finalization: UploadFinalization) -> None:
-        uploaded_parts = {
-            part.part_number: minio.definitions.UploadPart(
-                bucket_name=self._bucket_name,
-                object_name=finalization.object_key,
-                upload_id=finalization.upload_id,
-                part_number=part.part_number,
-                etag=part.etag,
-                size=part.size,
-                # Minio doesn't seem to actually use last_modified, and it's burdensome to track
-                last_modified=None,
-            )
-            for part in finalization.parts
-        }
-
-        self._client._complete_multipart_upload(
+    def _generate_presigned_finalize_url(self, finalization: UploadFinalization) -> str:
+        return self._signing_client.presigned_url(
+            method='POST',
             bucket_name=self._bucket_name,
             object_name=finalization.object_key,
-            upload_id=finalization.upload_id,
-            uploaded_parts=uploaded_parts,
+            expires=self._url_expiration,
+            response_headers={
+                'uploadId': finalization.upload_id,
+            },
         )
