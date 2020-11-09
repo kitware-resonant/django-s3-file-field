@@ -135,7 +135,10 @@ def test_multipart_manager_finalize_upload(multipart_manager: MultipartManager, 
             )
         )
 
-    multipart_manager.finalize_upload(finalization)
+    finalization = multipart_manager.finalize_upload(finalization)
+    assert finalization
+    assert finalization.finalize_url
+    assert finalization.body
 
 
 def test_multipart_manager_test_upload(multipart_manager: MultipartManager):
@@ -165,6 +168,34 @@ def test_multipart_manager_generate_presigned_part_url_content_length(
     )
     # Ensure Content-Length is a signed header
     assert 'content-length' in upload_url
+
+
+def test_multipart_manager_generate_presigned_finalize_url(multipart_manager: MultipartManager):
+    upload_url = multipart_manager._generate_presigned_finalize_url(
+        UploadFinalization(object_key='new-object', upload_id='fake-upload-id', parts=[])
+    )
+
+    assert isinstance(upload_url, str)
+
+
+def test_multipart_manager_marshal_finalize_body(multipart_manager: MultipartManager):
+    body = multipart_manager.marshal_finalize_body(
+        UploadFinalization(
+            object_key='new-object',
+            upload_id='fake-upload-id',
+            parts=[
+                PartFinalization(part_number=1, size=1, etag='fake-etag-1'),
+                PartFinalization(part_number=2, size=2, etag='fake-etag-2'),
+            ],
+        )
+    )
+    print(body)
+    assert body == (
+        b'<CompleteMultipartUpload xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
+        b'<Part><PartNumber>1</PartNumber><ETag>"fake-etag-1"</ETag></Part>'
+        b'<Part><PartNumber>2</PartNumber><ETag>"fake-etag-2"</ETag></Part>'
+        b'</CompleteMultipartUpload>'
+    )
 
 
 @pytest.mark.parametrize(

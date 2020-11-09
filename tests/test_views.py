@@ -84,7 +84,7 @@ def test_full_upload_flow(api_client: APIClient, file_size: int):
 
     initialization['field_id'] = 'test_app.Resource.blob'
 
-    # Finalize the upload
+    # Presign the finalize request
     resp = api_client.post(
         reverse('s3_file_field:upload-finalize'),
         initialization,
@@ -92,8 +92,17 @@ def test_full_upload_flow(api_client: APIClient, file_size: int):
     )
     assert resp.status_code == 200
     assert resp.data == {
+        'finalize_url': Re(r'.*'),
+        'body': Re(r'.*'),
         'field_value': Re(r'.*:.*'),
     }
+
+    # Finalize the upload
+    resp = requests.post(
+        resp.data['finalize_url'],
+        data=resp.data['body'],
+    )
+    resp.raise_for_status()
 
     # Verify the object is present in the store
     assert default_storage.exists(initialization['object_key'])
