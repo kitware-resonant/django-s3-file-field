@@ -18,10 +18,6 @@ interface UploadedPart {
   size: number;
   etag: string;
 }
-// Description of the upload from finalizeUpload()
-interface UploadFinalization {
-  field_value: string;
-}
 // Return value from uploadFile()
 export interface UploadResult {
   value: string;
@@ -88,24 +84,37 @@ export default class S3FFClient {
   }
 
   /**
-   * Finalizes an upload.
+   * Completes an upload. The object will exist in the object store after completion.
    *
    * @param multipartInfo the information describing the multipart upload
    * @param parts the parts that were uploaded
-   * @returns UploadResult
+   * @returns finalization signed information needed by /finalize/
    */
-  protected async finalizeUpload(multipartInfo: MultipartInfo, parts: UploadedPart[], fieldId: string): Promise<UploadFinalization> {
-    const response = await axios.post(`${this.baseUrl}/upload-finalize/`, {
+  protected async completeUpload(multipartInfo: MultipartInfo, parts: UploadedPart[], fieldId: string): Promise<string> {
+    const response = await axios.post(`${this.baseUrl}/upload-complete/`, {
       field_id: fieldId,
       object_key: multipartInfo.object_key,
       upload_id: multipartInfo.upload_id,
       parts: parts,
     });
-    const { finalize_url, body, field_value } = response.data;
-    await axios.post(finalize_url, body);
-    return {
-      field_value: field_value,
-    };
+    const { complete_url, body, finalization } = response.data;
+    await axios.post(complete_url, body);
+    return finalization;
+  }
+
+  /**
+   * Finalizes an upload.
+   * This will only succeed if the object is already present in the object store.
+   *
+   * @param finalization signed information returned from /upload-complete/
+   * @returns signed field_value containing an object_key and a size
+   */
+  protected async finalize(finalization: string): Promise<string> {
+    const response = await axios.post(`${this.baseUrl}/finalize/`, {
+      finalization: finalization,
+    });
+    const { field_value } = response.data;
+    return field_value;
   }
 
   /**
@@ -117,9 +126,10 @@ export default class S3FFClient {
   public async uploadFile(file: File, fieldId: string): Promise<UploadResult> {
     const multipartInfo = await this.initializeUpload(file, fieldId);
     const parts = await this.uploadParts(file, multipartInfo.parts);
-    const finalization = await this.finalizeUpload(multipartInfo, parts, fieldId);
+    const finalization = await this.completeUpload(multipartInfo, parts, fieldId);
+    const field_value = await this.finalize(finalization);
     return {
-      value: finalization.field_value,
+      value: field_value,
       state: 'successful',
     }
   }
