@@ -196,13 +196,30 @@ def test_multipart_manager_marshal_complete_body(multipart_manager: MultipartMan
     )
 
 
-def test_multipart_manager_get_upload_size(multipart_manager: MultipartManager):
-    # TODO: this abuses the leftover object from test_multipart_manager_complete_upload
+@pytest.mark.parametrize('file_size', [10, mb(10), mb(12)], ids=['10B', '10MB', '12MB'])
+def test_multipart_manager_get_upload_size(multipart_manager: MultipartManager, file_size: int):
+    # Upload an object
+    initialization = multipart_manager.initialize_upload(
+        'new-object',
+        file_size,
+    )
+    completion = UploadCompletion(
+        object_key=initialization.object_key, upload_id=initialization.upload_id, parts=[]
+    )
+    for part in initialization.parts:
+        resp = requests.put(part.upload_url, data=b'a' * part.size)
+        resp.raise_for_status()
+        completion.parts.append(
+            PartCompletion(part_number=part.part_number, size=part.size, etag=resp.headers['ETag'])
+        )
+    completed_upload = multipart_manager.complete_upload(completion)
+    requests.post(completed_upload.complete_url, data=completed_upload.body)
+
     size = multipart_manager.get_upload_size(
         object_key='new-object',
     )
 
-    assert size == 12 * 1024 * 1024
+    assert size == file_size
 
 
 def test_multipart_manager_get_upload_size_not_found(multipart_manager: MultipartManager):
