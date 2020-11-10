@@ -9,7 +9,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from . import _multipart, _registry
-from ._multipart import PartFinalization, UploadFinalization
+from ._multipart import PartCompletion, UploadCompletion
 
 
 class UploadInitializationRequestSerializer(serializers.Serializer):
@@ -31,33 +31,41 @@ class UploadInitializationResponseSerializer(serializers.Serializer):
     parts = PartInitializationResponseSerializer(many=True, allow_empty=False)
 
 
-class PartFinalizationRequestSerializer(serializers.Serializer):
+class PartCompletionRequestSerializer(serializers.Serializer):
     part_number = serializers.IntegerField(min_value=1)
     size = serializers.IntegerField(min_value=1)
     etag = serializers.CharField()
 
-    def create(self, validated_data) -> PartFinalization:
-        return PartFinalization(**validated_data)
+    def create(self, validated_data) -> PartCompletion:
+        return PartCompletion(**validated_data)
 
 
-class UploadFinalizationRequestSerializer(serializers.Serializer):
+class UploadCompletionRequestSerializer(serializers.Serializer):
     field_id = serializers.CharField()
     object_key = serializers.CharField(trim_whitespace=False)
     upload_id = serializers.CharField()
-    parts = PartFinalizationRequestSerializer(many=True, allow_empty=False)
+    parts = PartCompletionRequestSerializer(many=True, allow_empty=False)
 
-    def create(self, validated_data) -> UploadFinalization:
+    def create(self, validated_data) -> UploadCompletion:
         parts = [
-            PartFinalization(**part)
+            PartCompletion(**part)
             for part in sorted(validated_data.pop('parts'), key=lambda part: part['part_number'])
         ]
         del validated_data['field_id']
-        return UploadFinalization(parts=parts, **validated_data)
+        return UploadCompletion(parts=parts, **validated_data)
 
 
-class UploadFinalizationResponseSerializer(serializers.Serializer):
-    finalize_url = serializers.URLField()
+class UploadCompletionResponseSerializer(serializers.Serializer):
+    complete_url = serializers.URLField()
     body = serializers.CharField(trim_whitespace=False)
+    finalization = serializers.CharField(trim_whitespace=False)
+
+
+class FinalizationRequestSerializer(serializers.Serializer):
+    finalization = serializers.CharField(trim_whitespace=False)
+
+
+class FinalizationResponseSerializer(serializers.Serializer):
     field_value = serializers.CharField(trim_whitespace=False)
 
 
@@ -95,11 +103,11 @@ def upload_initialize(request: Request) -> HttpResponseBase:
 # @permission_classes([IsAuthenticated])
 @api_view(['POST'])
 @parser_classes([JSONParser])
-def upload_finalize(request: Request) -> HttpResponseBase:
-    request_serializer = UploadFinalizationRequestSerializer(data=request.data)
+def upload_complete(request: Request) -> HttpResponseBase:
+    request_serializer = UploadCompletionRequestSerializer(data=request.data)
     request_serializer.is_valid(raise_exception=True)
     field = _registry.get_field(request_serializer.validated_data['field_id'])
-    finalization: UploadFinalization = request_serializer.save()
+    completion: UploadCompletion = request_serializer.save()
 
     # check if upload_prepare signed this less than max age ago
     # tsigner = TimestampSigner()
@@ -108,9 +116,58 @@ def upload_finalize(request: Request) -> HttpResponseBase:
     # ):
     #     raise BadSignature()
 
-    finalized_upload = _multipart.MultipartManager.from_storage(field.storage).finalize_upload(
-        finalization
+    completed_upload = _multipart.MultipartManager.from_storage(field.storage).complete_upload(
+        completion
     )
+
+    # signals.s3_file_field_upload_finalize.send(
+    #     sender=multipart_upload_finalize, name=name, object_key=object_key
+    # )
+
+    # We sign the finalization info so that finalizations are unique to uploads
+    finalization = signing.dumps(
+        {
+            'field_id': request_serializer.validated_data['field_id'],
+            'object_key': request_serializer.validated_data['object_key'],
+        }
+    )
+
+    response_serializer = UploadCompletionResponseSerializer(
+        {
+            'complete_url': completed_upload.complete_url,
+            'body': completed_upload.body,
+            'finalization': finalization,
+        }
+    )
+    return Response(response_serializer.data)
+
+
+# @authentication_classes([TokenAuthentication])
+# @permission_classes([IsAuthenticated])
+@api_view(['POST'])
+@parser_classes([JSONParser])
+def finalize(request: Request) -> HttpResponseBase:
+    request_serializer = FinalizationRequestSerializer(data=request.data)
+    request_serializer.is_valid(raise_exception=True)
+
+    finalization = signing.loads(request_serializer.validated_data['finalization'])
+    field_id = finalization['field_id']
+    object_key = finalization['object_key']
+
+    field = _registry.get_field(field_id)
+
+    # check if upload_prepare signed this less than max age ago
+    # tsigner = TimestampSigner()
+    # if object_key != tsigner.unsign(
+    #     upload_sig, max_age=int(MultipartManager._url_expiration.total_seconds())
+    # ):
+    #     raise BadSignature()
+
+    try:
+        size = _multipart.MultipartManager.from_storage(field.storage).get_upload_size(object_key)
+    except ValueError:
+        # The upload did not complete, do not finalize
+        return Response('Object not found', status=400)
 
     # signals.s3_file_field_upload_finalize.send(
     #     sender=multipart_upload_finalize, name=name, object_key=object_key
@@ -118,15 +175,13 @@ def upload_finalize(request: Request) -> HttpResponseBase:
 
     field_value = signing.dumps(
         {
-            'object_key': finalization.object_key,
-            'file_size': sum(part.size for part in finalization.parts),
+            'object_key': object_key,
+            'file_size': size,
         }
     )
 
-    response_serializer = UploadFinalizationResponseSerializer(
+    response_serializer = FinalizationResponseSerializer(
         {
-            'finalize_url': finalized_upload.finalize_url,
-            'body': finalized_upload.body,
             'field_value': field_value,
         }
     )
