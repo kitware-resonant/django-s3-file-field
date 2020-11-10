@@ -1,7 +1,7 @@
 import minio
 from minio_storage.storage import MinioStorage
 
-from ._multipart import MultipartManager, UploadFinalization
+from ._multipart import MultipartManager, UploadCompletion
 
 
 class MinioMultipartManager(MultipartManager):
@@ -46,13 +46,20 @@ class MinioMultipartManager(MultipartManager):
             # }
         )
 
-    def _generate_presigned_finalize_url(self, finalization: UploadFinalization) -> str:
+    def _generate_presigned_complete_url(self, completion: UploadCompletion) -> str:
         return self._signing_client.presigned_url(
             method='POST',
             bucket_name=self._bucket_name,
-            object_name=finalization.object_key,
+            object_name=completion.object_key,
             expires=self._url_expiration,
             response_headers={
-                'uploadId': finalization.upload_id,
+                'uploadId': completion.upload_id,
             },
         )
+
+    def get_upload_size(self, object_key: str) -> int:
+        try:
+            stats = self._client.stat_object(bucket_name=self._bucket_name, object_name=object_key)
+            return stats.size
+        except minio.error.NoSuchKey:
+            raise ValueError('Object not found')

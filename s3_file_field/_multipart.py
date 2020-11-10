@@ -23,22 +23,22 @@ class InitializedUpload:
 
 
 @dataclass
-class PartFinalization:
+class PartCompletion:
     part_number: int
     size: int
     etag: str
 
 
 @dataclass
-class UploadFinalization:
+class UploadCompletion:
     object_key: str
     upload_id: str
-    parts: List[PartFinalization]
+    parts: List[PartCompletion]
 
 
 @dataclass
-class FinalizedUpload:
-    finalize_url: str
+class CompletedUpload:
+    complete_url: str
     body: str
 
 
@@ -67,15 +67,15 @@ class MultipartManager:
         ]
         return InitializedUpload(object_key=object_key, upload_id=upload_id, parts=parts)
 
-    def finalize_upload(self, finalization: UploadFinalization) -> FinalizedUpload:
-        finalize_url = self._generate_presigned_finalize_url(finalization)
-        body = self.marshal_finalize_body(finalization)
-        return FinalizedUpload(finalize_url=finalize_url, body=body)
+    def complete_upload(self, completion: UploadCompletion) -> CompletedUpload:
+        complete_url = self._generate_presigned_complete_url(completion)
+        body = self._marshal_complete_body(completion)
+        return CompletedUpload(complete_url=complete_url, body=body)
 
-    def marshal_finalize_body(self, finalization: UploadFinalization) -> str:
-        """Generate the body of a presigned finalize request."""
+    def _marshal_complete_body(self, completion: UploadCompletion) -> str:
+        """Generate the body of a presigned completion request."""
         body = '<CompleteMultipartUpload xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
-        for part in finalization.parts:
+        for part in completion.parts:
             body += '<Part>'
             body += f'<PartNumber>{part.part_number}</PartNumber>'
             body += f'<ETag>{part.etag}</ETag>'
@@ -141,7 +141,10 @@ class MultipartManager:
     ) -> str:
         raise NotImplementedError
 
-    def _generate_presigned_finalize_url(self, finalization: UploadFinalization) -> str:
+    def _generate_presigned_complete_url(self, completion: UploadCompletion) -> str:
+        raise NotImplementedError
+
+    def get_upload_size(self, object_key: str) -> int:
         raise NotImplementedError
 
     @staticmethod

@@ -1,12 +1,13 @@
 from typing import TYPE_CHECKING
 
+from botocore.exceptions import ClientError
 from storages.backends.s3boto3 import S3Boto3Storage
 
 if TYPE_CHECKING:
     # mypy_boto3_s3 only provides types
     import mypy_boto3_s3 as s3
 
-from ._multipart import MultipartManager, UploadFinalization
+from ._multipart import MultipartManager, UploadCompletion
 
 
 class Boto3MultipartManager(MultipartManager):
@@ -49,13 +50,23 @@ class Boto3MultipartManager(MultipartManager):
             ExpiresIn=int(self._url_expiration.total_seconds()),
         )
 
-    def _generate_presigned_finalize_url(self, finalization: UploadFinalization) -> str:
+    def _generate_presigned_complete_url(self, completion: UploadCompletion) -> str:
         return self._client.generate_presigned_url(
             ClientMethod='complete_multipart_upload',
             Params={
                 'Bucket': self._bucket_name,
-                'Key': finalization.object_key,
-                'UploadId': finalization.upload_id,
+                'Key': completion.object_key,
+                'UploadId': completion.upload_id,
             },
             ExpiresIn=int(self._url_expiration.total_seconds()),
         )
+
+    def get_upload_size(self, object_key: str) -> int:
+        try:
+            stats = self._client.head_object(
+                Bucket=self._bucket_name,
+                Key=object_key,
+            )
+            return stats['ContentLength']
+        except ClientError:
+            raise ValueError('Object not found')
