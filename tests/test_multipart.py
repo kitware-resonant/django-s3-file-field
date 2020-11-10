@@ -122,18 +122,18 @@ def test_multipart_manager_complete_upload(multipart_manager: MultipartManager, 
         file_size,
     )
 
-    finalization = UploadCompletion(
+    completion = UploadCompletion(
         object_key=initialization.object_key, upload_id=initialization.upload_id, parts=[]
     )
 
     for part in initialization.parts:
         resp = requests.put(part.upload_url, data=b'a' * part.size)
         resp.raise_for_status()
-        finalization.parts.append(
+        completion.parts.append(
             PartCompletion(part_number=part.part_number, size=part.size, etag=resp.headers['ETag'])
         )
 
-    finalization = multipart_manager.complete_upload(finalization)
+    finalization = multipart_manager.complete_upload(completion)
     assert finalization
     assert finalization.complete_url
     assert finalization.body

@@ -1,3 +1,5 @@
+from typing import Dict, cast
+
 from django.core.files.storage import default_storage
 from django.urls import reverse
 import pytest
@@ -96,14 +98,14 @@ def test_full_upload_flow(api_client: APIClient, file_size: int):
         'body': Re(r'.*'),
         'finalization': Re(r'.*:.*'),
     }
-    finalization = resp.data['finalization']
+    completion_data = cast(Dict, resp.data)
 
     # Finalize the upload
-    resp = requests.post(
-        resp.data['complete_url'],
-        data=resp.data['body'],
+    complete_resp = requests.post(
+        completion_data['complete_url'],
+        data=completion_data['body'],
     )
-    resp.raise_for_status()
+    complete_resp.raise_for_status()
 
     # Verify the object is present in the store
     assert default_storage.exists(initialization['object_key'])
@@ -111,7 +113,7 @@ def test_full_upload_flow(api_client: APIClient, file_size: int):
     resp = api_client.post(
         reverse('s3_file_field:finalize'),
         {
-            'finalization': finalization,
+            'finalization': completion_data['finalization'],
         },
         format='json',
     )
