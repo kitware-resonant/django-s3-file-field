@@ -133,10 +133,10 @@ def test_multipart_manager_complete_upload(multipart_manager: MultipartManager, 
             PartCompletion(part_number=part.part_number, size=part.size, etag=resp.headers['ETag'])
         )
 
-    completion = multipart_manager.complete_upload(completion)
-    assert completion
-    assert completion.complete_url
-    assert completion.body
+    completed_upload = multipart_manager.complete_upload(completion)
+    assert completed_upload
+    assert completed_upload.complete_url
+    assert completed_upload.body
 
 
 def test_multipart_manager_test_upload(multipart_manager: MultipartManager):
