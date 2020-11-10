@@ -100,7 +100,7 @@ def test_full_upload_flow(api_client: APIClient, file_size: int):
     }
     completion_data = cast(Dict, resp.data)
 
-    # Finalize the upload
+    # Complete the upload
     complete_resp = requests.post(
         completion_data['complete_url'],
         data=completion_data['body'],
@@ -110,6 +110,7 @@ def test_full_upload_flow(api_client: APIClient, file_size: int):
     # Verify the object is present in the store
     assert default_storage.exists(initialization['object_key'])
 
+    # Finalize the upload
     resp = api_client.post(
         reverse('s3_file_field:finalize'),
         {

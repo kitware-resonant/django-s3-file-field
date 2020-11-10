@@ -67,6 +67,6 @@ def test_upload_completion_request_deserialization():
     )
 
     assert serializer.is_valid(raise_exception=True)
-    finalization = serializer.save()
-    assert isinstance(finalization, UploadCompletion)
-    assert all(isinstance(part, PartCompletion) for part in finalization.parts)
+    completion = serializer.save()
+    assert isinstance(completion, UploadCompletion)
+    assert all(isinstance(part, PartCompletion) for part in completion.parts)
