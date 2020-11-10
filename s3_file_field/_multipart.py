@@ -6,7 +6,6 @@ import math
 from typing import Iterator, List, Tuple
 
 from django.core.files.storage import Storage
-from minio.xml_marshal import marshal_complete_multipart
 
 
 @dataclass
@@ -74,13 +73,15 @@ class MultipartManager:
         return FinalizedUpload(finalize_url=finalize_url, body=body)
 
     def marshal_finalize_body(self, finalization: UploadFinalization) -> str:
-        """
-        Generate the body of a presigned finalize request.
-
-        We use the internal minio implementation to generate the XML body of the request
-        the client will send.
-        """
-        return marshal_complete_multipart(finalization.parts)
+        """Generate the body of a presigned finalize request."""
+        body = '<CompleteMultipartUpload xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
+        for part in finalization.parts:
+            body += '<Part>'
+            body += f'<PartNumber>{part.part_number}</PartNumber>'
+            body += f'<ETag>{part.etag}</ETag>'
+            body += '</Part>'
+        body += '</CompleteMultipartUpload>'
+        return body
 
     def test_upload(self):
         object_key = '.s3-file-field-test-file'

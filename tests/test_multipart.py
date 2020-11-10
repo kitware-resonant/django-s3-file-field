@@ -189,12 +189,12 @@ def test_multipart_manager_marshal_finalize_body(multipart_manager: MultipartMan
             ],
         )
     )
-    print(body)
+
     assert body == (
-        b'<CompleteMultipartUpload xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
-        b'<Part><PartNumber>1</PartNumber><ETag>"fake-etag-1"</ETag></Part>'
-        b'<Part><PartNumber>2</PartNumber><ETag>"fake-etag-2"</ETag></Part>'
-        b'</CompleteMultipartUpload>'
+        '<CompleteMultipartUpload xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
+        '<Part><PartNumber>1</PartNumber><ETag>fake-etag-1</ETag></Part>'
+        '<Part><PartNumber>2</PartNumber><ETag>fake-etag-2</ETag></Part>'
+        '</CompleteMultipartUpload>'
     )
 
 
