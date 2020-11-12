@@ -57,7 +57,7 @@ class MinioMultipartManager(MultipartManager):
             },
         )
 
-    def get_upload_size(self, object_key: str) -> int:
+    def get_object_size(self, object_key: str) -> int:
         try:
             stats = self._client.stat_object(bucket_name=self._bucket_name, object_name=object_key)
             return stats.size

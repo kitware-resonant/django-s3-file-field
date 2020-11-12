@@ -61,7 +61,7 @@ class Boto3MultipartManager(MultipartManager):
             ExpiresIn=int(self._url_expiration.total_seconds()),
         )
 
-    def get_upload_size(self, object_key: str) -> int:
+    def get_object_size(self, object_key: str) -> int:
         try:
             stats = self._client.head_object(
                 Bucket=self._bucket_name,

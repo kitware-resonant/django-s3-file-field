@@ -149,7 +149,7 @@ class MultipartManager:
     def _generate_presigned_complete_url(self, completion: UploadCompletion) -> str:
         raise NotImplementedError
 
-    def get_upload_size(self, object_key: str) -> int:
+    def get_object_size(self, object_key: str) -> int:
         raise NotImplementedError
 
     @staticmethod

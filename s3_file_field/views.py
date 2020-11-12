@@ -164,7 +164,7 @@ def finalize(request: Request) -> HttpResponseBase:
     #     raise BadSignature()
 
     try:
-        size = _multipart.MultipartManager.from_storage(field.storage).get_upload_size(object_key)
+        size = _multipart.MultipartManager.from_storage(field.storage).get_object_size(object_key)
     except ValueError:
         # The upload did not complete, do not finalize
         return Response('Object not found', status=400)
