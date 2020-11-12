@@ -1,3 +1,4 @@
+from django.core import signing
 import pytest
 
 from s3_file_field._multipart import (
@@ -49,15 +50,22 @@ def test_upload_initialization_request_deserialization():
 def test_upload_initialization_response_serialization(
     initialization: InitializedUpload,
 ):
-    serializer = UploadInitializationResponseSerializer(initialization)
+    serializer = UploadInitializationResponseSerializer(
+        {
+            'object_key': initialization.object_key,
+            'upload_id': initialization.upload_id,
+            'parts': initialization.parts,
+            'upload_signature': 'test-upload-signature',
+        }
+    )
     assert isinstance(serializer.data, dict)
 
 
 def test_upload_completion_request_deserialization():
+    upload_signature = signing.dumps({'object_key': 'test-object-key', 'field_id': 'test-field-id'})
     serializer = UploadCompletionRequestSerializer(
         data={
-            'field_id': 'package.Class.field',
-            'object_key': 'test-object-key',
+            'upload_signature': upload_signature,
             'upload_id': 'test-upload-id',
             'parts': [
                 {'part_number': 1, 'size': 10_000, 'etag': 'test-etag-1'},

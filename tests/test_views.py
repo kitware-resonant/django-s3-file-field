@@ -1,5 +1,6 @@
 from typing import Dict, cast
 
+from django.core import signing
 from django.core.files.storage import default_storage
 from django.urls import reverse
 import pytest
@@ -24,6 +25,11 @@ def test_prepare(api_client):
         'object_key': Re(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt'),
         'upload_id': UUID_RE,
         'parts': [{'part_number': 1, 'size': 10, 'upload_url': URL_RE}],
+        'upload_signature': Re(r'.*:.*'),
+    }
+    assert signing.loads(resp.data['upload_signature']) == {
+        'object_key': Re(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt'),
+        'field_id': 'test_app.Resource.blob',
     }
 
 
@@ -42,6 +48,7 @@ def test_prepare_two_parts(api_client):
             {'part_number': 1, 'size': mb(5), 'upload_url': URL_RE},
             {'part_number': 2, 'size': mb(5), 'upload_url': URL_RE},
         ],
+        'upload_signature': Re(r'.*:.*'),
     }
 
 
@@ -60,6 +67,7 @@ def test_prepare_three_parts(api_client):
             {'part_number': 2, 'size': mb(5), 'upload_url': URL_RE},
             {'part_number': 3, 'size': mb(2), 'upload_url': URL_RE},
         ],
+        'upload_signature': Re(r'.*:.*'),
     }
 
 
@@ -74,6 +82,7 @@ def test_full_upload_flow(api_client: APIClient, file_size: int):
     assert resp.status_code == 200
     initialization = resp.data
     assert isinstance(initialization, dict)
+    upload_signature = initialization['upload_signature']
 
     # Perform the upload
     for part in initialization['parts']:
@@ -89,14 +98,17 @@ def test_full_upload_flow(api_client: APIClient, file_size: int):
     # Presign the complete request
     resp = api_client.post(
         reverse('s3_file_field:upload-complete'),
-        initialization,
+        {
+            'upload_id': initialization['upload_id'],
+            'parts': initialization['parts'],
+            'upload_signature': upload_signature,
+        },
         format='json',
     )
     assert resp.status_code == 200
     assert resp.data == {
         'complete_url': Re(r'.*'),
         'body': Re(r'.*'),
-        'finalization': Re(r'.*:.*'),
     }
     completion_data = cast(Dict, resp.data)
 
@@ -114,7 +126,7 @@ def test_full_upload_flow(api_client: APIClient, file_size: int):
     resp = api_client.post(
         reverse('s3_file_field:finalize'),
         {
-            'finalization': completion_data['finalization'],
+            'upload_signature': upload_signature,
         },
         format='json',
     )

@@ -29,6 +29,7 @@ class UploadInitializationResponseSerializer(serializers.Serializer):
     object_key = serializers.CharField(trim_whitespace=False)
     upload_id = serializers.CharField()
     parts = PartInitializationResponseSerializer(many=True, allow_empty=False)
+    upload_signature = serializers.CharField(trim_whitespace=False)
 
 
 class PartCompletionRequestSerializer(serializers.Serializer):
@@ -41,8 +42,7 @@ class PartCompletionRequestSerializer(serializers.Serializer):
 
 
 class UploadCompletionRequestSerializer(serializers.Serializer):
-    field_id = serializers.CharField()
-    object_key = serializers.CharField(trim_whitespace=False)
+    upload_signature = serializers.CharField(trim_whitespace=False)
     upload_id = serializers.CharField()
     parts = PartCompletionRequestSerializer(many=True, allow_empty=False)
 
@@ -51,18 +51,19 @@ class UploadCompletionRequestSerializer(serializers.Serializer):
             PartCompletion(**part)
             for part in sorted(validated_data.pop('parts'), key=lambda part: part['part_number'])
         ]
-        del validated_data['field_id']
-        return UploadCompletion(parts=parts, **validated_data)
+        upload_signature = signing.loads(validated_data['upload_signature'])
+        object_key = upload_signature['object_key']
+        upload_id = validated_data['upload_id']
+        return UploadCompletion(parts=parts, object_key=object_key, upload_id=upload_id)
 
 
 class UploadCompletionResponseSerializer(serializers.Serializer):
     complete_url = serializers.URLField()
     body = serializers.CharField(trim_whitespace=False)
-    finalization = serializers.CharField(trim_whitespace=False)
 
 
 class FinalizationRequestSerializer(serializers.Serializer):
-    finalization = serializers.CharField(trim_whitespace=False)
+    upload_signature = serializers.CharField(trim_whitespace=False)
 
 
 class FinalizationResponseSerializer(serializers.Serializer):
@@ -92,10 +93,22 @@ def upload_initialize(request: Request) -> HttpResponseBase:
     #     sender=upload_prepare, name=name, object_key=object_key
     # )
 
-    # signer = TimestampSigner()
-    # sig = signer.sign(object_key)
+    # We sign the field_id and object_key to create a "session token" for this upload
+    upload_signature = signing.dumps(
+        {
+            'field_id': upload_request['field_id'],
+            'object_key': object_key,
+        }
+    )
 
-    response_serializer = UploadInitializationResponseSerializer(initialization)
+    response_serializer = UploadInitializationResponseSerializer(
+        {
+            'object_key': initialization.object_key,
+            'upload_id': initialization.upload_id,
+            'parts': initialization.parts,
+            'upload_signature': upload_signature,
+        }
+    )
     return Response(response_serializer.data)
 
 
@@ -106,8 +119,10 @@ def upload_initialize(request: Request) -> HttpResponseBase:
 def upload_complete(request: Request) -> HttpResponseBase:
     request_serializer = UploadCompletionRequestSerializer(data=request.data)
     request_serializer.is_valid(raise_exception=True)
-    field = _registry.get_field(request_serializer.validated_data['field_id'])
     completion: UploadCompletion = request_serializer.save()
+
+    upload_signature = signing.loads(request_serializer.validated_data['upload_signature'])
+    field = _registry.get_field(upload_signature['field_id'])
 
     # check if upload_prepare signed this less than max age ago
     # tsigner = TimestampSigner()
@@ -124,19 +139,10 @@ def upload_complete(request: Request) -> HttpResponseBase:
     #     sender=multipart_upload_finalize, name=name, object_key=object_key
     # )
 
-    # We sign the finalization info so that finalizations are unique to uploads
-    finalization = signing.dumps(
-        {
-            'field_id': request_serializer.validated_data['field_id'],
-            'object_key': request_serializer.validated_data['object_key'],
-        }
-    )
-
     response_serializer = UploadCompletionResponseSerializer(
         {
             'complete_url': completed_upload.complete_url,
             'body': completed_upload.body,
-            'finalization': finalization,
         }
     )
     return Response(response_serializer.data)
@@ -150,9 +156,9 @@ def finalize(request: Request) -> HttpResponseBase:
     request_serializer = FinalizationRequestSerializer(data=request.data)
     request_serializer.is_valid(raise_exception=True)
 
-    finalization = signing.loads(request_serializer.validated_data['finalization'])
-    field_id = finalization['field_id']
-    object_key = finalization['object_key']
+    upload_signature = signing.loads(request_serializer.validated_data['upload_signature'])
+    field_id = upload_signature['field_id']
+    object_key = upload_signature['object_key']
 
     field = _registry.get_field(field_id)
 

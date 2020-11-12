@@ -8,6 +8,7 @@ interface PartInfo {
 }
 // Description of the upload from initializeUpload()
 interface MultipartInfo {
+  upload_signature: string;
   object_key: string;
   upload_id: string;
   parts: PartInfo[];
@@ -90,16 +91,14 @@ export default class S3FFClient {
    * @param parts the parts that were uploaded
    * @returns finalization signed information needed by /finalize/
    */
-  protected async completeUpload(multipartInfo: MultipartInfo, parts: UploadedPart[], fieldId: string): Promise<string> {
+  protected async completeUpload(multipartInfo: MultipartInfo, parts: UploadedPart[]): Promise<void> {
     const response = await axios.post(`${this.baseUrl}/upload-complete/`, {
-      field_id: fieldId,
-      object_key: multipartInfo.object_key,
+      upload_signature: multipartInfo.upload_signature,
       upload_id: multipartInfo.upload_id,
       parts: parts,
     });
-    const { complete_url, body, finalization } = response.data;
+    const { complete_url, body } = response.data;
     await axios.post(complete_url, body);
-    return finalization;
   }
 
   /**
@@ -109,9 +108,9 @@ export default class S3FFClient {
    * @param finalization signed information returned from /upload-complete/
    * @returns signed field_value containing an object_key and a size
    */
-  protected async finalize(finalization: string): Promise<string> {
+  protected async finalize(multipartInfo: MultipartInfo): Promise<string> {
     const response = await axios.post(`${this.baseUrl}/finalize/`, {
-      finalization: finalization,
+      upload_signature: multipartInfo.upload_signature,
     });
     const { field_value } = response.data;
     return field_value;
@@ -126,8 +125,8 @@ export default class S3FFClient {
   public async uploadFile(file: File, fieldId: string): Promise<UploadResult> {
     const multipartInfo = await this.initializeUpload(file, fieldId);
     const parts = await this.uploadParts(file, multipartInfo.parts);
-    const finalization = await this.completeUpload(multipartInfo, parts, fieldId);
-    const field_value = await this.finalize(finalization);
+    await this.completeUpload(multipartInfo, parts);
+    const field_value = await this.finalize(multipartInfo);
     return {
       value: field_value,
       state: 'successful',
