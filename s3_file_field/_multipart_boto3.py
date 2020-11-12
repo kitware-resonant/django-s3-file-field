@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     # mypy_boto3_s3 only provides types
     import mypy_boto3_s3 as s3
 
-from ._multipart import MultipartManager, TransferredParts
+from ._multipart import MultipartManager, ObjectNotFoundException, TransferredParts
 
 
 class Boto3MultipartManager(MultipartManager):
@@ -69,4 +69,4 @@ class Boto3MultipartManager(MultipartManager):
             )
             return stats['ContentLength']
         except ClientError:
-            raise ValueError('Object not found')
+            raise ObjectNotFoundException()

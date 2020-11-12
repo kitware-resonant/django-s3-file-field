@@ -48,6 +48,12 @@ class UnsupportedStorageException(Exception):
     pass
 
 
+class ObjectNotFoundException(Exception):
+    """Raised when an object cannot be found in the object store."""
+
+    pass
+
+
 class MultipartManager:
     """A facade providing management of S3 multipart uploads to multiple Storages."""
 

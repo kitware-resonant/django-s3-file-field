@@ -1,7 +1,7 @@
 import minio
 from minio_storage.storage import MinioStorage
 
-from ._multipart import MultipartManager, TransferredParts
+from ._multipart import MultipartManager, ObjectNotFoundException, TransferredParts
 
 
 class MinioMultipartManager(MultipartManager):
@@ -62,4 +62,4 @@ class MinioMultipartManager(MultipartManager):
             stats = self._client.stat_object(bucket_name=self._bucket_name, object_name=object_key)
             return stats.size
         except minio.error.NoSuchKey:
-            raise ValueError('Object not found')
+            raise ObjectNotFoundException()

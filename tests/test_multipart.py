@@ -9,7 +9,12 @@ import pytest
 import requests
 from storages.backends.s3boto3 import S3Boto3Storage
 
-from s3_file_field._multipart import MultipartManager, TransferredPart, TransferredParts
+from s3_file_field._multipart import (
+    MultipartManager,
+    ObjectNotFoundException,
+    TransferredPart,
+    TransferredParts,
+)
 from s3_file_field._multipart_boto3 import Boto3MultipartManager
 from s3_file_field._multipart_minio import MinioMultipartManager
 
@@ -224,7 +229,7 @@ def test_multipart_manager_get_object_size(multipart_manager: MultipartManager, 
 
 
 def test_multipart_manager_get_object_size_not_found(multipart_manager: MultipartManager):
-    with pytest.raises(ValueError, match=r'Object not found'):
+    with pytest.raises(ObjectNotFoundException):
         multipart_manager.get_object_size(
             object_key='no-such-object',
         )
