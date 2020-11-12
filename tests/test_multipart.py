@@ -176,8 +176,8 @@ def test_multipart_manager_generate_presigned_complete_url(multipart_manager: Mu
     assert isinstance(upload_url, str)
 
 
-def test_multipart_manager_marshal_complete_body(multipart_manager: MultipartManager):
-    body = multipart_manager._marshal_complete_body(
+def test_multipart_manager_generate_presigned_complete_body(multipart_manager: MultipartManager):
+    body = multipart_manager._generate_presigned_complete_body(
         UploadCompletion(
             object_key='new-object',
             upload_id='fake-upload-id',
@@ -189,6 +189,7 @@ def test_multipart_manager_marshal_complete_body(multipart_manager: MultipartMan
     )
 
     assert body == (
+        '<?xml version="1.0" encoding="UTF-8"?>'
         '<CompleteMultipartUpload xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
         '<Part><PartNumber>1</PartNumber><ETag>fake-etag-1</ETag></Part>'
         '<Part><PartNumber>2</PartNumber><ETag>fake-etag-2</ETag></Part>'

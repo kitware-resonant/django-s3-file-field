@@ -69,12 +69,17 @@ class MultipartManager:
 
     def complete_upload(self, completion: UploadCompletion) -> CompletedUpload:
         complete_url = self._generate_presigned_complete_url(completion)
-        body = self._marshal_complete_body(completion)
+        body = self._generate_presigned_complete_body(completion)
         return CompletedUpload(complete_url=complete_url, body=body)
 
-    def _marshal_complete_body(self, completion: UploadCompletion) -> str:
-        """Generate the body of a presigned completion request."""
-        body = '<CompleteMultipartUpload xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
+    def _generate_presigned_complete_body(self, completion: UploadCompletion) -> str:
+        """
+        Generate the body of a presigned completion request.
+
+        See https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html
+        """
+        body = '<?xml version="1.0" encoding="UTF-8"?>'
+        body += '<CompleteMultipartUpload xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
         for part in completion.parts:
             body += '<Part>'
             body += f'<PartNumber>{part.part_number}</PartNumber>'
