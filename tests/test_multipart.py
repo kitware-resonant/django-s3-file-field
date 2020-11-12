@@ -1,3 +1,4 @@
+from io import BytesIO
 from typing import TYPE_CHECKING
 
 from botocore.exceptions import ClientError
@@ -203,26 +204,13 @@ def test_multipart_manager_generate_presigned_complete_body(multipart_manager: M
 
 
 @pytest.mark.parametrize('file_size', [10, mb(10), mb(12)], ids=['10B', '10MB', '12MB'])
-def test_multipart_manager_get_object_size(multipart_manager: MultipartManager, file_size: int):
-    # Upload an object
-    initialization = multipart_manager.initialize_upload(
-        'new-object',
-        file_size,
-    )
-    transferred_parts = TransferredParts(
-        object_key=initialization.object_key, upload_id=initialization.upload_id, parts=[]
-    )
-    for part in initialization.parts:
-        resp = requests.put(part.upload_url, data=b'a' * part.size)
-        resp.raise_for_status()
-        transferred_parts.parts.append(
-            TransferredPart(part_number=part.part_number, size=part.size, etag=resp.headers['ETag'])
-        )
-    completed_upload = multipart_manager.complete_upload(transferred_parts)
-    requests.post(completed_upload.complete_url, data=completed_upload.body)
+def test_multipart_manager_get_object_size(
+    storage, multipart_manager: MultipartManager, file_size: int
+):
+    storage.save(name=f'object-with-size-{file_size}', content=BytesIO(b'X' * file_size))
 
     size = multipart_manager.get_object_size(
-        object_key='new-object',
+        object_key=f'object-with-size-{file_size}',
     )
 
     assert size == file_size
