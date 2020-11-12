@@ -162,22 +162,12 @@ def finalize(request: Request) -> HttpResponseBase:
 
     field = _registry.get_field(field_id)
 
-    # check if upload_prepare signed this less than max age ago
-    # tsigner = TimestampSigner()
-    # if object_key != tsigner.unsign(
-    #     upload_sig, max_age=int(MultipartManager._url_expiration.total_seconds())
-    # ):
-    #     raise BadSignature()
-
+    # get_object_size implicitly verifies that the object exists.
+    # We don't want to distribute the field value if the upload did not complete.
     try:
         size = _multipart.MultipartManager.from_storage(field.storage).get_object_size(object_key)
     except ValueError:
-        # The upload did not complete, do not finalize
         return Response('Object not found', status=400)
-
-    # signals.s3_file_field_upload_finalize.send(
-    #     sender=multipart_upload_finalize, name=name, object_key=object_key
-    # )
 
     field_value = signing.dumps(
         {
