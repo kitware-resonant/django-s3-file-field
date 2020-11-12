@@ -1,30 +1,31 @@
+from django.core import signing
 import pytest
 
 from s3_file_field._multipart import (
-    InitializedPart,
-    InitializedUpload,
-    PartFinalization,
-    UploadFinalization,
+    PresignedPartTransfer,
+    PresignedTransfer,
+    TransferredPart,
+    TransferredParts,
 )
 from s3_file_field.views import (
-    UploadFinalizationRequestSerializer,
+    UploadCompletionRequestSerializer,
     UploadInitializationRequestSerializer,
     UploadInitializationResponseSerializer,
 )
 
 
 @pytest.fixture
-def initialization() -> InitializedUpload:
-    return InitializedUpload(
+def initialization() -> PresignedTransfer:
+    return PresignedTransfer(
         object_key='test-object-key',
         upload_id='test-upload-id',
         parts=[
-            InitializedPart(
+            PresignedPartTransfer(
                 part_number=1,
                 size=10_000,
                 upload_url='http://minio.test/test-bucket/1',
             ),
-            InitializedPart(
+            PresignedPartTransfer(
                 part_number=2,
                 size=3_500,
                 upload_url='http://minio.test/test-bucket/2',
@@ -33,7 +34,7 @@ def initialization() -> InitializedUpload:
     )
 
 
-def test_upload_request_deserialization():
+def test_upload_initialization_request_deserialization():
     serializer = UploadInitializationRequestSerializer(
         data={
             'field_id': 'package.Class.field',
@@ -46,18 +47,25 @@ def test_upload_request_deserialization():
     assert isinstance(request, dict)
 
 
-def test_upload_initialization_serialization(
-    initialization: InitializedUpload,
+def test_upload_initialization_response_serialization(
+    initialization: PresignedTransfer,
 ):
-    serializer = UploadInitializationResponseSerializer(initialization)
+    serializer = UploadInitializationResponseSerializer(
+        {
+            'object_key': initialization.object_key,
+            'upload_id': initialization.upload_id,
+            'parts': initialization.parts,
+            'upload_signature': 'test-upload-signature',
+        }
+    )
     assert isinstance(serializer.data, dict)
 
 
-def test_upload_finalization_deserialization():
-    serializer = UploadFinalizationRequestSerializer(
+def test_upload_completion_request_deserialization():
+    upload_signature = signing.dumps({'object_key': 'test-object-key', 'field_id': 'test-field-id'})
+    serializer = UploadCompletionRequestSerializer(
         data={
-            'field_id': 'package.Class.field',
-            'object_key': 'test-object-key',
+            'upload_signature': upload_signature,
             'upload_id': 'test-upload-id',
             'parts': [
                 {'part_number': 1, 'size': 10_000, 'etag': 'test-etag-1'},
@@ -67,6 +75,6 @@ def test_upload_finalization_deserialization():
     )
 
     assert serializer.is_valid(raise_exception=True)
-    finalization = serializer.save()
-    assert isinstance(finalization, UploadFinalization)
-    assert all(isinstance(part, PartFinalization) for part in finalization.parts)
+    completion = serializer.save()
+    assert isinstance(completion, TransferredParts)
+    assert all(isinstance(part, TransferredPart) for part in completion.parts)

@@ -14,9 +14,9 @@ from django.urls import reverse
 @functools.lru_cache(maxsize=1)
 def get_base_url() -> str:
     prepare_url = reverse('s3_file_field:upload-initialize')
-    finalize_url = reverse('s3_file_field:upload-finalize')
+    complete_url = reverse('s3_file_field:upload-complete')
     # Use posixpath to always parse URL paths with forward slashes
-    return posixpath.commonpath([prepare_url, finalize_url])
+    return posixpath.commonpath([prepare_url, complete_url])
 
 
 class S3PlaceholderFile(File):

@@ -9,7 +9,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from . import _multipart, _registry
-from ._multipart import PartFinalization, UploadFinalization
+from ._multipart import ObjectNotFoundException, TransferredPart, TransferredParts
 
 
 class UploadInitializationRequestSerializer(serializers.Serializer):
@@ -29,33 +29,44 @@ class UploadInitializationResponseSerializer(serializers.Serializer):
     object_key = serializers.CharField(trim_whitespace=False)
     upload_id = serializers.CharField()
     parts = PartInitializationResponseSerializer(many=True, allow_empty=False)
+    upload_signature = serializers.CharField(trim_whitespace=False)
 
 
-class PartFinalizationRequestSerializer(serializers.Serializer):
+class TransferredPartRequestSerializer(serializers.Serializer):
     part_number = serializers.IntegerField(min_value=1)
     size = serializers.IntegerField(min_value=1)
     etag = serializers.CharField()
 
-    def create(self, validated_data) -> PartFinalization:
-        return PartFinalization(**validated_data)
+    def create(self, validated_data) -> TransferredPart:
+        return TransferredPart(**validated_data)
 
 
-class UploadFinalizationRequestSerializer(serializers.Serializer):
-    field_id = serializers.CharField()
-    object_key = serializers.CharField(trim_whitespace=False)
+class UploadCompletionRequestSerializer(serializers.Serializer):
+    upload_signature = serializers.CharField(trim_whitespace=False)
     upload_id = serializers.CharField()
-    parts = PartFinalizationRequestSerializer(many=True, allow_empty=False)
+    parts = TransferredPartRequestSerializer(many=True, allow_empty=False)
 
-    def create(self, validated_data) -> UploadFinalization:
+    def create(self, validated_data) -> TransferredParts:
         parts = [
-            PartFinalization(**part)
+            TransferredPart(**part)
             for part in sorted(validated_data.pop('parts'), key=lambda part: part['part_number'])
         ]
-        del validated_data['field_id']
-        return UploadFinalization(parts=parts, **validated_data)
+        upload_signature = signing.loads(validated_data['upload_signature'])
+        object_key = upload_signature['object_key']
+        upload_id = validated_data['upload_id']
+        return TransferredParts(parts=parts, object_key=object_key, upload_id=upload_id)
 
 
-class UploadFinalizationResponseSerializer(serializers.Serializer):
+class UploadCompletionResponseSerializer(serializers.Serializer):
+    complete_url = serializers.URLField()
+    body = serializers.CharField(trim_whitespace=False)
+
+
+class FinalizationRequestSerializer(serializers.Serializer):
+    upload_signature = serializers.CharField(trim_whitespace=False)
+
+
+class FinalizationResponseSerializer(serializers.Serializer):
     field_value = serializers.CharField(trim_whitespace=False)
 
 
@@ -82,10 +93,22 @@ def upload_initialize(request: Request) -> HttpResponseBase:
     #     sender=upload_prepare, name=name, object_key=object_key
     # )
 
-    # signer = TimestampSigner()
-    # sig = signer.sign(object_key)
+    # We sign the field_id and object_key to create a "session token" for this upload
+    upload_signature = signing.dumps(
+        {
+            'field_id': upload_request['field_id'],
+            'object_key': object_key,
+        }
+    )
 
-    response_serializer = UploadInitializationResponseSerializer(initialization)
+    response_serializer = UploadInitializationResponseSerializer(
+        {
+            'object_key': initialization.object_key,
+            'upload_id': initialization.upload_id,
+            'parts': initialization.parts,
+            'upload_signature': upload_signature,
+        }
+    )
     return Response(response_serializer.data)
 
 
@@ -93,11 +116,13 @@ def upload_initialize(request: Request) -> HttpResponseBase:
 # @permission_classes([IsAuthenticated])
 @api_view(['POST'])
 @parser_classes([JSONParser])
-def upload_finalize(request: Request) -> HttpResponseBase:
-    request_serializer = UploadFinalizationRequestSerializer(data=request.data)
+def upload_complete(request: Request) -> HttpResponseBase:
+    request_serializer = UploadCompletionRequestSerializer(data=request.data)
     request_serializer.is_valid(raise_exception=True)
-    field = _registry.get_field(request_serializer.validated_data['field_id'])
-    finalization: UploadFinalization = request_serializer.save()
+    transferred_parts: TransferredParts = request_serializer.save()
+
+    upload_signature = signing.loads(request_serializer.validated_data['upload_signature'])
+    field = _registry.get_field(upload_signature['field_id'])
 
     # check if upload_prepare signed this less than max age ago
     # tsigner = TimestampSigner()
@@ -106,20 +131,52 @@ def upload_finalize(request: Request) -> HttpResponseBase:
     # ):
     #     raise BadSignature()
 
-    _multipart.MultipartManager.from_storage(field.storage).finalize_upload(finalization)
+    completed_upload = _multipart.MultipartManager.from_storage(field.storage).complete_upload(
+        transferred_parts
+    )
 
     # signals.s3_file_field_upload_finalize.send(
     #     sender=multipart_upload_finalize, name=name, object_key=object_key
     # )
 
+    response_serializer = UploadCompletionResponseSerializer(
+        {
+            'complete_url': completed_upload.complete_url,
+            'body': completed_upload.body,
+        }
+    )
+    return Response(response_serializer.data)
+
+
+# @authentication_classes([TokenAuthentication])
+# @permission_classes([IsAuthenticated])
+@api_view(['POST'])
+@parser_classes([JSONParser])
+def finalize(request: Request) -> HttpResponseBase:
+    request_serializer = FinalizationRequestSerializer(data=request.data)
+    request_serializer.is_valid(raise_exception=True)
+
+    upload_signature = signing.loads(request_serializer.validated_data['upload_signature'])
+    field_id = upload_signature['field_id']
+    object_key = upload_signature['object_key']
+
+    field = _registry.get_field(field_id)
+
+    # get_object_size implicitly verifies that the object exists.
+    # We don't want to distribute the field value if the upload did not complete.
+    try:
+        size = _multipart.MultipartManager.from_storage(field.storage).get_object_size(object_key)
+    except ObjectNotFoundException:
+        return Response('Object not found', status=400)
+
     field_value = signing.dumps(
         {
-            'object_key': finalization.object_key,
-            'file_size': sum(part.size for part in finalization.parts),
+            'object_key': object_key,
+            'file_size': size,
         }
     )
 
-    response_serializer = UploadFinalizationResponseSerializer(
+    response_serializer = FinalizationResponseSerializer(
         {
             'field_value': field_value,
         }

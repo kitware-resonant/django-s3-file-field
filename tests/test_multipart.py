@@ -1,3 +1,4 @@
+from io import BytesIO
 from typing import TYPE_CHECKING
 
 from botocore.exceptions import ClientError
@@ -9,7 +10,12 @@ import pytest
 import requests
 from storages.backends.s3boto3 import S3Boto3Storage
 
-from s3_file_field._multipart import MultipartManager, PartFinalization, UploadFinalization
+from s3_file_field._multipart import (
+    MultipartManager,
+    ObjectNotFoundException,
+    TransferredPart,
+    TransferredParts,
+)
 from s3_file_field._multipart_boto3 import Boto3MultipartManager
 from s3_file_field._multipart_minio import MinioMultipartManager
 
@@ -116,26 +122,27 @@ def test_multipart_manager_initialize_upload(multipart_manager: MultipartManager
 
 
 @pytest.mark.parametrize('file_size', [10, mb(10), mb(12)], ids=['10B', '10MB', '12MB'])
-def test_multipart_manager_finalize_upload(multipart_manager: MultipartManager, file_size: int):
+def test_multipart_manager_complete_upload(multipart_manager: MultipartManager, file_size: int):
     initialization = multipart_manager.initialize_upload(
         'new-object',
         file_size,
     )
 
-    finalization = UploadFinalization(
+    transferred_parts = TransferredParts(
         object_key=initialization.object_key, upload_id=initialization.upload_id, parts=[]
     )
 
     for part in initialization.parts:
         resp = requests.put(part.upload_url, data=b'a' * part.size)
         resp.raise_for_status()
-        finalization.parts.append(
-            PartFinalization(
-                part_number=part.part_number, size=part.size, etag=resp.headers['ETag']
-            )
+        transferred_parts.parts.append(
+            TransferredPart(part_number=part.part_number, size=part.size, etag=resp.headers['ETag'])
         )
 
-    multipart_manager.finalize_upload(finalization)
+    completed_upload = multipart_manager.complete_upload(transferred_parts)
+    assert completed_upload
+    assert completed_upload.complete_url
+    assert completed_upload.body
 
 
 def test_multipart_manager_test_upload(multipart_manager: MultipartManager):
@@ -165,6 +172,55 @@ def test_multipart_manager_generate_presigned_part_url_content_length(
     )
     # Ensure Content-Length is a signed header
     assert 'content-length' in upload_url
+
+
+def test_multipart_manager_generate_presigned_complete_url(multipart_manager: MultipartManager):
+    upload_url = multipart_manager._generate_presigned_complete_url(
+        TransferredParts(object_key='new-object', upload_id='fake-upload-id', parts=[])
+    )
+
+    assert isinstance(upload_url, str)
+
+
+def test_multipart_manager_generate_presigned_complete_body(multipart_manager: MultipartManager):
+    body = multipart_manager._generate_presigned_complete_body(
+        TransferredParts(
+            object_key='new-object',
+            upload_id='fake-upload-id',
+            parts=[
+                TransferredPart(part_number=1, size=1, etag='fake-etag-1'),
+                TransferredPart(part_number=2, size=2, etag='fake-etag-2'),
+            ],
+        )
+    )
+
+    assert body == (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<CompleteMultipartUpload xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
+        '<Part><PartNumber>1</PartNumber><ETag>fake-etag-1</ETag></Part>'
+        '<Part><PartNumber>2</PartNumber><ETag>fake-etag-2</ETag></Part>'
+        '</CompleteMultipartUpload>'
+    )
+
+
+@pytest.mark.parametrize('file_size', [10, mb(10), mb(12)], ids=['10B', '10MB', '12MB'])
+def test_multipart_manager_get_object_size(
+    storage, multipart_manager: MultipartManager, file_size: int
+):
+    storage.save(name=f'object-with-size-{file_size}', content=BytesIO(b'X' * file_size))
+
+    size = multipart_manager.get_object_size(
+        object_key=f'object-with-size-{file_size}',
+    )
+
+    assert size == file_size
+
+
+def test_multipart_manager_get_object_size_not_found(multipart_manager: MultipartManager):
+    with pytest.raises(ObjectNotFoundException):
+        multipart_manager.get_object_size(
+            object_key='no-such-object',
+        )
 
 
 @pytest.mark.parametrize(

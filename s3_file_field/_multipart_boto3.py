@@ -1,12 +1,13 @@
 from typing import TYPE_CHECKING
 
+from botocore.exceptions import ClientError
 from storages.backends.s3boto3 import S3Boto3Storage
 
 if TYPE_CHECKING:
     # mypy_boto3_s3 only provides types
     import mypy_boto3_s3 as s3
 
-from ._multipart import MultipartManager, UploadFinalization
+from ._multipart import MultipartManager, ObjectNotFoundException, TransferredParts
 
 
 class Boto3MultipartManager(MultipartManager):
@@ -49,22 +50,23 @@ class Boto3MultipartManager(MultipartManager):
             ExpiresIn=int(self._url_expiration.total_seconds()),
         )
 
-    def finalize_upload(self, finalization: UploadFinalization) -> None:
-        # TODO: from
-        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.complete_multipart_upload
-        # "Processing of a Complete Multipart Upload request could
-        # take several minutes to complete."
-        self._client.complete_multipart_upload(
-            Bucket=self._bucket_name,
-            Key=finalization.object_key,
-            UploadId=finalization.upload_id,
-            MultipartUpload={
-                'Parts': [
-                    {
-                        'PartNumber': part.part_number,
-                        'ETag': part.etag,
-                    }
-                    for part in finalization.parts
-                ],
+    def _generate_presigned_complete_url(self, transferred_parts: TransferredParts) -> str:
+        return self._client.generate_presigned_url(
+            ClientMethod='complete_multipart_upload',
+            Params={
+                'Bucket': self._bucket_name,
+                'Key': transferred_parts.object_key,
+                'UploadId': transferred_parts.upload_id,
             },
+            ExpiresIn=int(self._url_expiration.total_seconds()),
         )
+
+    def get_object_size(self, object_key: str) -> int:
+        try:
+            stats = self._client.head_object(
+                Bucket=self._bucket_name,
+                Key=object_key,
+            )
+            return stats['ContentLength']
+        except ClientError:
+            raise ObjectNotFoundException()

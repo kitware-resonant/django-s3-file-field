@@ -1,7 +1,7 @@
 import minio
 from minio_storage.storage import MinioStorage
 
-from ._multipart import MultipartManager, UploadFinalization
+from ._multipart import MultipartManager, ObjectNotFoundException, TransferredParts
 
 
 class MinioMultipartManager(MultipartManager):
@@ -46,24 +46,20 @@ class MinioMultipartManager(MultipartManager):
             # }
         )
 
-    def finalize_upload(self, finalization: UploadFinalization) -> None:
-        uploaded_parts = {
-            part.part_number: minio.definitions.UploadPart(
-                bucket_name=self._bucket_name,
-                object_name=finalization.object_key,
-                upload_id=finalization.upload_id,
-                part_number=part.part_number,
-                etag=part.etag,
-                size=part.size,
-                # Minio doesn't seem to actually use last_modified, and it's burdensome to track
-                last_modified=None,
-            )
-            for part in finalization.parts
-        }
-
-        self._client._complete_multipart_upload(
+    def _generate_presigned_complete_url(self, transferred_parts: TransferredParts) -> str:
+        return self._signing_client.presigned_url(
+            method='POST',
             bucket_name=self._bucket_name,
-            object_name=finalization.object_key,
-            upload_id=finalization.upload_id,
-            uploaded_parts=uploaded_parts,
+            object_name=transferred_parts.object_key,
+            expires=self._url_expiration,
+            response_headers={
+                'uploadId': transferred_parts.upload_id,
+            },
         )
+
+    def get_object_size(self, object_key: str) -> int:
+        try:
+            stats = self._client.stat_object(bucket_name=self._bucket_name, object_name=object_key)
+            return stats.size
+        except minio.error.NoSuchKey:
+            raise ObjectNotFoundException()
