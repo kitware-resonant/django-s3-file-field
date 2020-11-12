@@ -9,35 +9,35 @@ from django.core.files.storage import Storage
 
 
 @dataclass
-class InitializedPart:
+class PresignedPartTransfer:
     part_number: int
     size: int
     upload_url: str
 
 
 @dataclass
-class InitializedUpload:
+class PresignedTransfer:
     object_key: str
     upload_id: str
-    parts: List[InitializedPart]
+    parts: List[PresignedPartTransfer]
 
 
 @dataclass
-class PartCompletion:
+class TransferredPart:
     part_number: int
     size: int
     etag: str
 
 
 @dataclass
-class UploadCompletion:
+class TransferredParts:
     object_key: str
     upload_id: str
-    parts: List[PartCompletion]
+    parts: List[TransferredPart]
 
 
 @dataclass
-class CompletedUpload:
+class PresignedUploadCompletion:
     complete_url: str
     body: str
 
@@ -53,10 +53,10 @@ class MultipartManager:
 
     def initialize_upload(
         self, object_key: str, file_size: int, part_size: int = None
-    ) -> InitializedUpload:
+    ) -> PresignedTransfer:
         upload_id = self._create_upload_id(object_key)
         parts = [
-            InitializedPart(
+            PresignedPartTransfer(
                 part_number=part_number,
                 size=part_size,
                 upload_url=self._generate_presigned_part_url(
@@ -65,14 +65,14 @@ class MultipartManager:
             )
             for part_number, part_size in self._iter_part_sizes(file_size, part_size)
         ]
-        return InitializedUpload(object_key=object_key, upload_id=upload_id, parts=parts)
+        return PresignedTransfer(object_key=object_key, upload_id=upload_id, parts=parts)
 
-    def complete_upload(self, completion: UploadCompletion) -> CompletedUpload:
-        complete_url = self._generate_presigned_complete_url(completion)
-        body = self._generate_presigned_complete_body(completion)
-        return CompletedUpload(complete_url=complete_url, body=body)
+    def complete_upload(self, transferred_parts: TransferredParts) -> PresignedUploadCompletion:
+        complete_url = self._generate_presigned_complete_url(transferred_parts)
+        body = self._generate_presigned_complete_body(transferred_parts)
+        return PresignedUploadCompletion(complete_url=complete_url, body=body)
 
-    def _generate_presigned_complete_body(self, completion: UploadCompletion) -> str:
+    def _generate_presigned_complete_body(self, transferred_parts: TransferredParts) -> str:
         """
         Generate the body of a presigned completion request.
 
@@ -80,7 +80,7 @@ class MultipartManager:
         """
         body = '<?xml version="1.0" encoding="UTF-8"?>'
         body += '<CompleteMultipartUpload xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
-        for part in completion.parts:
+        for part in transferred_parts.parts:
             body += '<Part>'
             body += f'<PartNumber>{part.part_number}</PartNumber>'
             body += f'<ETag>{part.etag}</ETag>'
@@ -146,7 +146,7 @@ class MultipartManager:
     ) -> str:
         raise NotImplementedError
 
-    def _generate_presigned_complete_url(self, completion: UploadCompletion) -> str:
+    def _generate_presigned_complete_url(self, transferred_parts: TransferredParts) -> str:
         raise NotImplementedError
 
     def get_object_size(self, object_key: str) -> int:

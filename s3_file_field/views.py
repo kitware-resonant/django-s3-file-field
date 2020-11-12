@@ -9,7 +9,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from . import _multipart, _registry
-from ._multipart import PartCompletion, UploadCompletion
+from ._multipart import TransferredPart, TransferredParts
 
 
 class UploadInitializationRequestSerializer(serializers.Serializer):
@@ -32,29 +32,29 @@ class UploadInitializationResponseSerializer(serializers.Serializer):
     upload_signature = serializers.CharField(trim_whitespace=False)
 
 
-class PartCompletionRequestSerializer(serializers.Serializer):
+class TransferredPartRequestSerializer(serializers.Serializer):
     part_number = serializers.IntegerField(min_value=1)
     size = serializers.IntegerField(min_value=1)
     etag = serializers.CharField()
 
-    def create(self, validated_data) -> PartCompletion:
-        return PartCompletion(**validated_data)
+    def create(self, validated_data) -> TransferredPart:
+        return TransferredPart(**validated_data)
 
 
 class UploadCompletionRequestSerializer(serializers.Serializer):
     upload_signature = serializers.CharField(trim_whitespace=False)
     upload_id = serializers.CharField()
-    parts = PartCompletionRequestSerializer(many=True, allow_empty=False)
+    parts = TransferredPartRequestSerializer(many=True, allow_empty=False)
 
-    def create(self, validated_data) -> UploadCompletion:
+    def create(self, validated_data) -> TransferredParts:
         parts = [
-            PartCompletion(**part)
+            TransferredPart(**part)
             for part in sorted(validated_data.pop('parts'), key=lambda part: part['part_number'])
         ]
         upload_signature = signing.loads(validated_data['upload_signature'])
         object_key = upload_signature['object_key']
         upload_id = validated_data['upload_id']
-        return UploadCompletion(parts=parts, object_key=object_key, upload_id=upload_id)
+        return TransferredParts(parts=parts, object_key=object_key, upload_id=upload_id)
 
 
 class UploadCompletionResponseSerializer(serializers.Serializer):
@@ -119,7 +119,7 @@ def upload_initialize(request: Request) -> HttpResponseBase:
 def upload_complete(request: Request) -> HttpResponseBase:
     request_serializer = UploadCompletionRequestSerializer(data=request.data)
     request_serializer.is_valid(raise_exception=True)
-    completion: UploadCompletion = request_serializer.save()
+    transferred_parts: TransferredParts = request_serializer.save()
 
     upload_signature = signing.loads(request_serializer.validated_data['upload_signature'])
     field = _registry.get_field(upload_signature['field_id'])
@@ -132,7 +132,7 @@ def upload_complete(request: Request) -> HttpResponseBase:
     #     raise BadSignature()
 
     completed_upload = _multipart.MultipartManager.from_storage(field.storage).complete_upload(
-        completion
+        transferred_parts
     )
 
     # signals.s3_file_field_upload_finalize.send(

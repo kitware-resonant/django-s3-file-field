@@ -9,7 +9,7 @@ import pytest
 import requests
 from storages.backends.s3boto3 import S3Boto3Storage
 
-from s3_file_field._multipart import MultipartManager, PartCompletion, UploadCompletion
+from s3_file_field._multipart import MultipartManager, TransferredPart, TransferredParts
 from s3_file_field._multipart_boto3 import Boto3MultipartManager
 from s3_file_field._multipart_minio import MinioMultipartManager
 
@@ -122,18 +122,18 @@ def test_multipart_manager_complete_upload(multipart_manager: MultipartManager, 
         file_size,
     )
 
-    completion = UploadCompletion(
+    transferred_parts = TransferredParts(
         object_key=initialization.object_key, upload_id=initialization.upload_id, parts=[]
     )
 
     for part in initialization.parts:
         resp = requests.put(part.upload_url, data=b'a' * part.size)
         resp.raise_for_status()
-        completion.parts.append(
-            PartCompletion(part_number=part.part_number, size=part.size, etag=resp.headers['ETag'])
+        transferred_parts.parts.append(
+            TransferredPart(part_number=part.part_number, size=part.size, etag=resp.headers['ETag'])
         )
 
-    completed_upload = multipart_manager.complete_upload(completion)
+    completed_upload = multipart_manager.complete_upload(transferred_parts)
     assert completed_upload
     assert completed_upload.complete_url
     assert completed_upload.body
@@ -170,7 +170,7 @@ def test_multipart_manager_generate_presigned_part_url_content_length(
 
 def test_multipart_manager_generate_presigned_complete_url(multipart_manager: MultipartManager):
     upload_url = multipart_manager._generate_presigned_complete_url(
-        UploadCompletion(object_key='new-object', upload_id='fake-upload-id', parts=[])
+        TransferredParts(object_key='new-object', upload_id='fake-upload-id', parts=[])
     )
 
     assert isinstance(upload_url, str)
@@ -178,12 +178,12 @@ def test_multipart_manager_generate_presigned_complete_url(multipart_manager: Mu
 
 def test_multipart_manager_generate_presigned_complete_body(multipart_manager: MultipartManager):
     body = multipart_manager._generate_presigned_complete_body(
-        UploadCompletion(
+        TransferredParts(
             object_key='new-object',
             upload_id='fake-upload-id',
             parts=[
-                PartCompletion(part_number=1, size=1, etag='fake-etag-1'),
-                PartCompletion(part_number=2, size=2, etag='fake-etag-2'),
+                TransferredPart(part_number=1, size=1, etag='fake-etag-1'),
+                TransferredPart(part_number=2, size=2, etag='fake-etag-2'),
             ],
         )
     )
@@ -204,16 +204,16 @@ def test_multipart_manager_get_object_size(multipart_manager: MultipartManager, 
         'new-object',
         file_size,
     )
-    completion = UploadCompletion(
+    transferred_parts = TransferredParts(
         object_key=initialization.object_key, upload_id=initialization.upload_id, parts=[]
     )
     for part in initialization.parts:
         resp = requests.put(part.upload_url, data=b'a' * part.size)
         resp.raise_for_status()
-        completion.parts.append(
-            PartCompletion(part_number=part.part_number, size=part.size, etag=resp.headers['ETag'])
+        transferred_parts.parts.append(
+            TransferredPart(part_number=part.part_number, size=part.size, etag=resp.headers['ETag'])
         )
-    completed_upload = multipart_manager.complete_upload(completion)
+    completed_upload = multipart_manager.complete_upload(transferred_parts)
     requests.post(completed_upload.complete_url, data=completed_upload.body)
 
     size = multipart_manager.get_object_size(

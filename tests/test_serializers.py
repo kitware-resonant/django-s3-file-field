@@ -2,10 +2,10 @@ from django.core import signing
 import pytest
 
 from s3_file_field._multipart import (
-    InitializedPart,
-    InitializedUpload,
-    PartCompletion,
-    UploadCompletion,
+    PresignedPartTransfer,
+    PresignedTransfer,
+    TransferredPart,
+    TransferredParts,
 )
 from s3_file_field.views import (
     UploadCompletionRequestSerializer,
@@ -15,17 +15,17 @@ from s3_file_field.views import (
 
 
 @pytest.fixture
-def initialization() -> InitializedUpload:
-    return InitializedUpload(
+def initialization() -> PresignedTransfer:
+    return PresignedTransfer(
         object_key='test-object-key',
         upload_id='test-upload-id',
         parts=[
-            InitializedPart(
+            PresignedPartTransfer(
                 part_number=1,
                 size=10_000,
                 upload_url='http://minio.test/test-bucket/1',
             ),
-            InitializedPart(
+            PresignedPartTransfer(
                 part_number=2,
                 size=3_500,
                 upload_url='http://minio.test/test-bucket/2',
@@ -48,7 +48,7 @@ def test_upload_initialization_request_deserialization():
 
 
 def test_upload_initialization_response_serialization(
-    initialization: InitializedUpload,
+    initialization: PresignedTransfer,
 ):
     serializer = UploadInitializationResponseSerializer(
         {
@@ -76,5 +76,5 @@ def test_upload_completion_request_deserialization():
 
     assert serializer.is_valid(raise_exception=True)
     completion = serializer.save()
-    assert isinstance(completion, UploadCompletion)
-    assert all(isinstance(part, PartCompletion) for part in completion.parts)
+    assert isinstance(completion, TransferredParts)
+    assert all(isinstance(part, TransferredPart) for part in completion.parts)

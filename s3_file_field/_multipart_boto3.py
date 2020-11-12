@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     # mypy_boto3_s3 only provides types
     import mypy_boto3_s3 as s3
 
-from ._multipart import MultipartManager, UploadCompletion
+from ._multipart import MultipartManager, TransferredParts
 
 
 class Boto3MultipartManager(MultipartManager):
@@ -50,13 +50,13 @@ class Boto3MultipartManager(MultipartManager):
             ExpiresIn=int(self._url_expiration.total_seconds()),
         )
 
-    def _generate_presigned_complete_url(self, completion: UploadCompletion) -> str:
+    def _generate_presigned_complete_url(self, transferred_parts: TransferredParts) -> str:
         return self._client.generate_presigned_url(
             ClientMethod='complete_multipart_upload',
             Params={
                 'Bucket': self._bucket_name,
-                'Key': completion.object_key,
-                'UploadId': completion.upload_id,
+                'Key': transferred_parts.object_key,
+                'UploadId': transferred_parts.upload_id,
             },
             ExpiresIn=int(self._url_expiration.total_seconds()),
         )

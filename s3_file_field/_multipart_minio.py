@@ -1,7 +1,7 @@
 import minio
 from minio_storage.storage import MinioStorage
 
-from ._multipart import MultipartManager, UploadCompletion
+from ._multipart import MultipartManager, TransferredParts
 
 
 class MinioMultipartManager(MultipartManager):
@@ -46,14 +46,14 @@ class MinioMultipartManager(MultipartManager):
             # }
         )
 
-    def _generate_presigned_complete_url(self, completion: UploadCompletion) -> str:
+    def _generate_presigned_complete_url(self, transferred_parts: TransferredParts) -> str:
         return self._signing_client.presigned_url(
             method='POST',
             bucket_name=self._bucket_name,
-            object_name=completion.object_key,
+            object_name=transferred_parts.object_key,
             expires=self._url_expiration,
             response_headers={
-                'uploadId': completion.upload_id,
+                'uploadId': transferred_parts.upload_id,
             },
         )
 
