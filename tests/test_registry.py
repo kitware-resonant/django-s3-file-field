@@ -2,10 +2,10 @@ from typing import cast
 
 from django.core.files.storage import default_storage
 import pytest
-from test_app.models import Resource
 
 from s3_file_field import _registry
 from s3_file_field.fields import S3FileField
+from test_app.models import Resource
 
 
 @pytest.fixture

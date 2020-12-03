@@ -2,9 +2,9 @@ from django.core import signing
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 import pytest
-from test_app.forms import ResourceForm
 
 from s3_file_field.forms import S3FormFileField
+from test_app.forms import ResourceForm
 
 
 @pytest.fixture
