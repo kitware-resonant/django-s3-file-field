@@ -105,7 +105,6 @@ MinIO support depends on the django-minio-storage config (see https://django-min
 
 
 ### Integrating with forms
- note on form.media
 If you want to use an S3FileField in a form, some extra client code needs to be injected into your frontend.
 The form submission only communicates with Django, so the web client has to somehow send that data directly to S3 before the form is submitted.
 The necessary `<script>` is available in templates as `form.media`, which should be embedded into your form template similarly to this:
