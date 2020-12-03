@@ -19,6 +19,17 @@ interface UploadedPart {
   size: number;
   etag: string;
 }
+
+interface ProgressEvent {
+  loaded: number;
+  total: number;
+  lengthComputable: boolean;
+}
+
+interface UploadOptions {
+  progress?: (event: ProgressEvent) => void;
+}
+
 // Return value from uploadFile()
 export interface UploadResult {
   value: string;
@@ -51,8 +62,11 @@ export default class S3FFClient {
    * @param chunk the data to upload
    * @returns UploadedPart
    */
-  protected async uploadPart(chunk: ArrayBuffer, part: PartInfo): Promise<UploadedPart> {
-    const response = await axios.put(part.upload_url, chunk);
+  protected async uploadPart(chunk: ArrayBuffer, part: PartInfo, options: UploadOptions = {}): Promise<UploadedPart> {
+    const progress = options.progress || (() => null);
+    const response = await axios.put(part.upload_url, chunk, {
+      onUploadProgress: progress
+    });
     const etag = response.headers['etag'];
     return {
       part_number: part.part_number,
@@ -68,7 +82,7 @@ export default class S3FFClient {
    * @param parts the list of parts describing how to break up the file
    * @returns UploadedPart[]
    */
-  protected async uploadParts(file: File, parts: PartInfo[]): Promise<UploadedPart[]> {
+  protected async uploadParts(file: File, parts: PartInfo[], options: UploadOptions = {}): Promise<UploadedPart[]> {
     const buffer = await file.arrayBuffer();
     // indices track where in the buffer each part begins
     let index = 0;
@@ -80,7 +94,7 @@ export default class S3FFClient {
     // upload each part of the buffer in parallel using the calculated indices
     return await Promise.all(parts.map(async (part, i) => {
       const chunk = buffer.slice(indices[i], indices[i] + part.size);
-      return await this.uploadPart(chunk, part);
+      return await this.uploadPart(chunk, part, options);
     }));
   }
 
@@ -120,11 +134,12 @@ export default class S3FFClient {
    * Uploads a file using multipart upload.
    *
    * @param file the file to upload
+   * @param fieldId the django model field's id
    * @param options the upload options
    */
-  public async uploadFile(file: File, fieldId: string): Promise<UploadResult> {
+  public async uploadFile(file: File, fieldId: string, options: UploadOptions = {}): Promise<UploadResult> {
     const multipartInfo = await this.initializeUpload(file, fieldId);
-    const parts = await this.uploadParts(file, multipartInfo.parts);
+    const parts = await this.uploadParts(file, multipartInfo.parts, options);
     await this.completeUpload(multipartInfo, parts);
     const field_value = await this.finalize(multipartInfo);
     return {
