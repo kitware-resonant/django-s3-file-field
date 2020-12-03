@@ -1,30 +1,7 @@
-from django.core import signing
-from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
 import pytest
 
 from s3_file_field.forms import S3FormFileField
 from test_app.forms import ResourceForm
-
-
-@pytest.fixture
-def field_value(storage_object_key):
-    return signing.dumps(
-        {
-            'object_key': storage_object_key,
-            # TODO: Compute this dynamically
-            'file_size': len(b'test content'),
-        }
-    )
-
-
-@pytest.fixture()
-def storage_object_key() -> str:
-    """Return the key to an object saved directly into Storage."""
-    # TODO: random key
-    key = 'test_key'
-    default_storage.save(key, ContentFile(b'test content'))
-    return key
 
 
 def test_form_field_type():
@@ -32,17 +9,17 @@ def test_form_field_type():
     assert isinstance(form.fields['blob'], S3FormFileField)
 
 
-def test_form_missing(storage_object_key):
+def test_form_missing():
     form = ResourceForm(data={})
     assert not form.is_valid()
 
 
-def test_form_empty(storage_object_key):
+def test_form_empty():
     form = ResourceForm(data={'blob': ''})
     assert not form.is_valid()
 
 
-def test_form_invalid(storage_object_key):
+def test_form_invalid():
     form = ResourceForm(data={'blob': 'invalid:field_value'})
     assert not form.is_valid()
 

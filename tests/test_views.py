@@ -134,3 +134,5 @@ def test_full_upload_flow(api_client: APIClient, file_size: int):
     assert resp.data == {
         'field_value': Re(r'.*:.*'),
     }
+
+    default_storage.delete(initialization['object_key'])

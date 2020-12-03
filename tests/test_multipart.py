@@ -207,13 +207,17 @@ def test_multipart_manager_generate_presigned_complete_body(multipart_manager: M
 def test_multipart_manager_get_object_size(
     storage, multipart_manager: MultipartManager, file_size: int
 ):
-    storage.save(name=f'object-with-size-{file_size}', content=BytesIO(b'X' * file_size))
+    key = f'object-with-size-{file_size}'
+    # Storage.save may rename this, if the key is not unique
+    key = storage.save(name=key, content=BytesIO(b'X' * file_size))
 
     size = multipart_manager.get_object_size(
-        object_key=f'object-with-size-{file_size}',
+        object_key=key,
     )
 
     assert size == file_size
+
+    storage.delete(key)
 
 
 def test_multipart_manager_get_object_size_not_found(multipart_manager: MultipartManager):
