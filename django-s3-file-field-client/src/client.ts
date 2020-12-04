@@ -35,9 +35,8 @@ export default class S3FFClient {
   /**
    * Initializes an upload.
    *
-   * @param file the file to upload
-   * @param options the upload options
-   * @returns MultipartResponse
+   * @param file The file to upload.
+   * @param fieldId The Django field identifier.
    */
   protected async initializeUpload(file: File, fieldId: string): Promise<MultipartInfo> {
     const response = await axios.post(`${this.baseUrl}/upload-initialize/`, { 'field_id': fieldId, 'file_name': file.name, 'file_size': file.size });
@@ -47,9 +46,8 @@ export default class S3FFClient {
   /**
    * Uploads a part directly to an object store.
    *
-   * @param url the URL to upload the part to
-   * @param chunk the data to upload
-   * @returns UploadedPart
+   * @param chunk The data to upload to this part.
+   * @param part Details of this part.
    */
   protected async uploadPart(chunk: ArrayBuffer, part: PartInfo): Promise<UploadedPart> {
     const response = await axios.put(part.upload_url, chunk);
@@ -64,9 +62,8 @@ export default class S3FFClient {
   /**
    * Uploads all the parts in a file directly to an object store in parallel.
    *
-   * @param file the file to upload
-   * @param parts the list of parts describing how to break up the file
-   * @returns UploadedPart[]
+   * @param file The file to upload.
+   * @param parts The list of parts describing how to break up the file.
    */
   protected async uploadParts(file: File, parts: PartInfo[]): Promise<UploadedPart[]> {
     const buffer = await file.arrayBuffer();
@@ -85,11 +82,12 @@ export default class S3FFClient {
   }
 
   /**
-   * Completes an upload. The object will exist in the object store after completion.
+   * Completes an upload.
    *
-   * @param multipartInfo the information describing the multipart upload
-   * @param parts the parts that were uploaded
-   * @returns finalization signed information needed by /finalize/
+   * The object will exist in the object store after completion.
+   *
+   * @param multipartInfo The information describing the multipart upload.
+   * @param parts The parts that were uploaded.
    */
   protected async completeUpload(multipartInfo: MultipartInfo, parts: UploadedPart[]): Promise<void> {
     const response = await axios.post(`${this.baseUrl}/upload-complete/`, {
@@ -114,10 +112,10 @@ export default class S3FFClient {
 
   /**
    * Finalizes an upload.
+   *
    * This will only succeed if the object is already present in the object store.
    *
-   * @param finalization signed information returned from /upload-complete/
-   * @returns signed field_value containing an object_key and a size
+   * @param multipartInfo Signed information returned from /upload-complete/.
    */
   protected async finalize(multipartInfo: MultipartInfo): Promise<string> {
     const response = await axios.post(`${this.baseUrl}/finalize/`, {
@@ -130,8 +128,8 @@ export default class S3FFClient {
   /**
    * Uploads a file using multipart upload.
    *
-   * @param file the file to upload
-   * @param options the upload options
+   * @param file The file to upload.
+   * @param fieldId The Django field identifier.
    */
   public async uploadFile(file: File, fieldId: string): Promise<UploadResult> {
     const multipartInfo = await this.initializeUpload(file, fieldId);
