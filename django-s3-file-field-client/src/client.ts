@@ -98,7 +98,18 @@ export default class S3FFClient {
       parts: parts,
     });
     const { complete_url, body } = response.data;
-    await axios.post(complete_url, body);
+
+    // Send the CompleteMultipartUpload operation to S3
+    await axios.post(complete_url, body, {
+      headers: {
+        // By default, Axios sets "Content-Type: application/x-www-form-urlencoded" on POST
+        // requests. This causes AWS's API to interpret the request body as additional parameters
+        // to include in the signature validation, causing it to fail.
+        // So, do not send this request with any Content-Type, as that is what's specified by the
+        // CompleteMultipartUpload docs.
+        'Content-Type': null,
+      },
+    });
   }
 
   /**
