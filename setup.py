@@ -60,7 +60,6 @@ setup(
     packages=find_packages(include=['s3_file_field']),
     package_data={'': ['*.html', '*.js']},
     include_package_data=True,
-    zip_safe=False,
     install_requires=[
         'django>=3',
         'djangorestframework',
