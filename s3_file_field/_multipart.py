@@ -7,6 +7,8 @@ from typing import Iterator, List, Tuple
 
 from django.core.files.storage import Storage
 
+DEFAULT_PART_SIZE = 64 * 2 ** 20  # 64MB
+
 
 @dataclass
 class PresignedPartTransfer:
@@ -159,9 +161,7 @@ class MultipartManager:
     @staticmethod
     def _iter_part_sizes(file_size: int, part_size: int = None) -> Iterator[Tuple[int, int]]:
         if part_size is None:
-            # 5 MB
-            # TODO: pick a sane default; 1GB?
-            part_size = 5 * 2 ** 20
+            part_size = DEFAULT_PART_SIZE
 
         # S3 multipart limits: https://docs.aws.amazon.com/AmazonS3/latest/dev/qfacts.html
 

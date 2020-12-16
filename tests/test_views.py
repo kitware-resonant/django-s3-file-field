@@ -7,11 +7,18 @@ import pytest
 import requests
 from rest_framework.test import APIClient
 
+from s3_file_field import _multipart
+
 from .fuzzy import URL_RE, UUID_RE, Re
 
 
 def mb(bytes_size: int) -> int:
     return bytes_size * 2 ** 20
+
+
+@pytest.fixture
+def mock_part_size(monkeypatch):
+    monkeypatch.setattr(_multipart, 'DEFAULT_PART_SIZE', mb(5))
 
 
 def test_prepare(api_client):
@@ -33,7 +40,7 @@ def test_prepare(api_client):
     }
 
 
-def test_prepare_two_parts(api_client):
+def test_prepare_two_parts(api_client, mock_part_size):
     resp = api_client.post(
         reverse('s3_file_field:upload-initialize'),
         {'field_id': 'test_app.Resource.blob', 'file_name': 'test.txt', 'file_size': mb(10)},
@@ -52,7 +59,7 @@ def test_prepare_two_parts(api_client):
     }
 
 
-def test_prepare_three_parts(api_client):
+def test_prepare_three_parts(api_client, mock_part_size):
     resp = api_client.post(
         reverse('s3_file_field:upload-initialize'),
         {'field_id': 'test_app.Resource.blob', 'file_name': 'test.txt', 'file_size': mb(12)},
