@@ -57,9 +57,7 @@ class ObjectNotFoundException(Exception):
 class MultipartManager:
     """A facade providing management of S3 multipart uploads to multiple Storages."""
 
-    def initialize_upload(
-        self, object_key: str, file_size: int, part_size: int = None
-    ) -> PresignedTransfer:
+    def initialize_upload(self, object_key: str, file_size: int) -> PresignedTransfer:
         upload_id = self._create_upload_id(object_key)
         parts = [
             PresignedPartTransfer(
@@ -69,7 +67,7 @@ class MultipartManager:
                     object_key, upload_id, part_number, part_size
                 ),
             )
-            for part_number, part_size in self._iter_part_sizes(file_size, part_size)
+            for part_number, part_size in self._iter_part_sizes(file_size)
         ]
         return PresignedTransfer(object_key=object_key, upload_id=upload_id, parts=parts)
 
