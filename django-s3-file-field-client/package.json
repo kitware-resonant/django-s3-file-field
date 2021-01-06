@@ -31,7 +31,7 @@
     "webpack-cli": "^3.3.11"
   },
   "dependencies": {
-    "axios": "^0.20.0"
+    "axios": "^0.21.1"
   },
   "eslintConfig": {
     "parser": "@typescript-eslint/parser",
