@@ -66,7 +66,7 @@ setup(
     ],
     extras_require={
         'boto3': ['django-storages[boto3]', 'boto3'],
-        'minio': ['django-minio-storage', 'minio'],
+        'minio': ['django-minio-storage', 'minio<7'],
     },
     cmdclass={
         'build_py': js_prerelease(build_py),
