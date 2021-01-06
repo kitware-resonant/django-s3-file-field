@@ -46,7 +46,7 @@
     "@types/js-cookie": "^2.2.6",
     "@types/node": "^14.0.13",
     "aws-sdk": "^2.693.0",
-    "axios": "^0.20.0",
+    "axios": "^0.21.1",
     "django-s3-file-field": "file:../django-s3-file-field-client",
     "js-cookie": "^2.2.1"
   }
