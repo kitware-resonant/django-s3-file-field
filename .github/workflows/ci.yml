@@ -1,0 +1,60 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: "0 0 * * *"
+jobs:
+  test-python:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9"]
+    services:
+      minio:
+        # This image does not require any command arguments (which GitHub Actions don't support)
+        image: "bitnami/minio:latest"
+        env:
+          MINIO_ACCESS_KEY: minioAccessKey
+          MINIO_SECRET_KEY: minioSecretKey
+        ports:
+          - 9000:9000
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install tox
+        run: |
+          pip install --upgrade pip
+          pip install tox
+      - name: Run tests
+        run: |
+          tox
+        env:
+          MINIO_STORAGE_ENDPOINT: "localhost:9000"
+          MINIO_STORAGE_ACCESS_KEY: minioAccessKey
+          MINIO_STORAGE_SECRET_KEY: minioSecretKey
+          MINIO_STORAGE_MEDIA_BUCKET_NAME: s3ff-test
+  test-javascript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "14.x"
+      - name: Build and test Javascript client
+        working-directory: ./javascript-client
+        run: |
+          npm ci
+          npm run build
+          npm run lint
+      - name: Build and test widget
+        working-directory: ./widget
+        run: |
+          npm ci
+          npm run build
+          npm run lint
