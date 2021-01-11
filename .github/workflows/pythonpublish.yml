@@ -24,3 +24,28 @@ jobs:
       run: |
         python setup.py sdist bdist_wheel
         twine upload dist/*
+  publish-client:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./python-client
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          # Tags are needed to compute the current version number
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+      - name: Install tox
+        run: |
+          pip install --upgrade pip
+          pip install tox
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: "__token__"
+          TWINE_PASSWORD: ${{ secrets.CLIENT_PYPI_TOKEN }}
+          TWINE_NON_INTERACTIVE: "true"
+        run: |
+          tox -e release
