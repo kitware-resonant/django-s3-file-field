@@ -25,10 +25,19 @@ export interface UploadResult {
   state: 'aborted' | 'successful' | 'error';
 }
 
-export default class S3FFClient {
-  protected readonly baseUrl: string;
+export interface ProgressEvent {
+  loaded?: number;
+  total?: number;
+  state: 'initializing' | 'sending' | 'finalizing';
+}
 
-  constructor(baseUrl: string) {
+type ProgressCallback = (progress: ProgressEvent) => void;
+
+export default class S3FFClient {
+  constructor(
+    protected readonly baseUrl: string,
+    private readonly onProgress: ProgressCallback = () => { /* no-op*/ },
+  ) {
     // Strip any trailing slash
     this.baseUrl = baseUrl.replace(/\/$/, '');
   }
@@ -40,24 +49,9 @@ export default class S3FFClient {
    * @param fieldId The Django field identifier.
    */
   protected async initializeUpload(file: File, fieldId: string): Promise<MultipartInfo> {
+    this.onProgress({ state: 'initializing' });
     const response = await axios.post(`${this.baseUrl}/upload-initialize/`, { 'field_id': fieldId, 'file_name': file.name, 'file_size': file.size });
     return response.data;
-  }
-
-  /**
-   * Uploads a part directly to an object store.
-   *
-   * @param chunk The data to upload to this part.
-   * @param part Details of this part.
-   */
-  protected async uploadPart(chunk: Blob, part: PartInfo): Promise<UploadedPart> {
-    const response = await axios.put(part.upload_url, chunk);
-    const etag = response.headers.etag;
-    return {
-      part_number: part.part_number,
-      size: part.size,
-      etag,
-    };
   }
 
   /**
@@ -71,7 +65,21 @@ export default class S3FFClient {
     let index = 0;
     for (const part of parts) {
       const chunk = file.slice(index, index + part.size);
-      uploadedParts.push(await this.uploadPart(chunk, part));
+      const response = await axios.put(part.upload_url, chunk, {
+        onUploadProgress: (e) => {
+          this.onProgress({
+            loaded: index + e.loaded,
+            total: file.size,
+            state: 'sending',
+          });
+        },
+      });
+
+      uploadedParts.push({
+        part_number: part.part_number,
+        size: part.size,
+        etag: response.headers.etag
+      });
       index += part.size;
     }
     return uploadedParts;
@@ -114,6 +122,7 @@ export default class S3FFClient {
    * @param multipartInfo Signed information returned from /upload-complete/.
    */
   protected async finalize(multipartInfo: MultipartInfo): Promise<string> {
+    this.onProgress({ state: 'finalizing' });
     const response = await axios.post(`${this.baseUrl}/finalize/`, {
       upload_signature: multipartInfo.upload_signature,
     });
