@@ -26,10 +26,11 @@ export interface UploadResult {
 }
 
 export default class S3FFClient {
-  protected baseUrl: string;
+  protected readonly baseUrl: string;
 
   constructor(baseUrl: string) {
-    this.baseUrl = baseUrl;
+    // Strip any trailing slash
+    this.baseUrl = baseUrl.replace(/\/$/, '');
   }
 
   /**
