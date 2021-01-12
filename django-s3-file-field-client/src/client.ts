@@ -49,36 +49,31 @@ export default class S3FFClient {
    * @param chunk The data to upload to this part.
    * @param part Details of this part.
    */
-  protected async uploadPart(chunk: ArrayBuffer, part: PartInfo): Promise<UploadedPart> {
+  protected async uploadPart(chunk: Blob, part: PartInfo): Promise<UploadedPart> {
     const response = await axios.put(part.upload_url, chunk);
-    const etag = response.headers['etag'];
+    const etag = response.headers.etag;
     return {
       part_number: part.part_number,
       size: part.size,
       etag,
-    }
+    };
   }
 
   /**
-   * Uploads all the parts in a file directly to an object store in parallel.
+   * Uploads all the parts in a file directly to an object store in serial.
    *
    * @param file The file to upload.
    * @param parts The list of parts describing how to break up the file.
    */
   protected async uploadParts(file: File, parts: PartInfo[]): Promise<UploadedPart[]> {
-    const buffer = await file.arrayBuffer();
-    // indices track where in the buffer each part begins
+    const uploadedParts: UploadedPart[] = [];
     let index = 0;
-    const indices: number[] = [];
     for (const part of parts) {
-      indices.push(index);
+      const chunk = file.slice(index, index + part.size);
+      uploadedParts.push(await this.uploadPart(chunk, part));
       index += part.size;
     }
-    // upload each part of the buffer in parallel using the calculated indices
-    return await Promise.all(parts.map(async (part, i) => {
-      const chunk = buffer.slice(indices[i], indices[i] + part.size);
-      return await this.uploadPart(chunk, part);
-    }));
+    return uploadedParts;
   }
 
   /**
