@@ -54,11 +54,6 @@ STATIC_URL = '/static/'
 ROOT_URLCONF = 's3ff_example.urls'
 WSGI_APPLICATION = 's3ff_example.wsgi.application'
 
-REST_FRAMEWORK = {
-    # TODO: this works around https://github.com/girder/django-s3-file-field/issues/112
-    'DEFAULT_AUTHENTICATION_CLASSES': [],
-}
-
 if 'AWS_ACCESS_KEY_ID' in os.environ:
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
     AWS_S3_REGION_NAME = os.environ.get('AWS_DEFAULT_REGION', 'us-east1')
