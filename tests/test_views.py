@@ -10,10 +10,7 @@ from rest_framework.test import APIClient
 from s3_file_field import _multipart
 
 from .fuzzy import URL_RE, UUID_RE, Re
-
-
-def mb(bytes_size: int) -> int:
-    return bytes_size * 2 ** 20
+from .sizes import mb
 
 
 @pytest.fixture

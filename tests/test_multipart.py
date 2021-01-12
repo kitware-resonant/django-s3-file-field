@@ -19,17 +19,11 @@ from s3_file_field._multipart import (
 from s3_file_field._multipart_boto3 import Boto3MultipartManager
 from s3_file_field._multipart_minio import MinioMultipartManager
 
+from .sizes import gb, mb
+
 if TYPE_CHECKING:
     # mypy_boto3_s3 only provides types
     import mypy_boto3_s3 as s3
-
-
-def mb(bytes_size: int) -> int:
-    return bytes_size * 2 ** 20
-
-
-def gb(bytes_size: int) -> int:
-    return bytes_size * 2 ** 30
 
 
 def s3boto3_storage_factory() -> 'S3Boto3Storage':
