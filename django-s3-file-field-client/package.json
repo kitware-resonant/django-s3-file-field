@@ -2,7 +2,7 @@
   "name": "django-s3-file-field",
   "version": "0.0.19",
   "description": "",
-  "author": "Kitware, Inc.",
+  "author": "Kitware, Inc",
   "license": "Apache 2.0",
   "main": "build/client.js",
   "module": "build/client.js",

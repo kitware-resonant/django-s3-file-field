@@ -1,12 +1,10 @@
 const path = require('path');
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = {
   entry: "./src/widget.ts",
   output: {
-    path: path.resolve("../s3_file_field/static/joist/"),
-    filename: "joist.js",
-    libraryExport: "Joist",
+    path: path.resolve("../s3_file_field/static/s3_file_field/"),
+    filename: "s3_file_field.js",
     libraryTarget: "umd"
   },
   resolve: {

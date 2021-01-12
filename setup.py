@@ -39,7 +39,7 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/girder/django-s3-file-field',
     keywords=['django', 's3', 'minio', 'django-widget'],
-    author='Kitware, Inc.',
+    author='Kitware, Inc',
     author_email='kitware@kitware.com',
     license='Apache 2.0',
     python_requires='>=3.7.0',
