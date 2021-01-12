@@ -247,9 +247,11 @@ def test_multipart_manager_get_object_size_not_found(multipart_manager: Multipar
     ],
 )
 def test_multipart_manager_iter_part_sizes(
-    file_size, requested_part_size, initial_part_size, final_part_size, part_count
+    mocker, file_size, requested_part_size, initial_part_size, final_part_size, part_count
 ):
-    part_nums, part_sizes = zip(*MultipartManager._iter_part_sizes(file_size, requested_part_size))
+    mocker.patch.object(MultipartManager, 'part_size', new=requested_part_size)
+
+    part_nums, part_sizes = zip(*MultipartManager._iter_part_sizes(file_size))
 
     # TOOD: zip(*) returns a tuple, but semantically this should be a list
     assert part_nums == tuple(range(1, part_count + 1))

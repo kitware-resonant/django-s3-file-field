@@ -9,8 +9,6 @@ from django.core.files.storage import Storage
 
 from s3_file_field._sizes import gb, mb, tb
 
-DEFAULT_PART_SIZE = mb(64)
-
 
 @dataclass
 class PresignedPartTransfer:
@@ -60,6 +58,8 @@ class ObjectNotFoundException(Exception):
 
 class MultipartManager:
     """A facade providing management of S3 multipart uploads to multiple Storages."""
+
+    part_size = mb(64)
 
     def initialize_upload(self, object_key: str, file_size: int) -> PresignedTransfer:
         upload_id = self._create_upload_id(object_key)
@@ -160,10 +160,9 @@ class MultipartManager:
     def get_object_size(self, object_key: str) -> int:
         raise NotImplementedError
 
-    @staticmethod
-    def _iter_part_sizes(file_size: int, part_size: int = None) -> Iterator[Tuple[int, int]]:
-        if part_size is None:
-            part_size = DEFAULT_PART_SIZE
+    @classmethod
+    def _iter_part_sizes(cls, file_size: int) -> Iterator[Tuple[int, int]]:
+        part_size = cls.part_size
 
         # S3 multipart limits: https://docs.aws.amazon.com/AmazonS3/latest/dev/qfacts.html
 
