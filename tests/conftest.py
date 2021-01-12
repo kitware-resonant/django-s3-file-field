@@ -7,7 +7,16 @@ import factory
 import pytest
 from rest_framework.test import APIClient
 
+from s3_file_field import _multipart
 from test_app.models import Resource
+
+from .sizes import mb
+
+
+@pytest.fixture(autouse=True)
+def reduce_part_size(monkeypatch):
+    """To speed up tests, reduce the part size to the minimum supported by S3 (5MB)."""
+    monkeypatch.setattr(_multipart, 'DEFAULT_PART_SIZE', mb(5))
 
 
 @pytest.fixture
