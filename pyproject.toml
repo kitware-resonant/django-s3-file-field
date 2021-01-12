@@ -2,7 +2,7 @@
 line-length = 100
 skip-string-normalization = true
 target-version = ["py38"]
-exclude='\.eggs|\.git|\.mypy_cache|\.tox|\.venv|_build|build|dist|node_modules'
+exclude='.*\.egg-info|\.git|\.mypy_cache|\.pytest_cache|\.tox|\.venv|__pycache__|build|node_modules'
 
 [tool.isort]
 profile = "black"
