@@ -18,18 +18,11 @@ from s3_file_field._multipart import (
 )
 from s3_file_field._multipart_boto3 import Boto3MultipartManager
 from s3_file_field._multipart_minio import MinioMultipartManager
+from s3_file_field._sizes import gb, mb
 
 if TYPE_CHECKING:
     # mypy_boto3_s3 only provides types
     import mypy_boto3_s3 as s3
-
-
-def mb(bytes_size: int) -> int:
-    return bytes_size * 2 ** 20
-
-
-def gb(bytes_size: int) -> int:
-    return bytes_size * 2 ** 30
 
 
 def s3boto3_storage_factory() -> 'S3Boto3Storage':
@@ -254,9 +247,11 @@ def test_multipart_manager_get_object_size_not_found(multipart_manager: Multipar
     ],
 )
 def test_multipart_manager_iter_part_sizes(
-    file_size, requested_part_size, initial_part_size, final_part_size, part_count
+    mocker, file_size, requested_part_size, initial_part_size, final_part_size, part_count
 ):
-    part_nums, part_sizes = zip(*MultipartManager._iter_part_sizes(file_size, requested_part_size))
+    mocker.patch.object(MultipartManager, 'part_size', new=requested_part_size)
+
+    part_nums, part_sizes = zip(*MultipartManager._iter_part_sizes(file_size))
 
     # TOOD: zip(*) returns a tuple, but semantically this should be a list
     assert part_nums == tuple(range(1, part_count + 1))

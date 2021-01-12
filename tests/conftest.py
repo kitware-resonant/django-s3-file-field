@@ -7,7 +7,15 @@ import factory
 import pytest
 from rest_framework.test import APIClient
 
+from s3_file_field._multipart import MultipartManager
+from s3_file_field._sizes import mb
 from test_app.models import Resource
+
+
+@pytest.fixture(autouse=True)
+def reduce_part_size(mocker):
+    """To speed up tests, reduce the part size to the minimum supported by S3 (5MB)."""
+    mocker.patch.object(MultipartManager, 'part_size', new=mb(5))
 
 
 @pytest.fixture
