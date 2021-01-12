@@ -18,8 +18,7 @@ from s3_file_field._multipart import (
 )
 from s3_file_field._multipart_boto3 import Boto3MultipartManager
 from s3_file_field._multipart_minio import MinioMultipartManager
-
-from .sizes import gb, mb
+from s3_file_field._sizes import gb, mb
 
 if TYPE_CHECKING:
     # mypy_boto3_s3 only provides types

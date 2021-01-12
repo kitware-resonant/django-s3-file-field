@@ -7,7 +7,9 @@ from typing import Iterator, List, Tuple
 
 from django.core.files.storage import Storage
 
-DEFAULT_PART_SIZE = 64 * 2 ** 20  # 64MB
+from s3_file_field._sizes import gb, mb, tb
+
+DEFAULT_PART_SIZE = mb(64)
 
 
 @dataclass
@@ -165,21 +167,21 @@ class MultipartManager:
 
         # S3 multipart limits: https://docs.aws.amazon.com/AmazonS3/latest/dev/qfacts.html
 
-        if file_size > 5 * 2 ** 40:
+        if file_size > tb(5):
             raise Exception('File is larger than the S3 maximum object size.')
 
-        # 10k is the maximum number of allowed parts
+        # 10k is the maximum number of allowed parts allowed by S3
         max_parts = 10_000
         if math.ceil(file_size / part_size) >= max_parts:
             part_size = math.ceil(file_size / max_parts)
 
-        # 5MB is the minimum part size
-        min_part_size = 5 * 2 ** 20
+        # 5MB is the minimum part size allowed by S3
+        min_part_size = mb(5)
         if part_size < min_part_size:
             part_size = min_part_size
 
-        # 5GB is the maximum part size
-        max_part_size = 5 * 2 ** 30
+        # 5GB is the maximum part size allowed by S3
+        max_part_size = gb(5)
         if part_size > max_part_size:
             part_size = max_part_size
 

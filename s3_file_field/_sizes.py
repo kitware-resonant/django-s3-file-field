@@ -8,3 +8,7 @@ def mb(bytes_size: int) -> int:
 
 def gb(bytes_size: int) -> int:
     return bytes_size * 2 ** 30
+
+
+def tb(bytes_size: int) -> int:
+    return bytes_size * 2 ** 40

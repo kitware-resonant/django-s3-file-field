@@ -8,9 +8,8 @@ import pytest
 from rest_framework.test import APIClient
 
 from s3_file_field import _multipart
+from s3_file_field._sizes import mb
 from test_app.models import Resource
-
-from .sizes import mb
 
 
 @pytest.fixture(autouse=True)
