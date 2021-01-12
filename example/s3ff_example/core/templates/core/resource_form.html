@@ -2,6 +2,8 @@
 
 {% block title %}Resource{% endblock %}
 
+{% block head %}{{ form.media }}{% endblock %}
+
 {% block content %}
 <a href="{% url "resource-list" %}">[Back to List]</a>
 <h1>Resource</h1>
