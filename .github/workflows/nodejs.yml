@@ -21,8 +21,8 @@ jobs:
         npm run lint
       env:
         CI: true
-    - name: client npm install, build, and test
-      working-directory: ./client
+    - name: widget npm install, build, and test
+      working-directory: ./widget
       run: |
         npm ci
         npm run build
