@@ -14,9 +14,9 @@ from .sizes import mb
 
 
 @pytest.fixture(autouse=True)
-def reduce_part_size(monkeypatch):
+def reduce_part_size(mocker):
     """To speed up tests, reduce the part size to the minimum supported by S3 (5MB)."""
-    monkeypatch.setattr(_multipart, 'DEFAULT_PART_SIZE', mb(5))
+    mocker.patch.object(_multipart, 'DEFAULT_PART_SIZE', new=mb(5))
 
 
 @pytest.fixture
