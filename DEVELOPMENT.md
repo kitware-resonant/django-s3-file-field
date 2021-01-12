@@ -56,13 +56,3 @@ cd example-client
 npm run serve
 ```
 --> run at http://localhost:8080
-
-
-### Release
-
-```sh
-pipenv shell
-bumpversion minor
-```
-
-TODO: npm release
