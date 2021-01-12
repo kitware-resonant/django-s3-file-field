@@ -1,7 +1,7 @@
 ## Development Environment
 
 ### Requirements
- * Python 3.7
+ * Python 3.8
  * node
  * AWS CLI (AWS setup)
  * docker + docker-compose (MinIO docker setup)
