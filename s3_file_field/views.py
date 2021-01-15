@@ -3,7 +3,7 @@ from typing import Dict
 from django.core import signing
 from django.http.response import HttpResponseBase
 from rest_framework import serializers
-from rest_framework.decorators import api_view, parser_classes
+from rest_framework.decorators import api_view, authentication_classes, parser_classes
 from rest_framework.parsers import JSONParser
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -70,9 +70,11 @@ class FinalizationResponseSerializer(serializers.Serializer):
     field_value = serializers.CharField(trim_whitespace=False)
 
 
-# @authentication_classes([TokenAuthentication])
-# @permission_classes([IsAuthenticated])
 @api_view(['POST'])
+# authentication_classes needs to be set to skip SessionAuthentication, which requires a CSRF token
+@authentication_classes([])
+# TODO require user to be logged in to upload
+# @permission_classes([IsAuthenticated])
 @parser_classes([JSONParser])
 def upload_initialize(request: Request) -> HttpResponseBase:
     request_serializer = UploadInitializationRequestSerializer(data=request.data)
@@ -112,9 +114,11 @@ def upload_initialize(request: Request) -> HttpResponseBase:
     return Response(response_serializer.data)
 
 
-# @authentication_classes([TokenAuthentication])
-# @permission_classes([IsAuthenticated])
 @api_view(['POST'])
+# authentication_classes needs to be set to skip SessionAuthentication, which requires a CSRF token
+@authentication_classes([])
+# TODO require user to be logged in to upload
+# @permission_classes([IsAuthenticated])
 @parser_classes([JSONParser])
 def upload_complete(request: Request) -> HttpResponseBase:
     request_serializer = UploadCompletionRequestSerializer(data=request.data)
@@ -148,9 +152,11 @@ def upload_complete(request: Request) -> HttpResponseBase:
     return Response(response_serializer.data)
 
 
-# @authentication_classes([TokenAuthentication])
-# @permission_classes([IsAuthenticated])
 @api_view(['POST'])
+# authentication_classes needs to be set to skip SessionAuthentication, which requires a CSRF token
+@authentication_classes([])
+# TODO require user to be logged in to upload
+# @permission_classes([IsAuthenticated])
 @parser_classes([JSONParser])
 def finalize(request: Request) -> HttpResponseBase:
     request_serializer = FinalizationRequestSerializer(data=request.data)
