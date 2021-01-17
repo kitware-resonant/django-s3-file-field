@@ -26,9 +26,9 @@ export interface UploadResult {
 }
 
 export interface ProgressEvent {
-  loaded?: number;
-  total?: number;
-  state: 'initializing' | 'sending' | 'finalizing';
+  readonly uploaded?: number;
+  readonly total?: number;
+  readonly state: 'initializing' | 'sending' | 'finalizing';
 }
 
 type ProgressCallback = (progress: ProgressEvent) => void;
@@ -49,8 +49,7 @@ export default class S3FFClient {
    * @param fieldId The Django field identifier.
    */
   protected async initializeUpload(file: File, fieldId: string): Promise<MultipartInfo> {
-    this.onProgress({ state: 'initializing' });
-    const response = await axios.post(`${this.baseUrl}/upload-initialize/`, { 'field_id': fieldId, 'file_name': file.name, 'file_size': file.size });
+    const response = await axios.post(`${this.baseUrl}/upload-initialize/`, { field_id: fieldId, file_name: file.name, file_size: file.size });
     return response.data;
   }
 
@@ -62,13 +61,13 @@ export default class S3FFClient {
    */
   protected async uploadParts(file: File, parts: PartInfo[]): Promise<UploadedPart[]> {
     const uploadedParts: UploadedPart[] = [];
-    let index = 0;
+    let fileOffset = 0;
     for (const part of parts) {
-      const chunk = file.slice(index, index + part.size);
+      const chunk = file.slice(fileOffset, fileOffset + part.size);
       const response = await axios.put(part.upload_url, chunk, {
         onUploadProgress: (e) => {
           this.onProgress({
-            loaded: index + e.loaded,
+            uploaded: fileOffset + e.loaded,
             total: file.size,
             state: 'sending',
           });
@@ -80,7 +79,7 @@ export default class S3FFClient {
         size: part.size,
         etag: response.headers.etag
       });
-      index += part.size;
+      fileOffset += part.size;
     }
     return uploadedParts;
   }
@@ -122,12 +121,10 @@ export default class S3FFClient {
    * @param multipartInfo Signed information returned from /upload-complete/.
    */
   protected async finalize(multipartInfo: MultipartInfo): Promise<string> {
-    this.onProgress({ state: 'finalizing' });
     const response = await axios.post(`${this.baseUrl}/finalize/`, {
       upload_signature: multipartInfo.upload_signature,
     });
-    const { field_value } = response.data;
-    return field_value;
+    return response.data.field_value;
   }
 
   /**
@@ -137,13 +134,16 @@ export default class S3FFClient {
    * @param fieldId The Django field identifier.
    */
   public async uploadFile(file: File, fieldId: string): Promise<UploadResult> {
+    this.onProgress({ state: 'initializing' });
     const multipartInfo = await this.initializeUpload(file, fieldId);
+    this.onProgress({ state: 'sending', uploaded: 0, total: file.size });
     const parts = await this.uploadParts(file, multipartInfo.parts);
+    this.onProgress({ state: 'finalizing' });
     await this.completeUpload(multipartInfo, parts);
-    const field_value = await this.finalize(multipartInfo);
+    const value = await this.finalize(multipartInfo);
     return {
-      value: field_value,
+      value,
       state: 'successful',
-    }
+    };
   }
 }
