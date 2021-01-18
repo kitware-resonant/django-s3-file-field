@@ -19,16 +19,38 @@ interface UploadedPart {
   size: number;
   etag: string;
 }
+
+export enum UploadResultState {
+  Aborted,
+  Successful,
+  Error,
+}
 // Return value from uploadFile()
 export interface UploadResult {
   value: string;
-  state: 'aborted' | 'successful' | 'error';
+  state: UploadResultState;
 }
 
-export default class S3FFClient {
-  protected readonly baseUrl: string;
+export enum ProgressState {
+  Initializing,
+  Sending,
+  Finalizing,
+  Done,
+}
 
-  constructor(baseUrl: string) {
+export interface ProgressEvent {
+  readonly uploaded?: number;
+  readonly total?: number;
+  readonly state: ProgressState;
+}
+
+type ProgressCallback = (progress: ProgressEvent) => void;
+
+export default class S3FFClient {
+  constructor(
+    protected readonly baseUrl: string,
+    private readonly onProgress: ProgressCallback = () => { /* no-op*/ },
+  ) {
     // Strip any trailing slash
     this.baseUrl = baseUrl.replace(/\/$/, '');
   }
@@ -40,24 +62,8 @@ export default class S3FFClient {
    * @param fieldId The Django field identifier.
    */
   protected async initializeUpload(file: File, fieldId: string): Promise<MultipartInfo> {
-    const response = await axios.post(`${this.baseUrl}/upload-initialize/`, { 'field_id': fieldId, 'file_name': file.name, 'file_size': file.size });
+    const response = await axios.post(`${this.baseUrl}/upload-initialize/`, { field_id: fieldId, file_name: file.name, file_size: file.size });
     return response.data;
-  }
-
-  /**
-   * Uploads a part directly to an object store.
-   *
-   * @param chunk The data to upload to this part.
-   * @param part Details of this part.
-   */
-  protected async uploadPart(chunk: Blob, part: PartInfo): Promise<UploadedPart> {
-    const response = await axios.put(part.upload_url, chunk);
-    const etag = response.headers.etag;
-    return {
-      part_number: part.part_number,
-      size: part.size,
-      etag,
-    };
   }
 
   /**
@@ -68,11 +74,25 @@ export default class S3FFClient {
    */
   protected async uploadParts(file: File, parts: PartInfo[]): Promise<UploadedPart[]> {
     const uploadedParts: UploadedPart[] = [];
-    let index = 0;
+    let fileOffset = 0;
     for (const part of parts) {
-      const chunk = file.slice(index, index + part.size);
-      uploadedParts.push(await this.uploadPart(chunk, part));
-      index += part.size;
+      const chunk = file.slice(fileOffset, fileOffset + part.size);
+      const response = await axios.put(part.upload_url, chunk, {
+        onUploadProgress: (e) => {
+          this.onProgress({
+            uploaded: fileOffset + e.loaded,
+            total: file.size,
+            state: ProgressState.Sending,
+          });
+        },
+      });
+
+      uploadedParts.push({
+        part_number: part.part_number,
+        size: part.size,
+        etag: response.headers.etag
+      });
+      fileOffset += part.size;
     }
     return uploadedParts;
   }
@@ -117,8 +137,7 @@ export default class S3FFClient {
     const response = await axios.post(`${this.baseUrl}/finalize/`, {
       upload_signature: multipartInfo.upload_signature,
     });
-    const { field_value } = response.data;
-    return field_value;
+    return response.data.field_value;
   }
 
   /**
@@ -128,13 +147,17 @@ export default class S3FFClient {
    * @param fieldId The Django field identifier.
    */
   public async uploadFile(file: File, fieldId: string): Promise<UploadResult> {
+    this.onProgress({ state: ProgressState.Initializing });
     const multipartInfo = await this.initializeUpload(file, fieldId);
+    this.onProgress({ state: ProgressState.Sending, uploaded: 0, total: file.size });
     const parts = await this.uploadParts(file, multipartInfo.parts);
+    this.onProgress({ state: ProgressState.Finalizing });
     await this.completeUpload(multipartInfo, parts);
-    const field_value = await this.finalize(multipartInfo);
+    const value = await this.finalize(multipartInfo);
+    this.onProgress({ state: ProgressState.Done });
     return {
-      value: field_value,
-      state: 'successful',
-    }
+      value,
+      state: UploadResultState.Successful,
+    };
   }
 }

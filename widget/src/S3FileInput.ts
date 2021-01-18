@@ -1,6 +1,6 @@
 import { DEFAULT_BASE_URL, EVENT_UPLOAD_COMPLETE, EVENT_UPLOAD_STARTED } from "./constants";
 import S3FFClient from "django-s3-file-field";
-import { UploadResult } from "django-s3-file-field";
+import { UploadResult, UploadResultState } from "django-s3-file-field";
 
 function cssClass(clazz: string): string {
   return `s3fileinput-${clazz}`;
@@ -56,8 +56,8 @@ export default class S3FileInput {
     </button>
     <div class="${cssClass("spinner-wrapper")}">
       <div class="${cssClass(
-        "spinner"
-      )}"><div></div><div></div><div></div><div></div>
+      "spinner"
+    )}"><div></div><div></div><div></div><div></div>
     </div>
   </div>`;
     this.input.parentElement!.replaceChild(this.node, this.input);
@@ -152,7 +152,7 @@ export default class S3FileInput {
 
     const result = await this.uploadFile(file);
     this.node.classList.remove(cssClass("uploading"));
-    if (result.state === "successful") {
+    if (result.state === UploadResultState.Successful) {
       this.node.classList.add(cssClass("set"));
       this.input.setCustomValidity(""); // no error
       this.input.type = "hidden";
