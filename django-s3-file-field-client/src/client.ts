@@ -19,16 +19,29 @@ interface UploadedPart {
   size: number;
   etag: string;
 }
+
+export enum UploadResultState {
+  Aborted,
+  Successful,
+  Error,
+}
 // Return value from uploadFile()
 export interface UploadResult {
   value: string;
-  state: 'aborted' | 'successful' | 'error';
+  state: UploadResultState;
+}
+
+export enum ProgressState {
+  Initializing,
+  Sending,
+  Finalizing,
+  Done,
 }
 
 export interface ProgressEvent {
   readonly uploaded?: number;
   readonly total?: number;
-  readonly state: 'initializing' | 'sending' | 'finalizing';
+  readonly state: ProgressState;
 }
 
 type ProgressCallback = (progress: ProgressEvent) => void;
@@ -69,7 +82,7 @@ export default class S3FFClient {
           this.onProgress({
             uploaded: fileOffset + e.loaded,
             total: file.size,
-            state: 'sending',
+            state: ProgressState.Sending,
           });
         },
       });
@@ -134,16 +147,17 @@ export default class S3FFClient {
    * @param fieldId The Django field identifier.
    */
   public async uploadFile(file: File, fieldId: string): Promise<UploadResult> {
-    this.onProgress({ state: 'initializing' });
+    this.onProgress({ state: ProgressState.Initializing });
     const multipartInfo = await this.initializeUpload(file, fieldId);
-    this.onProgress({ state: 'sending', uploaded: 0, total: file.size });
+    this.onProgress({ state: ProgressState.Sending, uploaded: 0, total: file.size });
     const parts = await this.uploadParts(file, multipartInfo.parts);
-    this.onProgress({ state: 'finalizing' });
+    this.onProgress({ state: ProgressState.Finalizing });
     await this.completeUpload(multipartInfo, parts);
     const value = await this.finalize(multipartInfo);
+    this.onProgress({ state: ProgressState.Done });
     return {
       value,
-      state: 'successful',
+      state: UploadResultState.Successful,
     };
   }
 }
