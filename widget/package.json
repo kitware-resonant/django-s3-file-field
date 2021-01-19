@@ -13,7 +13,7 @@
   "dependencies": {
     "@types/js-cookie": "^2.2.6",
     "axios": "^0.21.1",
-    "django-s3-file-field": "file:../django-s3-file-field-client",
+    "django-s3-file-field": "file:../javascript-client",
     "js-cookie": "^2.2.1"
   },
   "devDependencies": {

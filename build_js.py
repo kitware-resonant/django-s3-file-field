@@ -53,7 +53,7 @@ class NPM(Command):
     description = 'install package.json dependencies using npm'
     user_options: List[Tuple[str, str, str]] = []
 
-    build_scripts = [('django-s3-file-field-client', 'build'), ('widget', 'build')]
+    build_scripts = [('javascript-client', 'build'), ('widget', 'build')]
     targets = [os.path.join(here, 's3_file_field', 'static', 's3_file_field', 's3_file_field.js')]
 
     def initialize_options(self):
