@@ -49,7 +49,7 @@ type ProgressCallback = (progress: ProgressEvent) => void;
 export default class S3FFClient {
   constructor(
     protected readonly baseUrl: string,
-    private readonly onProgress: ProgressCallback = () => { /* no-op*/ },
+    private readonly onProgress: ProgressCallback = () => { /* no-op */ },
   ) {
     // Strip any trailing slash
     this.baseUrl = baseUrl.replace(/\/$/, '');
@@ -62,7 +62,11 @@ export default class S3FFClient {
    * @param fieldId The Django field identifier.
    */
   protected async initializeUpload(file: File, fieldId: string): Promise<MultipartInfo> {
-    const response = await axios.post(`${this.baseUrl}/upload-initialize/`, { field_id: fieldId, file_name: file.name, file_size: file.size });
+    const response = await axios.post(`${this.baseUrl}/upload-initialize/`, {
+      field_id: fieldId,
+      file_name: file.name,
+      file_size: file.size,
+    });
     return response.data;
   }
 
@@ -77,7 +81,9 @@ export default class S3FFClient {
     let fileOffset = 0;
     for (const part of parts) {
       const chunk = file.slice(fileOffset, fileOffset + part.size);
+      // eslint-disable-next-line no-await-in-loop
       const response = await axios.put(part.upload_url, chunk, {
+        // eslint-disable-next-line @typescript-eslint/no-loop-func
         onUploadProgress: (e) => {
           this.onProgress({
             uploaded: fileOffset + e.loaded,
@@ -86,11 +92,10 @@ export default class S3FFClient {
           });
         },
       });
-
       uploadedParts.push({
         part_number: part.part_number,
         size: part.size,
-        etag: response.headers.etag
+        etag: response.headers.etag,
       });
       fileOffset += part.size;
     }
@@ -105,16 +110,18 @@ export default class S3FFClient {
    * @param multipartInfo The information describing the multipart upload.
    * @param parts The parts that were uploaded.
    */
-  protected async completeUpload(multipartInfo: MultipartInfo, parts: UploadedPart[]): Promise<void> {
+  protected async completeUpload(
+    multipartInfo: MultipartInfo, parts: UploadedPart[],
+  ): Promise<void> {
     const response = await axios.post(`${this.baseUrl}/upload-complete/`, {
       upload_signature: multipartInfo.upload_signature,
       upload_id: multipartInfo.upload_id,
-      parts: parts,
+      parts,
     });
-    const { complete_url, body } = response.data;
+    const { complete_url: completeUrl, body } = response.data;
 
     // Send the CompleteMultipartUpload operation to S3
-    await axios.post(complete_url, body, {
+    await axios.post(completeUrl, body, {
       headers: {
         // By default, Axios sets "Content-Type: application/x-www-form-urlencoded" on POST
         // requests. This causes AWS's API to interpret the request body as additional parameters
