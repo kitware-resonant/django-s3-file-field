@@ -81,6 +81,7 @@ export default class S3FFClient {
     let fileOffset = 0;
     for (const part of parts) {
       const chunk = file.slice(fileOffset, fileOffset + part.size);
+      // eslint-disable-next-line no-await-in-loop
       const response = await axios.put(part.upload_url, chunk, {
         // eslint-disable-next-line @typescript-eslint/no-loop-func
         onUploadProgress: (e) => {
