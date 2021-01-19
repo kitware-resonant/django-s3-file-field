@@ -1,6 +1,6 @@
 {
   "name": "django-s3-file-field",
-  "version": "0.0.21",
+  "version": "0.0.0",
   "description": "A Javascript client library for django-s3-file-field.",
   "author": "Kitware, Inc. <kitware@kitware.com>",
   "license": "Apache-2.0",

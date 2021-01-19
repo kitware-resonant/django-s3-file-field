@@ -35,3 +35,18 @@ jobs:
         working-directory: ./python-client
         run: |
           tox -e release
+  publish-javascript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "14.x"
+      - name: Publish Javascript client to npm
+        working-directory: ./javascript-client
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          npm version --no-git-tag-version $(git describe --tags --match '*[0-9]*' --abbrev=0 | sed 's/^v//')
+          echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > ./.npmrc
+          npm publish
