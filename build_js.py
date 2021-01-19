@@ -54,7 +54,7 @@ class NPM(Command):
     user_options: List[Tuple[str, str, str]] = []
 
     build_scripts = [('javascript-client', 'build'), ('widget', 'build')]
-    targets = [os.path.join(here, 's3_file_field', 'static', 's3_file_field', 's3_file_field.js')]
+    targets = [os.path.join(here, 's3_file_field', 'static', 's3_file_field', 'widget.js')]
 
     def initialize_options(self):
         pass
