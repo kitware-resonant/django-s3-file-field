@@ -17,7 +17,7 @@ setup(
         'Bug Reports': 'https://github.com/girder/django-s3-file-field/issues',
         'Source': 'https://github.com/girder/django-s3-file-field',
     },
-    author='Kitware, Inc',
+    author='Kitware, Inc.',
     author_email='kitware@kitware.com',
     keywords='django girder',
     classifiers=[

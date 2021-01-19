@@ -13,8 +13,8 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: 12.x
-    - name: django-s3-file-field npm install, build, and test
-      working-directory: ./django-s3-file-field-client
+    - name: Javascript client npm install, build, and test
+      working-directory: ./javascript-client
       run: |
         npm ci
         npm run build
