@@ -32,13 +32,13 @@ jobs:
           pip install --upgrade pip
           pip install tox
       - name: Run tests
-        run: |
-          tox
         env:
           MINIO_STORAGE_ENDPOINT: "localhost:9000"
           MINIO_STORAGE_ACCESS_KEY: minioAccessKey
           MINIO_STORAGE_SECRET_KEY: minioSecretKey
           MINIO_STORAGE_MEDIA_BUCKET_NAME: s3ff-test
+        run: |
+          tox
   test-javascript:
     runs-on: ubuntu-latest
     steps:
