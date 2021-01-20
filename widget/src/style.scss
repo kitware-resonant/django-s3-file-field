@@ -129,15 +129,7 @@ $dot-width: 0.5em;
   }
 }
 
-.#{$css_prefix}-autoupload {
-  display: none;
-}
-
 .#{$css_prefix}-uploading {
-  .#{$css_prefix}-upload {
-    display: none;
-  }
-
   .#{$css_prefix}-abort {
     display: unset;
   }
@@ -148,9 +140,6 @@ $dot-width: 0.5em;
 }
 
 .#{$css_prefix}-set {
-  .#{$css_prefix}-upload {
-    display: none;
-  }
   .#{$css_prefix}-info {
     display: inline-block;
   }
