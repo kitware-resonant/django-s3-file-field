@@ -56,6 +56,7 @@ class S3FileInput(ClearableFileInput):
 
     class Media:
         js = ['s3_file_field/widget.js']
+        css = {'all': ['s3_file_field/widget.css']}
 
     def get_context(self, *args, **kwargs):
         # The base URL cannot be determined at the time the widget is instantiated
