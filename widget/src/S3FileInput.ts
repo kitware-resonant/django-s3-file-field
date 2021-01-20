@@ -11,10 +11,6 @@ export interface S3FileInputOptions {
    * @default /api/joist
    */
   baseUrl: string;
-  /**
-   * @default false
-   */
-  autoUpload: boolean;
 }
 
 function i18n(text: string): string {
@@ -28,15 +24,11 @@ export default class S3FileInput {
 
   private readonly info: HTMLElement;
 
-  private readonly uploadButton: HTMLButtonElement;
-
   private readonly clearButton: HTMLButtonElement;
 
   private readonly spinnerWrapper: HTMLElement;
 
   private readonly baseUrl: string;
-
-  private readonly autoUpload: boolean;
 
   private readonly fieldId: string;
 
@@ -44,18 +36,12 @@ export default class S3FileInput {
     this.input = input;
 
     this.baseUrl = options.baseUrl || this.input.dataset.s3fileinput || DEFAULT_BASE_URL;
-    this.autoUpload = options.autoUpload != null
-      ? options.autoUpload
-      : this.input.dataset.autoUpload != null;
     this.fieldId = this.input.dataset?.fieldId || ''; // TODO this should error out
 
     this.node = input.ownerDocument.createElement('div');
     this.node.classList.add(cssClass('wrapper'));
     this.node.innerHTML = `<div class="${cssClass('inner')}">
     <div class="${cssClass('info')}"></div>
-    <button type="button" class="${cssClass('upload')}" disabled>
-      ${i18n('Upload to S3')}
-    </button>
     <button type="button" class="${cssClass('clear')}" title="${i18n('Clear (file was already uploaded tho)')}">
       ${i18n('x')}
     </button>
@@ -68,19 +54,13 @@ export default class S3FileInput {
     /* eslint-disable @typescript-eslint/no-non-null-assertion */
     this.input.parentElement!.replaceChild(this.node, this.input);
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.uploadButton = this.node.querySelector<HTMLButtonElement>(
-      `.${cssClass('upload')}`,
-    )!;
     this.clearButton = this.node.querySelector<HTMLButtonElement>(
       `.${cssClass('clear')}`,
     )!;
     this.info = this.node.querySelector<HTMLElement>(
       `.${cssClass('info')}`,
     )!;
-    if (this.autoUpload) {
-      this.uploadButton.classList.add(cssClass('autoupload'));
-    }
-    this.uploadButton.insertAdjacentElement('beforebegin', this.input);
+    this.clearButton.insertAdjacentElement('beforebegin', this.input);
     this.spinnerWrapper = this.node.querySelector<HTMLElement>(
       `.${cssClass('spinner-wrapper')}`,
     )!;
@@ -89,8 +69,7 @@ export default class S3FileInput {
     this.input.onchange = (evt): void => {
       evt.preventDefault();
       if (this.input.type === 'file') {
-        const files = Array.from(this.input.files || []);
-        this.handleFiles(files);
+        this.uploadFiles();
       } else if (this.input.value === '') {
         // already processed but user resetted it -> convert bak
         this.input.type = 'file';
@@ -107,24 +86,6 @@ export default class S3FileInput {
       this.info.innerText = '';
       this.node.classList.remove(cssClass('set'));
     };
-
-    this.uploadButton.onclick = (evt): void => {
-      evt.preventDefault();
-      evt.stopPropagation();
-      this.uploadFiles();
-    };
-  }
-
-  private async handleFiles(files: File[]): Promise<void> {
-    if (this.autoUpload) {
-      await this.uploadFiles();
-      return;
-    }
-    this.uploadButton.disabled = files.length === 0;
-
-    this.input.setCustomValidity(
-      files.length > 0 ? i18n('Press Upload Button to upload directly') : '',
-    );
   }
 
   private async uploadFile(file: File): Promise<UploadResult> {
@@ -152,7 +113,6 @@ export default class S3FileInput {
     this.spinnerWrapper.style.height = `${bb.height}px`;
 
     this.node.classList.add(cssClass('uploading'));
-    this.uploadButton.disabled = true;
     this.input.setCustomValidity(i18n('Uploading files, wait till finished'));
     this.input.value = ''; // reset file selection
 

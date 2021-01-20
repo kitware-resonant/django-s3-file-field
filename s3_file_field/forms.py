@@ -40,7 +40,6 @@ class S3FormFileField(FileField):
         attrs = super().widget_attrs(widget)
         attrs.update(
             {
-                'data-auto-upload': True,
                 'data-field-id': self.model_field_id,
                 'data-s3fileinput': '',
             }
