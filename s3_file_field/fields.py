@@ -33,6 +33,14 @@ class S3FileField(FileField):
         kwargs.setdefault('upload_to', self.uuid_prefix_filename)
         super().__init__(*args, **kwargs)
 
+    def deconstruct(self):
+        name, path, args, kwargs = super().deconstruct()
+        if kwargs.get('max_length') == 2000:
+            del kwargs['max_length']
+        if kwargs.get('upload_to') is self.uuid_prefix_filename:
+            del kwargs['upload_to']
+        return name, path, args, kwargs
+
     @property
     def id(self) -> str:
         """Return the unique identifier for this field instance."""
