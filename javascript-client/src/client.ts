@@ -20,47 +20,47 @@ interface UploadedPart {
   etag: string;
 }
 
-export enum UploadResultState {
+export enum S3FileFieldResultState {
   Aborted,
   Successful,
   Error,
 }
 // Return value from uploadFile()
-export interface UploadResult {
+export interface S3FileFieldResult {
   value: string;
-  state: UploadResultState;
+  state: S3FileFieldResultState;
 }
 
-export enum ProgressState {
+export enum S3FileFieldProgressState {
   Initializing,
   Sending,
   Finalizing,
   Done,
 }
 
-export interface ProgressEvent {
+export interface S3FileFieldProgress {
   readonly uploaded?: number;
   readonly total?: number;
-  readonly state: ProgressState;
+  readonly state: S3FileFieldProgressState;
 }
 
-type ProgressCallback = (progress: ProgressEvent) => void;
+export type S3FileFieldProgressCallback = (progress: S3FileFieldProgress) => void;
 
-export interface S3FFClientOptions {
+export interface S3FileFieldClientOptions {
   readonly baseUrl: string;
-  readonly onProgress?: ProgressCallback;
+  readonly onProgress?: S3FileFieldProgressCallback;
   readonly apiConfig?: AxiosRequestConfig
 }
 
-export default class S3FFClient {
+export default class S3FileFieldClient {
   protected readonly api: AxiosInstance;
 
-  protected readonly onProgress: ProgressCallback;
+  protected readonly onProgress: S3FileFieldProgressCallback;
 
   /**
-   * Create an S3FFClient instance.
+   * Create an S3FileFieldClient instance.
    *
-   * @param options {S3FFClientOptions} - A Object with all arguments.
+   * @param options {S3FileFieldClientOptions} - A Object with all arguments.
    * @param options.baseUrl - The absolute URL to the Django server.
    * @param [options.onProgress] - A callback for upload progress.
    * @param [options.apiConfig] - An axios configuration to use for Django API requests.
@@ -71,7 +71,7 @@ export default class S3FFClient {
       baseUrl,
       onProgress = () => { /* no-op */ },
       apiConfig = {},
-    }: S3FFClientOptions,
+    }: S3FileFieldClientOptions,
   ) {
     this.onProgress = onProgress;
 
@@ -115,7 +115,7 @@ export default class S3FFClient {
           this.onProgress({
             uploaded: fileOffset + e.loaded,
             total: file.size,
-            state: ProgressState.Sending,
+            state: S3FileFieldProgressState.Sending,
           });
         },
       });
@@ -180,18 +180,18 @@ export default class S3FFClient {
    * @param file The file to upload.
    * @param fieldId The Django field identifier.
    */
-  public async uploadFile(file: File, fieldId: string): Promise<UploadResult> {
-    this.onProgress({ state: ProgressState.Initializing });
+  public async uploadFile(file: File, fieldId: string): Promise<S3FileFieldResult> {
+    this.onProgress({ state: S3FileFieldProgressState.Initializing });
     const multipartInfo = await this.initializeUpload(file, fieldId);
-    this.onProgress({ state: ProgressState.Sending, uploaded: 0, total: file.size });
+    this.onProgress({ state: S3FileFieldProgressState.Sending, uploaded: 0, total: file.size });
     const parts = await this.uploadParts(file, multipartInfo.parts);
-    this.onProgress({ state: ProgressState.Finalizing });
+    this.onProgress({ state: S3FileFieldProgressState.Finalizing });
     await this.completeUpload(multipartInfo, parts);
     const value = await this.finalize(multipartInfo);
-    this.onProgress({ state: ProgressState.Done });
+    this.onProgress({ state: S3FileFieldProgressState.Done });
     return {
       value,
-      state: UploadResultState.Successful,
+      state: S3FileFieldResultState.Successful,
     };
   }
 }
