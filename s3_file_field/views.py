@@ -2,7 +2,6 @@ from typing import Dict
 
 from django.core import signing
 from django.http.response import HttpResponseBase
-from django.views.decorators.csrf import csrf_exempt
 from rest_framework import serializers
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import JSONParser
@@ -72,7 +71,6 @@ class FinalizationResponseSerializer(serializers.Serializer):
 
 
 @api_view(['POST'])
-@csrf_exempt
 @parser_classes([JSONParser])
 def upload_initialize(request: Request) -> HttpResponseBase:
     request_serializer = UploadInitializationRequestSerializer(data=request.data)
@@ -113,7 +111,6 @@ def upload_initialize(request: Request) -> HttpResponseBase:
 
 
 @api_view(['POST'])
-@csrf_exempt
 @parser_classes([JSONParser])
 def upload_complete(request: Request) -> HttpResponseBase:
     request_serializer = UploadCompletionRequestSerializer(data=request.data)
@@ -148,7 +145,6 @@ def upload_complete(request: Request) -> HttpResponseBase:
 
 
 @api_view(['POST'])
-@csrf_exempt
 @parser_classes([JSONParser])
 def finalize(request: Request) -> HttpResponseBase:
     request_serializer = FinalizationRequestSerializer(data=request.data)
