@@ -1,19 +1,10 @@
 import S3FFClient, { UploadResult, UploadResultState } from 'django-s3-file-field';
 
-export const DEFAULT_BASE_URL = '/api/joist';
-
 export const EVENT_UPLOAD_STARTED = 's3UploadStarted';
 export const EVENT_UPLOAD_COMPLETE = 's3UploadComplete';
 
 function cssClass(clazz: string): string {
   return `s3fileinput-${clazz}`;
-}
-
-export interface S3FileInputOptions {
-  /**
-   * @default /api/joist
-   */
-  baseUrl: string;
 }
 
 function i18n(text: string): string {
@@ -35,11 +26,20 @@ export default class S3FileInput {
 
   private readonly fieldId: string;
 
-  constructor(input: HTMLInputElement, options: Partial<S3FileInputOptions> = {}) {
+  constructor(input: HTMLInputElement) {
     this.input = input;
 
-    this.baseUrl = options.baseUrl || this.input.dataset.s3fileinput || DEFAULT_BASE_URL;
-    this.fieldId = this.input.dataset?.fieldId || ''; // TODO this should error out
+    const baseUrl = this.input.dataset?.s3fileinput;
+    if (!baseUrl) {
+      throw new Error('Missing "data-s3fileinput" attribute on input element.');
+    }
+    this.baseUrl = baseUrl;
+
+    const fieldId = this.input.dataset?.fieldId;
+    if (!fieldId) {
+      throw new Error('Missing "data-field-id" attribute on input element.');
+    }
+    this.fieldId = fieldId;
 
     this.node = input.ownerDocument.createElement('div');
     this.node.classList.add(cssClass('wrapper'));
