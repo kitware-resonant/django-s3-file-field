@@ -47,16 +47,3 @@ class S3FormFileField(FileField):
         # 'data-s3fileinput' cannot be determined at this point, during app startup.
         # It will be added at render-time by "S3FileInput.get_context".
         return attrs
-
-    # def validate(self, value):
-    #     super().validate(value)
-
-    #     if isinstance(value, S3PlaceholderFile):
-    #         # verify signature
-    #         signer = Signer()
-    #         try:
-    #             expected = signer.unsign(value.signature)
-    #             if value.name != expected:
-    #                 raise ValidationError('Signature tempering detected')
-    #         except BadSignature:
-    #             raise ValidationError('Signature tempering detected')

@@ -24,10 +24,6 @@ class S3PlaceholderFile(File):
         self.name = name
         self.size = size
 
-    # @property
-    # def size(self) -> int:
-    #     return 0
-
     def open(self, mode=None):
         raise NotImplementedError
 
