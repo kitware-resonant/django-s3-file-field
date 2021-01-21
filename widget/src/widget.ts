@@ -1,19 +1,16 @@
 import './style.scss';
 import S3FileInput from './S3FileInput';
 
-/**
- * @internal
- */
-function autoInit(): void {
-  // auto init
-  const wrappers = Array.from(
-    document.querySelectorAll<HTMLInputElement>('input[data-s3fileinput]'),
-  );
-  wrappers.forEach((w) => new S3FileInput(w));
+function attachToFileInputs(): void {
+  document.querySelectorAll<HTMLInputElement>('input[data-s3fileinput]')
+    .forEach((element) => {
+      // eslint-disable-next-line no-new
+      new S3FileInput(element);
+    });
 }
 
 if (document.readyState !== 'loading') {
-  autoInit();
+  attachToFileInputs();
 } else {
-  document.addEventListener('DOMContentLoaded', autoInit);
+  document.addEventListener('DOMContentLoaded', attachToFileInputs.bind(this));
 }
