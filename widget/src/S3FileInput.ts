@@ -94,7 +94,7 @@ export default class S3FileInput {
     });
     this.input.dispatchEvent(startedEvent);
 
-    const result = await new S3FFClient(this.baseUrl).uploadFile(file, this.fieldId);
+    const result = await new S3FFClient({ baseUrl: this.baseUrl }).uploadFile(file, this.fieldId);
     const completedEvent = new CustomEvent(EVENT_UPLOAD_COMPLETE, {
       detail: result,
     });

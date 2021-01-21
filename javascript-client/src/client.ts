@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 
 // Description of a part from initializeUpload()
 interface PartInfo {
@@ -46,13 +46,40 @@ export interface ProgressEvent {
 
 type ProgressCallback = (progress: ProgressEvent) => void;
 
+export interface S3FFClientOptions {
+  readonly baseUrl: string;
+  readonly onProgress?: ProgressCallback;
+  readonly apiConfig?: AxiosRequestConfig
+}
+
 export default class S3FFClient {
+  protected readonly api: AxiosInstance;
+
+  protected readonly onProgress: ProgressCallback;
+
+  /**
+   * Create an S3FFClient instance.
+   *
+   * @param options {S3FFClientOptions} - A Object with all arguments.
+   * @param options.baseUrl - The absolute URL to the Django server.
+   * @param [options.onProgress] - A callback for upload progress.
+   * @param [options.apiConfig] - An axios configuration to use for Django API requests.
+   *                              Can be extracted from an existing axios instance via `.defaults`.
+   */
   constructor(
-    protected readonly baseUrl: string,
-    private readonly onProgress: ProgressCallback = () => { /* no-op */ },
+    {
+      baseUrl,
+      onProgress = () => { /* no-op */ },
+      apiConfig = {},
+    }: S3FFClientOptions,
   ) {
-    // Strip any trailing slash
-    this.baseUrl = baseUrl.replace(/\/$/, '');
+    this.onProgress = onProgress;
+
+    this.api = axios.create({
+      ...apiConfig,
+      // Add a trailing slash
+      baseURL: baseUrl.replace(/\/?$/, '/'),
+    });
   }
 
   /**
@@ -62,7 +89,7 @@ export default class S3FFClient {
    * @param fieldId The Django field identifier.
    */
   protected async initializeUpload(file: File, fieldId: string): Promise<MultipartInfo> {
-    const response = await axios.post(`${this.baseUrl}/upload-initialize/`, {
+    const response = await this.api.post('upload-initialize/', {
       field_id: fieldId,
       file_name: file.name,
       file_size: file.size,
@@ -113,7 +140,7 @@ export default class S3FFClient {
   protected async completeUpload(
     multipartInfo: MultipartInfo, parts: UploadedPart[],
   ): Promise<void> {
-    const response = await axios.post(`${this.baseUrl}/upload-complete/`, {
+    const response = await this.api.post('upload-complete/', {
       upload_signature: multipartInfo.upload_signature,
       upload_id: multipartInfo.upload_id,
       parts,
@@ -141,7 +168,7 @@ export default class S3FFClient {
    * @param multipartInfo Signed information returned from /upload-complete/.
    */
   protected async finalize(multipartInfo: MultipartInfo): Promise<string> {
-    const response = await axios.post(`${this.baseUrl}/finalize/`, {
+    const response = await this.api.post('finalize/', {
       upload_signature: multipartInfo.upload_signature,
     });
     return response.data.field_value;
