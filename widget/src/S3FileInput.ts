@@ -1,6 +1,9 @@
 import S3FFClient, { UploadResult, UploadResultState } from 'django-s3-file-field';
 
-import { DEFAULT_BASE_URL, EVENT_UPLOAD_COMPLETE, EVENT_UPLOAD_STARTED } from './constants';
+export const DEFAULT_BASE_URL = '/api/joist';
+
+export const EVENT_UPLOAD_STARTED = 's3UploadStarted';
+export const EVENT_UPLOAD_COMPLETE = 's3UploadComplete';
 
 function cssClass(clazz: string): string {
   return `s3fileinput-${clazz}`;
@@ -94,7 +97,19 @@ export default class S3FileInput {
     });
     this.input.dispatchEvent(startedEvent);
 
-    const result = await new S3FFClient({ baseUrl: this.baseUrl }).uploadFile(file, this.fieldId);
+    const result = await new S3FFClient({
+      baseUrl: this.baseUrl,
+      apiConfig: {
+        // This will cause session and CSRF cookies to be sent for same-site requests.
+        // Cross-site requests with the server-rendered widget are not supported.
+        // If the server does not enable SessionAuthentication, requests will be unauthenticated,
+        // but still allowed.
+        xsrfCookieName: 'csrftoken',
+        xsrfHeaderName: 'X-CSRFToken',
+        // Explicitly disable this, to ensure that cross-site requests fail cleanly.
+        withCredentials: false,
+      },
+    }).uploadFile(file, this.fieldId);
     const completedEvent = new CustomEvent(EVENT_UPLOAD_COMPLETE, {
       detail: result,
     });
