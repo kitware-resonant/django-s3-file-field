@@ -1,4 +1,4 @@
-import S3FFClient, { UploadResult, UploadResultState } from 'django-s3-file-field';
+import S3FileFieldClient, { S3FileFieldResult, S3FileFieldResultState } from 'django-s3-file-field';
 
 export const EVENT_UPLOAD_STARTED = 's3UploadStarted';
 export const EVENT_UPLOAD_COMPLETE = 's3UploadComplete';
@@ -91,13 +91,13 @@ export default class S3FileInput {
     };
   }
 
-  private async uploadFile(file: File): Promise<UploadResult> {
+  private async uploadFile(file: File): Promise<S3FileFieldResult> {
     const startedEvent = new CustomEvent(EVENT_UPLOAD_STARTED, {
       detail: file,
     });
     this.input.dispatchEvent(startedEvent);
 
-    const result = await new S3FFClient({
+    const result = await new S3FileFieldClient({
       baseUrl: this.baseUrl,
       apiConfig: {
         // This will cause session and CSRF cookies to be sent for same-site requests.
@@ -135,7 +135,7 @@ export default class S3FileInput {
 
     const result = await this.uploadFile(file);
     this.node.classList.remove(cssClass('uploading'));
-    if (result.state === UploadResultState.Successful) {
+    if (result.state === S3FileFieldResultState.Successful) {
       this.node.classList.add(cssClass('set'));
       this.input.setCustomValidity(''); // no error
       this.input.type = 'hidden';
