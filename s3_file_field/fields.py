@@ -1,11 +1,11 @@
 import logging
-from typing import Any, List, cast
+from typing import Any, List
 from uuid import uuid4
 
 from django.core import checks
 from django.core.checks import CheckMessage
 from django.db import models
-from django.db.models.fields.files import FieldFile, FileField
+from django.db.models.fields.files import FileField
 from django.forms import Field as FormField
 
 from ._multipart import MultipartManager
@@ -16,28 +16,6 @@ from .widgets import S3PlaceholderFile
 logger = logging.getLogger(__name__)
 
 
-class S3FieldFile(FieldFile):
-    """
-    Helper class for the S3FileField.
-
-    it wraps the value within a model instance.
-    """
-
-    def save(self, name: str, content: Any, save=True):
-        if not isinstance(content, S3PlaceholderFile):
-            return super().save(name, content, save)
-
-        self.name = content.name
-        setattr(self.instance, self.field.name, self.name)
-        self._committed = True
-
-        # Save the object because it has changed, unless save is False
-        if save:
-            self.instance.save()
-
-    cast(Any, save).alters_data = True
-
-
 class S3FileField(FileField):
     """
     A django model field that is similar to a file field.
@@ -45,7 +23,6 @@ class S3FileField(FileField):
     Except it supports directly uploading the file to S3 via the UI
     """
 
-    attr_class = S3FieldFile
     description = (
         'A file field which is supports direct uploads to S3 via the '
         'UI and fallsback to uploaded to <randomuuid>/filename.'
