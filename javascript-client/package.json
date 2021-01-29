@@ -15,7 +15,7 @@
     "watch": "tsc --watch",
     "build:clean": "rimraf ./dist",
     "build:compile": "tsc",
-    "build": "npm-run-all build:*",
+    "build": "npm-run-all build:clean build:compile",
     "prepack": "npm-run-all build"
   },
   "dependencies": {
