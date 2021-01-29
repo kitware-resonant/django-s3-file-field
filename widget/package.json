@@ -10,7 +10,7 @@
     "watch": "parcel watch ./src/widget.ts --out-dir ../s3_file_field/static/s3_file_field/",
     "build:clean": "rimraf ../s3_file_field/static/s3_file_field",
     "build:compile": "parcel build ./src/widget.ts --out-dir ../s3_file_field/static/s3_file_field/ --no-source-maps",
-    "build": "npm-run-all build:*"
+    "build": "npm-run-all build:clean build:compile"
   },
   "dependencies": {
     "django-s3-file-field": "file:../javascript-client"
