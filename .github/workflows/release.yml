@@ -42,7 +42,8 @@ jobs:
         with:
           # Tags are needed to compute the current version number
           fetch-depth: 0
-      - uses: actions/setup-node@v2
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
         with:
           node-version: "14.x"
       - name: Publish Javascript client to npm
