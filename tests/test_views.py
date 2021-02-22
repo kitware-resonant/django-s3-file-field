@@ -70,13 +70,35 @@ def test_prepare_three_parts(api_client):
 
 
 @pytest.mark.parametrize('file_size', [10, mb(10), mb(12)], ids=['10B', '10MB', '12MB'])
-def test_full_upload_flow(api_client: APIClient, file_size: int):
+@pytest.mark.parametrize(
+    'content_type',
+    [None, 'image/png', 'application/dicom'],
+    ids=['none', 'png', 'dicom'],
+)
+@pytest.mark.parametrize(
+    'content_disposition',
+    [None, 'new-object.png', 'new-object.dicom'],
+    ids=['none', 'new-object.png', 'new-object.dicom'],
+)
+def test_full_upload_flow(
+    api_client: APIClient,
+    file_size: int,
+    content_type: str,
+    content_disposition: str,
+):
+    request_body = {
+        'field_id': 'test_app.Resource.blob',
+        'file_name': 'test.txt',
+        'file_size': file_size,
+    }
+    # Only include Content headers if non-null
+    if content_type is not None:
+        request_body['content_type'] = content_type
+    if content_disposition is not None:
+        request_body['content_disposition'] = content_disposition
+
     # Initialize the multipart upload
-    resp = api_client.post(
-        reverse('s3_file_field:upload-initialize'),
-        {'field_id': 'test_app.Resource.blob', 'file_name': 'test.txt', 'file_size': file_size},
-        format='json',
-    )
+    resp = api_client.post(reverse('s3_file_field:upload-initialize'), request_body, format='json')
     assert resp.status_code == 200
     initialization = resp.data
     assert isinstance(initialization, dict)
@@ -132,5 +154,21 @@ def test_full_upload_flow(api_client: APIClient, file_size: int):
     assert resp.data == {
         'field_value': Re(r'.*:.*'),
     }
+
+    # Verify that the Content headers were stored correctly on the object
+    object_resp = requests.get(default_storage.url(initialization['object_key']))
+    assert resp.status_code == 200
+    actual_content_type = object_resp.headers['Content-Type']
+    actual_content_disposition = object_resp.headers['Content-Disposition']
+    if content_type is not None:
+        assert actual_content_type == content_type
+    else:
+        # Test Content-Type inference when none is specified
+        assert actual_content_type == 'text/plain'
+    if content_disposition is not None:
+        # Test default Content-Disposition when none is specified
+        assert actual_content_disposition == content_disposition
+    else:
+        assert actual_content_disposition == 'attachment; filename="test.txt"'
 
     default_storage.delete(initialization['object_key'])
