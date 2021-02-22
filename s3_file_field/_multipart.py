@@ -61,8 +61,18 @@ class MultipartManager:
 
     part_size = mb(64)
 
-    def initialize_upload(self, object_key: str, file_size: int) -> PresignedTransfer:
-        upload_id = self._create_upload_id(object_key)
+    def initialize_upload(
+        self,
+        object_key: str,
+        file_size: int,
+        content_type: str | None = None,
+        content_disposition: str | None = None,
+    ) -> PresignedTransfer:
+        upload_id = self._create_upload_id(
+            object_key,
+            content_type=content_type,
+            content_disposition=content_disposition,
+        )
         parts = [
             PresignedPartTransfer(
                 part_number=part_number,
@@ -143,7 +153,13 @@ class MultipartManager:
     # The AWS default expiration of 1 hour may not be enough for large uploads to complete
     _url_expiration = timedelta(hours=24)
 
-    def _create_upload_id(self, object_key: str) -> str:
+    def _create_upload_id(
+        self,
+        object_key: str,
+        content_type: str | None = None,
+        content_disposition: str | None = None,
+    ) -> str:
+        # Require content headers here
         raise NotImplementedError
 
     def _abort_upload_id(self, object_key: str, upload_id: str) -> None:

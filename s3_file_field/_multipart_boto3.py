@@ -16,13 +16,22 @@ class Boto3MultipartManager(MultipartManager):
         self._client: s3.Client = resource.meta.client
         self._bucket_name: str = storage.bucket_name
 
-    def _create_upload_id(self, object_key: str) -> str:
+    def _create_upload_id(
+        self,
+        object_key: str,
+        content_type: str = None,
+        content_disposition: str = None,
+    ) -> str:
+        metadata = {}
+        if content_type is not None:
+            metadata['ContentType'] = content_type
+        if content_disposition is not None:
+            metadata['ContentDisposition'] = content_disposition
         resp = self._client.create_multipart_upload(
             Bucket=self._bucket_name,
             Key=object_key,
+            **metadata,  # type: ignore
             # TODO: filename in Metadata
-            # TODO: ContentType
-            # TODO: ContentEncoding
             # TODO: ensure ServerSideEncryption is set, even if not specified
             # TODO: use client._get_write_parameters?
         )
