@@ -22,15 +22,15 @@ class Boto3MultipartManager(MultipartManager):
         content_type: str = None,
         content_disposition: str = None,
     ) -> str:
-        metadata = {}
+        boto3_kwargs = {}
         if content_type is not None:
-            metadata['ContentType'] = content_type
+            boto3_kwargs['ContentType'] = content_type
         if content_disposition is not None:
-            metadata['ContentDisposition'] = content_disposition
+            boto3_kwargs['ContentDisposition'] = content_disposition
         resp = self._client.create_multipart_upload(
             Bucket=self._bucket_name,
             Key=object_key,
-            **metadata,  # type: ignore
+            **boto3_kwargs,  # type: ignore
             # TODO: filename in Metadata
             # TODO: ensure ServerSideEncryption is set, even if not specified
             # TODO: use client._get_write_parameters?
