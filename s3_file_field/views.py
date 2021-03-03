@@ -86,7 +86,7 @@ def upload_initialize(request: Request) -> HttpResponseBase:
     # Maybe we need a different generate method/upload_to with a different signature?
     object_key = field.generate_filename(None, file_name)
 
-    content_type = upload_request.get('content_type', mimetypes.guess_type(file_name)[0])
+    content_type = upload_request.get('content_type')
 
     initialization = _multipart.MultipartManager.from_storage(field.storage).initialize_upload(
         object_key,
