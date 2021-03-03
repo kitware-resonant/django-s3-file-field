@@ -18,13 +18,10 @@ class MinioMultipartManager(MultipartManager):
         self,
         object_key: str,
         content_type: Union[str, None] = None,
-        content_disposition: Union[str, None] = None,
     ) -> str:
         metadata = {}
         if content_type is not None:
             metadata['Content-Type'] = content_type
-        if content_disposition is not None:
-            metadata['Content-Disposition'] = content_disposition
         # Require content headers here
         return self._client._new_multipart_upload(
             bucket_name=self._bucket_name,

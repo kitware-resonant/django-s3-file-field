@@ -19,7 +19,6 @@ class UploadInitializationRequestSerializer(serializers.Serializer):
     file_size = serializers.IntegerField(min_value=1)
     # part_size = serializers.IntegerField(min_value=1)
     content_type = serializers.CharField(required=False, trim_whitespace=False)
-    content_disposition = serializers.CharField(required=False, trim_whitespace=False)
 
 
 class PartInitializationResponseSerializer(serializers.Serializer):
@@ -88,16 +87,11 @@ def upload_initialize(request: Request) -> HttpResponseBase:
     object_key = field.generate_filename(None, file_name)
 
     content_type = upload_request.get('content_type', mimetypes.guess_type(file_name)[0])
-    content_disposition = upload_request.get(
-        'content_disposition',
-        f'attachment; filename="{file_name}"',
-    )
 
     initialization = _multipart.MultipartManager.from_storage(field.storage).initialize_upload(
         object_key,
         upload_request['file_size'],
         content_type=content_type,
-        content_disposition=content_disposition,
     )
 
     # signals.s3_file_field_upload_prepare.send(

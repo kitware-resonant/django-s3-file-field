@@ -20,13 +20,10 @@ class Boto3MultipartManager(MultipartManager):
         self,
         object_key: str,
         content_type: Union[str, None] = None,
-        content_disposition: Union[str, None] = None,
     ) -> str:
         boto3_kwargs = {}
         if content_type is not None:
             boto3_kwargs['ContentType'] = content_type
-        if content_disposition is not None:
-            boto3_kwargs['ContentDisposition'] = content_disposition
         resp = self._client.create_multipart_upload(
             Bucket=self._bucket_name,
             Key=object_key,

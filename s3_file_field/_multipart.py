@@ -64,12 +64,10 @@ class MultipartManager:
         object_key: str,
         file_size: int,
         content_type: Union[str, None] = None,
-        content_disposition: Union[str, None] = None,
     ) -> PresignedTransfer:
         upload_id = self._create_upload_id(
             object_key,
             content_type=content_type,
-            content_disposition=content_disposition,
         )
         parts = [
             PresignedPartTransfer(
@@ -155,7 +153,6 @@ class MultipartManager:
         self,
         object_key: str,
         content_type: Union[str, None] = None,
-        content_disposition: Union[str, None] = None,
     ) -> str:
         # Require content headers here
         raise NotImplementedError
