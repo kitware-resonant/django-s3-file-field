@@ -18,7 +18,7 @@ class UploadInitializationRequestSerializer(serializers.Serializer):
     file_name = serializers.CharField(trim_whitespace=False)
     file_size = serializers.IntegerField(min_value=1)
     # part_size = serializers.IntegerField(min_value=1)
-    content_type = serializers.CharField(required=False, trim_whitespace=False)
+    content_type = serializers.CharField(required=False)
 
 
 class PartInitializationResponseSerializer(serializers.Serializer):
