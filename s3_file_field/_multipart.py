@@ -1,9 +1,7 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
 from datetime import timedelta
 import math
-from typing import Iterator, List, Tuple
+from typing import Iterator, List, Tuple, Union
 
 from django.core.files.storage import Storage
 
@@ -65,8 +63,8 @@ class MultipartManager:
         self,
         object_key: str,
         file_size: int,
-        content_type: str | None = None,
-        content_disposition: str | None = None,
+        content_type: Union[str, None] = None,
+        content_disposition: Union[str, None] = None,
     ) -> PresignedTransfer:
         upload_id = self._create_upload_id(
             object_key,
@@ -117,7 +115,7 @@ class MultipartManager:
             raise
 
     @classmethod
-    def from_storage(cls, storage: Storage) -> MultipartManager:
+    def from_storage(cls, storage: Storage) -> 'MultipartManager':
         try:
             from storages.backends.s3boto3 import S3Boto3Storage
         except ImportError:
@@ -156,8 +154,8 @@ class MultipartManager:
     def _create_upload_id(
         self,
         object_key: str,
-        content_type: str | None = None,
-        content_disposition: str | None = None,
+        content_type: Union[str, None] = None,
+        content_disposition: Union[str, None] = None,
     ) -> str:
         # Require content headers here
         raise NotImplementedError
