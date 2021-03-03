@@ -1,4 +1,3 @@
-import mimetypes
 from typing import Dict
 
 from django.core import signing

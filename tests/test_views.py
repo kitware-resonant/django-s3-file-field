@@ -154,7 +154,7 @@ def test_full_upload_flow(
     if content_type is not None:
         assert actual_content_type == content_type
     else:
-        # Test Content-Type inference when none is specified
-        assert actual_content_type == 'text/plain'
+        # The default Content-Type header is application/octet-stream
+        assert actual_content_type == 'application/octet-stream'
 
     default_storage.delete(initialization['object_key'])
