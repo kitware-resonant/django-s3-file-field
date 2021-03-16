@@ -85,8 +85,8 @@ export default class S3FileFieldClient {
   /**
    * Initializes an upload.
    *
-   * @param file The file to upload.
-   * @param fieldId The Django field identifier.
+   * @param file - The file to upload.
+   * @param fieldId - The Django field identifier.
    */
   protected async initializeUpload(file: File, fieldId: string): Promise<MultipartInfo> {
     const response = await this.api.post('upload-initialize/', {
@@ -100,8 +100,8 @@ export default class S3FileFieldClient {
   /**
    * Uploads all the parts in a file directly to an object store in serial.
    *
-   * @param file The file to upload.
-   * @param parts The list of parts describing how to break up the file.
+   * @param file - The file to upload.
+   * @param parts - The list of parts describing how to break up the file.
    */
   protected async uploadParts(file: File, parts: PartInfo[]): Promise<UploadedPart[]> {
     const uploadedParts: UploadedPart[] = [];
@@ -134,8 +134,8 @@ export default class S3FileFieldClient {
    *
    * The object will exist in the object store after completion.
    *
-   * @param multipartInfo The information describing the multipart upload.
-   * @param parts The parts that were uploaded.
+   * @param multipartInfo - The information describing the multipart upload.
+   * @param parts - The parts that were uploaded.
    */
   protected async completeUpload(
     multipartInfo: MultipartInfo, parts: UploadedPart[],
@@ -165,7 +165,7 @@ export default class S3FileFieldClient {
    *
    * This will only succeed if the object is already present in the object store.
    *
-   * @param multipartInfo Signed information returned from /upload-complete/.
+   * @param multipartInfo - Signed information returned from /upload-complete/.
    */
   protected async finalize(multipartInfo: MultipartInfo): Promise<string> {
     const response = await this.api.post('finalize/', {
@@ -177,8 +177,8 @@ export default class S3FileFieldClient {
   /**
    * Uploads a file using multipart upload.
    *
-   * @param file The file to upload.
-   * @param fieldId The Django field identifier.
+   * @param file - The file to upload.
+   * @param fieldId - The Django field identifier.
    */
   public async uploadFile(file: File, fieldId: string): Promise<S3FileFieldResult> {
     this.onProgress({ state: S3FileFieldProgressState.Initializing });
