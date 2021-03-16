@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional
 
 import minio
 from minio_storage.storage import MinioStorage
@@ -17,7 +17,7 @@ class MinioMultipartManager(MultipartManager):
     def _create_upload_id(
         self,
         object_key: str,
-        content_type: Union[str, None] = None,
+        content_type: Optional[str] = None,
     ) -> str:
         metadata = {}
         if content_type is not None:

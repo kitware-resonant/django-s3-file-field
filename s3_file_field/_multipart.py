@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import timedelta
 import math
-from typing import Iterator, List, Tuple, Union
+from typing import Iterator, List, Optional, Tuple
 
 from django.core.files.storage import Storage
 
@@ -63,7 +63,7 @@ class MultipartManager:
         self,
         object_key: str,
         file_size: int,
-        content_type: Union[str, None] = None,
+        content_type: Optional[str] = None,
     ) -> PresignedTransfer:
         upload_id = self._create_upload_id(
             object_key,
@@ -152,7 +152,7 @@ class MultipartManager:
     def _create_upload_id(
         self,
         object_key: str,
-        content_type: Union[str, None] = None,
+        content_type: Optional[str] = None,
     ) -> str:
         # Require content headers here
         raise NotImplementedError

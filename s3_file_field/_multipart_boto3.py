@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Optional
 
 from botocore.exceptions import ClientError
 from storages.backends.s3boto3 import S3Boto3Storage
@@ -19,7 +19,7 @@ class Boto3MultipartManager(MultipartManager):
     def _create_upload_id(
         self,
         object_key: str,
-        content_type: Union[str, None] = None,
+        content_type: Optional[str] = None,
     ) -> str:
         boto3_kwargs = {}
         if content_type is not None:
