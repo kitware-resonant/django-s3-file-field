@@ -3,6 +3,11 @@
 
 A Python client library for django-s3-file-field.
 
+## Installation
+```bash
+pip install django-s3-file-field-client
+```
+
 ## Usage
 ```python
 import requests
