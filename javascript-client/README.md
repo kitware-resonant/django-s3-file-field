@@ -3,6 +3,17 @@
 
 A Javascript (with TypeScript support) client library for django-s3-file-field.
 
+## Installation
+```bash
+npm install django-s3-file-field
+```
+
+or 
+
+```bash
+yarn add django-s3-file-field
+```
+
 ## Usage
 ```typescript
 import axios from 'axios';
