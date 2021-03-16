@@ -27,7 +27,7 @@ class Boto3MultipartManager(MultipartManager):
         resp = self._client.create_multipart_upload(
             Bucket=self._bucket_name,
             Key=object_key,
-            **boto3_kwargs,  # type: ignore
+            **boto3_kwargs,
             # TODO: filename in Metadata
             # TODO: ensure ServerSideEncryption is set, even if not specified
             # TODO: use client._get_write_parameters?

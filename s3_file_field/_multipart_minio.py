@@ -22,7 +22,6 @@ class MinioMultipartManager(MultipartManager):
         metadata = {}
         if content_type is not None:
             metadata['Content-Type'] = content_type
-        # Require content headers here
         return self._client._new_multipart_upload(
             bucket_name=self._bucket_name,
             object_name=object_key,
