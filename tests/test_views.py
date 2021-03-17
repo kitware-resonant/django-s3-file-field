@@ -150,11 +150,7 @@ def test_full_upload_flow(
     # Verify that the Content headers were stored correctly on the object
     object_resp = requests.get(default_storage.url(initialization['object_key']))
     assert resp.status_code == 200
-    actual_content_type = object_resp.headers['Content-Type']
     if content_type is not None:
-        assert actual_content_type == content_type
-    else:
-        # The default Content-Type header is application/octet-stream
-        assert actual_content_type == 'application/octet-stream'
+        assert object_resp.headers['Content-Type'] == content_type
 
     default_storage.delete(initialization['object_key'])
