@@ -48,33 +48,26 @@ export type S3FileFieldProgressCallback = (progress: S3FileFieldProgress) => voi
 
 export interface S3FileFieldClientOptions {
   readonly baseUrl: string;
-  readonly onProgress?: S3FileFieldProgressCallback;
   readonly apiConfig?: AxiosRequestConfig
 }
 
 export default class S3FileFieldClient {
   protected readonly api: AxiosInstance;
 
-  protected readonly onProgress: S3FileFieldProgressCallback;
-
   /**
    * Create an S3FileFieldClient instance.
    *
    * @param options {S3FileFieldClientOptions} - A Object with all arguments.
    * @param options.baseUrl - The absolute URL to the Django server.
-   * @param [options.onProgress] - A callback for upload progress.
    * @param [options.apiConfig] - An axios configuration to use for Django API requests.
    *                              Can be extracted from an existing axios instance via `.defaults`.
    */
   constructor(
     {
       baseUrl,
-      onProgress = () => { /* no-op */ },
       apiConfig = {},
     }: S3FileFieldClientOptions,
   ) {
-    this.onProgress = onProgress;
-
     this.api = axios.create({
       ...apiConfig,
       // Add a trailing slash
@@ -102,8 +95,13 @@ export default class S3FileFieldClient {
    *
    * @param file - The file to upload.
    * @param parts - The list of parts describing how to break up the file.
+   * @param onProgress - A callback for upload progress.
    */
-  protected async uploadParts(file: File, parts: PartInfo[]): Promise<UploadedPart[]> {
+  protected async uploadParts( // eslint-disable-line class-methods-use-this
+    file: File,
+    parts: PartInfo[],
+    onProgress: S3FileFieldProgressCallback,
+  ): Promise<UploadedPart[]> {
     const uploadedParts: UploadedPart[] = [];
     let fileOffset = 0;
     for (const part of parts) {
@@ -112,7 +110,7 @@ export default class S3FileFieldClient {
       const response = await axios.put(part.upload_url, chunk, {
         // eslint-disable-next-line @typescript-eslint/no-loop-func
         onUploadProgress: (e) => {
-          this.onProgress({
+          onProgress({
             uploaded: fileOffset + e.loaded,
             total: file.size,
             state: S3FileFieldProgressState.Sending,
@@ -179,16 +177,21 @@ export default class S3FileFieldClient {
    *
    * @param file - The file to upload.
    * @param fieldId - The Django field identifier.
+   * @param [onProgress] - A callback for upload progress.
    */
-  public async uploadFile(file: File, fieldId: string): Promise<S3FileFieldResult> {
-    this.onProgress({ state: S3FileFieldProgressState.Initializing });
+  public async uploadFile(
+    file: File,
+    fieldId: string,
+    onProgress: S3FileFieldProgressCallback = () => { /* no-op */ },
+  ): Promise<S3FileFieldResult> {
+    onProgress({ state: S3FileFieldProgressState.Initializing });
     const multipartInfo = await this.initializeUpload(file, fieldId);
-    this.onProgress({ state: S3FileFieldProgressState.Sending, uploaded: 0, total: file.size });
-    const parts = await this.uploadParts(file, multipartInfo.parts);
-    this.onProgress({ state: S3FileFieldProgressState.Finalizing });
+    onProgress({ state: S3FileFieldProgressState.Sending, uploaded: 0, total: file.size });
+    const parts = await this.uploadParts(file, multipartInfo.parts, onProgress);
+    onProgress({ state: S3FileFieldProgressState.Finalizing });
     await this.completeUpload(multipartInfo, parts);
     const value = await this.finalize(multipartInfo);
-    this.onProgress({ state: S3FileFieldProgressState.Done });
+    onProgress({ state: S3FileFieldProgressState.Done });
     return {
       value,
       state: S3FileFieldResultState.Successful,
