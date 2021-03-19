@@ -105,10 +105,16 @@ def test_multipart_manager_supported_storage_unsupported():
     assert not MultipartManager.supported_storage(storage)
 
 
-def test_multipart_manager_initialize_upload(multipart_manager: MultipartManager):
+@pytest.mark.parametrize(
+    'content_type',
+    [None, 'image/png', 'application/dicom'],
+    ids=['none', 'png', 'dicom'],
+)
+def test_multipart_manager_initialize_upload(multipart_manager: MultipartManager, content_type):
     initialization = multipart_manager.initialize_upload(
         'new-object',
         100,
+        content_type=content_type,
     )
 
     assert initialization

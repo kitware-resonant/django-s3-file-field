@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import timedelta
 import math
-from typing import Iterator, List, Tuple
+from typing import Iterator, List, Optional, Tuple
 
 from django.core.files.storage import Storage
 
@@ -61,8 +61,16 @@ class MultipartManager:
 
     part_size = mb(64)
 
-    def initialize_upload(self, object_key: str, file_size: int) -> PresignedTransfer:
-        upload_id = self._create_upload_id(object_key)
+    def initialize_upload(
+        self,
+        object_key: str,
+        file_size: int,
+        content_type: Optional[str] = None,
+    ) -> PresignedTransfer:
+        upload_id = self._create_upload_id(
+            object_key,
+            content_type=content_type,
+        )
         parts = [
             PresignedPartTransfer(
                 part_number=part_number,
@@ -143,7 +151,12 @@ class MultipartManager:
     # The AWS default expiration of 1 hour may not be enough for large uploads to complete
     _url_expiration = timedelta(hours=24)
 
-    def _create_upload_id(self, object_key: str) -> str:
+    def _create_upload_id(
+        self,
+        object_key: str,
+        content_type: Optional[str] = None,
+    ) -> str:
+        # Require content headers here
         raise NotImplementedError
 
     def _abort_upload_id(self, object_key: str, upload_id: str) -> None:

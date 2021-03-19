@@ -70,13 +70,27 @@ def test_prepare_three_parts(api_client):
 
 
 @pytest.mark.parametrize('file_size', [10, mb(10), mb(12)], ids=['10B', '10MB', '12MB'])
-def test_full_upload_flow(api_client: APIClient, file_size: int):
+@pytest.mark.parametrize(
+    'content_type',
+    [None, 'image/png', 'application/dicom'],
+    ids=['none', 'png', 'dicom'],
+)
+def test_full_upload_flow(
+    api_client: APIClient,
+    file_size: int,
+    content_type: str,
+):
+    request_body = {
+        'field_id': 'test_app.Resource.blob',
+        'file_name': 'test.txt',
+        'file_size': file_size,
+    }
+    # Only include Content headers if non-null
+    if content_type is not None:
+        request_body['content_type'] = content_type
+
     # Initialize the multipart upload
-    resp = api_client.post(
-        reverse('s3_file_field:upload-initialize'),
-        {'field_id': 'test_app.Resource.blob', 'file_name': 'test.txt', 'file_size': file_size},
-        format='json',
-    )
+    resp = api_client.post(reverse('s3_file_field:upload-initialize'), request_body, format='json')
     assert resp.status_code == 200
     initialization = resp.data
     assert isinstance(initialization, dict)
@@ -132,5 +146,11 @@ def test_full_upload_flow(api_client: APIClient, file_size: int):
     assert resp.data == {
         'field_value': Re(r'.*:.*'),
     }
+
+    # Verify that the Content headers were stored correctly on the object
+    object_resp = requests.get(default_storage.url(initialization['object_key']))
+    assert resp.status_code == 200
+    if content_type is not None:
+        assert object_resp.headers['Content-Type'] == content_type
 
     default_storage.delete(initialization['object_key'])

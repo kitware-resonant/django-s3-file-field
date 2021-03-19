@@ -1,3 +1,5 @@
+from typing import Optional
+
 import minio
 from minio_storage.storage import MinioStorage
 
@@ -12,10 +14,18 @@ class MinioMultipartManager(MultipartManager):
         # for pre-signing URLs when it exists
         self._signing_client: minio.Minio = getattr(storage, 'base_url_client', storage.client)
 
-    def _create_upload_id(self, object_key: str) -> str:
+    def _create_upload_id(
+        self,
+        object_key: str,
+        content_type: Optional[str] = None,
+    ) -> str:
+        metadata = {}
+        if content_type is not None:
+            metadata['Content-Type'] = content_type
         return self._client._new_multipart_upload(
             bucket_name=self._bucket_name,
             object_name=object_key,
+            metadata=metadata
             # TODO: filename in Metadata
         )
 
