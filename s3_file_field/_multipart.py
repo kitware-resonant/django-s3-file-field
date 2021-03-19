@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import timedelta
 import math
@@ -113,7 +115,7 @@ class MultipartManager:
             raise
 
     @classmethod
-    def from_storage(cls, storage: Storage) -> 'MultipartManager':
+    def from_storage(cls, storage: Storage) -> MultipartManager:
         try:
             from storages.backends.s3boto3 import S3Boto3Storage
         except ImportError:
