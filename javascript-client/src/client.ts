@@ -1,4 +1,5 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios';
+import * as rax from 'retry-axios';
 
 // Description of a part from initializeUpload()
 interface PartInfo {
@@ -54,6 +55,8 @@ export interface S3FileFieldClientOptions {
 export default class S3FileFieldClient {
   protected readonly api: AxiosInstance;
 
+  protected readonly s3: AxiosInstance;
+
   /**
    * Create an S3FileFieldClient instance.
    *
@@ -68,11 +71,36 @@ export default class S3FileFieldClient {
       apiConfig = {},
     }: S3FileFieldClientOptions,
   ) {
+    // Create axios instances for API and direct S3 requests
     this.api = axios.create({
       ...apiConfig,
       // Add a trailing slash
       baseURL: baseUrl.replace(/\/?$/, '/'),
     });
+    this.s3 = axios.create();
+
+    // Attach axios-retry to both axios instances
+    const raxConfig = {
+      // Retry 3 times on requests that return a response (500, etc) before giving up.
+      retry: 3,
+      // Retry twice on errors that don't return a response (ENOTFOUND, ETIMEDOUT, etc).
+      noResponseRetries: 2,
+      httpMethodsToRetry: ['GET', 'HEAD', 'OPTIONS', 'DELETE', 'PUT', 'POST', 'PATCH'],
+      statusCodesToRetry: [[429, 429], [500, 599]],
+      onRetryAttempt: (err: AxiosError) => {
+
+      },
+    };
+    this.api.defaults.raxConfig = {
+      ...raxConfig,
+      instance: this.api,
+    };
+    this.s3.defaults.raxConfig = {
+      ...raxConfig,
+      instance: this.s3,
+    };
+    rax.attach(this.api);
+    rax.attach(this.s3);
   }
 
   /**
@@ -107,7 +135,7 @@ export default class S3FileFieldClient {
     for (const part of parts) {
       const chunk = file.slice(fileOffset, fileOffset + part.size);
       // eslint-disable-next-line no-await-in-loop
-      const response = await axios.put(part.upload_url, chunk, {
+      const response = await this.s3.put(part.upload_url, chunk, {
         // eslint-disable-next-line @typescript-eslint/no-loop-func
         onUploadProgress: (e) => {
           onProgress({
@@ -146,7 +174,7 @@ export default class S3FileFieldClient {
     const { complete_url: completeUrl, body } = response.data;
 
     // Send the CompleteMultipartUpload operation to S3
-    await axios.post(completeUrl, body, {
+    await this.s3.post(completeUrl, body, {
       headers: {
         // By default, Axios sets "Content-Type: application/x-www-form-urlencoded" on POST
         // requests. This causes AWS's API to interpret the request body as additional parameters
