@@ -48,7 +48,7 @@ export type S3FileFieldProgressCallback = (progress: S3FileFieldProgress) => voi
 
 export interface S3FileFieldClientOptions {
   readonly baseUrl: string;
-  readonly apiConfig?: AxiosRequestConfig
+  readonly apiConfig?: AxiosRequestConfig;
 }
 
 export default class S3FileFieldClient {
