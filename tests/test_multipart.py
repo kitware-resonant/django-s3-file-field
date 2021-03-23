@@ -252,7 +252,7 @@ def test_multipart_manager_get_object_size_not_found(multipart_manager: Multipar
         'too_small_part',
         'too_large_part',
         'too_many_part',
-        '0_length_file',
+        'zero_length_file',
     ],
 )
 def test_multipart_manager_iter_part_sizes(

@@ -69,7 +69,7 @@ def test_prepare_three_parts(api_client):
     }
 
 
-@pytest.mark.parametrize('file_size', [0, 10, mb(10), mb(12)], ids=['0b', '10B', '10MB', '12MB'])
+@pytest.mark.parametrize('file_size', [0, 10, mb(10), mb(12)], ids=['0B', '10B', '10MB', '12MB'])
 @pytest.mark.parametrize(
     'content_type',
     [None, 'image/png', 'application/dicom'],
@@ -91,7 +91,6 @@ def test_full_upload_flow(
 
     # Initialize the multipart upload
     resp = api_client.post(reverse('s3_file_field:upload-initialize'), request_body, format='json')
-    breakpoint()
     assert resp.status_code == 200
     initialization = resp.data
     assert isinstance(initialization, dict)
