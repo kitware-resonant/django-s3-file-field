@@ -241,6 +241,8 @@ def test_multipart_manager_get_object_size_not_found(multipart_manager: Multipar
         (gb(50), gb(10), gb(5), gb(5), 10),
         # Too many parts
         (mb(100_000), mb(5), mb(10), mb(10), 10_000),
+        # 0-length file
+        (0, mb(10), 0, 0, 1)
         # TODO: file too large
     ],
     ids=[
@@ -250,6 +252,7 @@ def test_multipart_manager_get_object_size_not_found(multipart_manager: Multipar
         'too_small_part',
         'too_large_part',
         'too_many_part',
+        '0_length_file',
     ],
 )
 def test_multipart_manager_iter_part_sizes(

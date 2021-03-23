@@ -15,7 +15,7 @@ from ._multipart import ObjectNotFoundException, TransferredPart, TransferredPar
 class UploadInitializationRequestSerializer(serializers.Serializer):
     field_id = serializers.CharField()
     file_name = serializers.CharField(trim_whitespace=False)
-    file_size = serializers.IntegerField(min_value=1)
+    file_size = serializers.IntegerField(min_value=0)
     # part_size = serializers.IntegerField(min_value=1)
     content_type = serializers.CharField(required=False)
 
@@ -35,7 +35,7 @@ class UploadInitializationResponseSerializer(serializers.Serializer):
 
 class TransferredPartRequestSerializer(serializers.Serializer):
     part_number = serializers.IntegerField(min_value=1)
-    size = serializers.IntegerField(min_value=1)
+    size = serializers.IntegerField(min_value=0)
     etag = serializers.CharField()
 
     def create(self, validated_data) -> TransferredPart:

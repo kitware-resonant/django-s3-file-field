@@ -179,6 +179,11 @@ class MultipartManager:
 
         # S3 multipart limits: https://docs.aws.amazon.com/AmazonS3/latest/dev/qfacts.html
 
+        if file_size == 0:
+            # 1 part of 0 size
+            yield 1, 0
+            return
+
         if file_size > tb(5):
             raise Exception('File is larger than the S3 maximum object size.')
 
