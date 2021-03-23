@@ -1,128 +1,118 @@
 # django-s3-file-field
+[![PyPI](https://img.shields.io/pypi/v/django-s3-file-field)](https://pypi.org/project/django-s3-file-field/)
 
-[![PyPI version
- shields.io](https://img.shields.io/pypi/v/django-s3-file-field.svg)](https://pypi.python.org/pypi/django-s3-file-field/)
-![PyPI - Python
- Version](https://img.shields.io/pypi/pyversions/django-s3-file-field)
-![PyPI - Django Version](https://img.shields.io/pypi/djversions/django-s3-file-field)
+django-s3-file-field is a Django library for uploading files directly to
+[AWS S3](https://aws.amazon.com/s3/) or [MinIO](https://min.io/) Storage from HTTP clients
+(browsers, CLIs, etc.).
 
-`django-s3-file-field` is a Django widget library for uploading files directly to S3
-(or MinIO) through the browser. django-s3-file-field heavily depends on the
-[django-storages](https://github.com/jschneier/django-storages) package.
+### Benefits
+django-s3-file-field makes long-running file transfers (with large files or slow connections)
+more efficient, as the file content is no longer proxied through the Django server. This also frees
+Django from needing to maintain active HTTP requests during file upload, decreasing server load and
+facilitating deployment to environments like
+[Heroku, which have short, strict request timeouts](https://devcenter.heroku.com/articles/request-timeout).
 
-## Quickstart
-Ensure you've configured your Django installation to use `django-storages` for S3 access: https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html.
+### Scope
+The principal API of django-s3-file-field is the `S3FileField`, which is a subclass of
+[Django's `FileField`](https://docs.djangoproject.com/en/3.1/ref/models/fields/#filefield).
+django-s3-file-field does not affect any operations other than uploading from external HTTP
+clients; for all other file operations (downloading, uploading from the Python API, etc.), refer to
+[Django's file management documentation](https://docs.djangoproject.com/en/3.1/topics/files/).
 
-Install the django-s3-file-field package:
-```sh
-pip install django-s3-file-field
+django-s3-file-field supports both the creation and modification (by overwrite) of
+`S3FileField`-containing `Model` instances.
+It supports server-rendered views, via the Forms API, with Form `Field` and `Widget` subclasses
+which will automatically be used for `ModelForm` instances.
+It also supports RESTful APIs, via Django Rest Framework's Serializer API, with a
+Serializer `Field` subclass which will automatically be used for `ModelSerializer` instances.
+
+## Installation
+django-s3-file-field must be used with a compatible Django Storage, which are:
+* `S3Boto3Storage` in [django-storages](https://django-storages.readthedocs.io/),
+  for [AWS S3](https://aws.amazon.com/s3/)
+* `MinioStorage` or `MinioMediaStorage` in [django-minio-storage](https://django-minio-storage.readthedocs.io/),
+  for [MinIO](https://min.io/)
+
+After the appropriate Storage is installed and configured, install django-s3-file-field, using the
+corresponding extra:
+```bash
+pip install django-s3-file-field[boto3]
+```
+or
+```bash
+pip install django-s3-file-field[minio]
 ```
 
-Add `s3_file_field` to your `INSTALLED_APPS`:
+Enable django-s3-file-field as an installed Django app:
 ```python
+# settings.py
 INSTALLED_APPS = [
- ...
- 's3_file_field',
+    ...,
+    's3_file_field',
 ]
 ```
 
-Add the required settings:
+Add django-s3-file-field's URLconf to the root URLconf; the path prefix (`'api/s3-upload/'`)
+can be changed arbitrarily as desired:
 ```python
-S3FF_UPLOAD_STS_ARN = '' # see STS Role section below (not required for minio)
-```
+# urls.py
+from django.urls import include, path
 
-Add the appropriate routes to `urls.py`:
-```python
 urlpatterns = [
-    ...
+    ...,
     path('api/s3-upload/', include('s3_file_field.urls')),
 ]
 ```
 
-
 ## Usage
+For all usage, define an `S3FileField` on a Django `Model`, instead of a `FileField`:
 ```python
+from django.db import models
 from s3_file_field import S3FileField
 
-class Car(db.Model):
-    ...
-    owners_manual = S3FileField()
+class Resource(models.Model):
+    blob = S3FileField()
 ```
 
+### Django Forms
+When defining a
+[Django `ModelForm`](https://docs.djangoproject.com/en/3.1/topics/forms/modelforms/),
+the appropriate Form `Field` will be automatically used:
+```python
+from django.forms import ModelForm
+from .models import Resource
 
-## Running checks
-
-django-s3-file-field can detect common misconfigurations using Django's built in [System check
-framework](https://docs.djangoproject.com/en/3.0/topics/checks/). To confirm
-your configuration is correct, run:
-
-``` sh
-./manage.py check
+class ResourceForm(ModelForm):
+    class Meta:
+        model = Resource
+        fields = ['blob']
 ```
 
-
-## Advanced Topics
-
-### Advanced configuration
-
-| Key                  | Default          | Description                                 |
-| -------------------  | ---------------- | ------------------------------------------- |
-| S3FF_UPLOAD_STS_ARN  | none             | ...                                         |
-
-
-#### STS configuration
-#### CORS configuration
-
-This is a minimal function CORS configuration for an S3 bucket to be compatible with django-s3-file-field:
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<CORSConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-<CORSRule>
-    <AllowedHeader>*</AllowedHeader>
-    <AllowedMethod>POST</AllowedMethod>
-    <AllowedMethod>PUT</AllowedMethod>
-    <AllowedOrigin>*</AllowedOrigin>
-    <ExposeHeader>Connection</ExposeHeader>
-    <ExposeHeader>Content-Length</ExposeHeader>
-    <ExposeHeader>Date</ExposeHeader>
-    <ExposeHeader>ETag</ExposeHeader>
-    <ExposeHeader>Server</ExposeHeader>
-    <ExposeHeader>x-amz-delete-marker</ExposeHeader>
-    <ExposeHeader>x-amz-version-id</ExposeHeader>
-    <MaxAgeSeconds>600</MaxAgeSeconds>
-</CORSRule>
-</CORSConfiguration>
+Forms using django-s3-file-field include additional
+[assets](https://docs.djangoproject.com/en/3.1/topics/forms/media/), which it's essential to render
+along with the Form. Typically, this can be done in any Form-containing Template as:
 ```
-
-Note: These are insecure defaults, the allowed origin and headers should not be a wildcard but instead
-modified for your specific deployment(s).
-
-### MinIO support
-MinIO support depends on the django-minio-storage config (see https://django-minio-storage.readthedocs.io/en/latest/usage/), following settings are used
-
-### Security considerations
-
-
-### Integrating with forms
-If you want to use an S3FileField in a form, some extra client code needs to be injected into your frontend.
-The form submission only communicates with Django, so the web client has to somehow send that data directly to S3 before the form is submitted.
-The necessary `<script>` is available in templates as `form.media`, which should be embedded into your form template similarly to this:
-```
-...
 <head>
+  {# Assuming the Form is availible in context as "form" #}
   {{ form.media }}
 </head>
-...
 ```
-The script will detect any S3FileFields being rendered in forms and dynamically rewrite them so that they upload data directly to S3 whenever a file is selected.
 
-### Extending
-
-django-s3-file-field sends out two signals when its REST api is called:
-
+### Django Rest Framework
+When defining a
+[Django Rest Frameowrk `ModelSerializer`](https://www.django-rest-framework.org/api-guide/serializers/#modelserializer),
+the appropriate Serializer `Field` will be automatically used:
 ```python
-s3_file_field_upload_prepare(name: str, object_key: str)
-s3_file_field_upload_finalize(name: str, object_key: str, status: string)
+from rest_framework import serializers
+from .models import Resource
+
+class ResourceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Resource
+        fields = ['blob']
 ```
-### API Reference
+
+Clients interacting with these RESTful APIs will need to use a corresponding django-s3-file-field
+client library. Client libraries (and associated documentation) are available for:
+* [Python](python-client/README.md)
+* [Javascript / TypeScript](javascript-client/README.md)
