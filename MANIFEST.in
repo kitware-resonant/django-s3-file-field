@@ -1,7 +1,6 @@
 prune .github
 prune client
 prune example
-prune example-client
 prune tests
 exclude tox.ini
 exclude docker-compose.yml
