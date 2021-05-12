@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import io
-from typing import BinaryIO, Dict, List, Optional
+from typing import Any, BinaryIO, Dict, List, Optional
 
 import requests
 
@@ -75,7 +75,7 @@ class S3FileFieldClient:
         complete_resp = requests.post(completion_data['complete_url'], data=completion_data['body'])
         complete_resp.raise_for_status()
 
-    def _finalize(self, multipart_info: Dict) -> str:
+    def _finalize(self, multipart_info: Dict) -> Dict[str, Any]:
         resp = self.api_session.post(
             f'{self.base_url}/finalize/',
             json={
@@ -85,7 +85,7 @@ class S3FileFieldClient:
         resp.raise_for_status()
         return resp.json()
 
-    def upload_file(self, file_stream: BinaryIO, file_name: str, field_id: str) -> str:
+    def upload_file(self, file_stream: BinaryIO, file_name: str, field_id: str) -> Dict[str, Any]:
         file = _File.from_stream(file_stream, file_name)
         multipart_info = self._initialize_upload(file, field_id)
         upload_infos = self._upload_parts(file, multipart_info['parts'])
