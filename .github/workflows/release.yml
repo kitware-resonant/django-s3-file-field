@@ -45,7 +45,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: "15.x"
+          node-version: "16.x"
       - name: Publish Javascript client to npm
         working-directory: ./javascript-client
         env:
