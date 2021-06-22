@@ -1,5 +1,5 @@
 from io import BytesIO
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from botocore.exceptions import ClientError
 from django.conf import settings
@@ -39,7 +39,7 @@ def s3boto3_storage_factory() -> 'S3Boto3Storage':
     )
 
     resource: s3.ServiceResource = storage.connection
-    client: s3.Client = resource.meta.client
+    client: s3.Client = cast('s3.Client', resource.meta.client)
     try:
         client.head_bucket(Bucket=settings.MINIO_STORAGE_MEDIA_BUCKET_NAME)
     except ClientError:
