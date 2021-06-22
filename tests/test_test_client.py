@@ -26,12 +26,9 @@ def s3ff_client(api_client):
 @pytest.mark.django_db
 def test_field_value(s3ff_client):
     with io.StringIO(test_json_str) as file_stream:
-        field_value_dict = s3ff_client.upload_file(
-            file_stream, 'test.json', 'test_app.Resource.blob'
-        )
+        field_value = s3ff_client.upload_file(file_stream, 'test.json', 'test_app.Resource.blob')
 
     # Verifies that the response is in a correct format
-    field_value = field_value_dict['field_value']
     loaded_dict: Dict = signing.loads(field_value)
 
     assert 'object_key' in loaded_dict

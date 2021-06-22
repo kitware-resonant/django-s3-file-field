@@ -83,7 +83,7 @@ class S3FileFieldClient:
             },
         )
         resp.raise_for_status()
-        return resp.json()
+        return resp.json()['field_value']
 
     def upload_file(self, file_stream: BinaryIO, file_name: str, field_id: str) -> str:
         file = _File.from_stream(file_stream, file_name)

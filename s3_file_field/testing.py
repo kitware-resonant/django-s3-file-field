@@ -86,7 +86,7 @@ class S3FileFieldTestClient:
         complete_resp = requests.post(completion_data['complete_url'], data=completion_data['body'])
         complete_resp.raise_for_status()
 
-    def _finalize(self, multipart_info: Dict) -> Dict:
+    def _finalize(self, multipart_info: Dict) -> str:
         resp = self.api_client.post(
             f'{self.base_url}/finalize/',
             {
@@ -95,9 +95,9 @@ class S3FileFieldTestClient:
             format='json',
         )
         assert resp.status_code < 400
-        return resp.json()
+        return resp.json()['field_value']
 
-    def upload_file(self, file_stream: BinaryIO, file_name: str, field_id: str) -> Dict:
+    def upload_file(self, file_stream: BinaryIO, file_name: str, field_id: str) -> str:
         file = _File.from_stream(file_stream, file_name)
         multipart_info = self._initialize_upload(file, field_id)
         upload_infos = self._upload_parts(file, multipart_info['parts'])
