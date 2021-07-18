@@ -9,7 +9,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from . import _multipart, _registry
-from ._multipart import ObjectNotFoundException, TransferredPart, TransferredParts
+from ._multipart import ObjectNotFoundError, TransferredPart, TransferredParts
 
 
 class UploadInitializationRequestSerializer(serializers.Serializer):
@@ -166,7 +166,7 @@ def finalize(request: Request) -> HttpResponseBase:
     # We don't want to distribute the field value if the upload did not complete.
     try:
         size = _multipart.MultipartManager.from_storage(field.storage).get_object_size(object_key)
-    except ObjectNotFoundException:
+    except ObjectNotFoundError:
         return Response('Object not found', status=400)
 
     field_value = signing.dumps(

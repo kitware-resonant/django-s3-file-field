@@ -44,13 +44,13 @@ class PresignedUploadCompletion:
     body: str
 
 
-class UnsupportedStorageException(Exception):
+class UnsupportedStorageError(Exception):
     """Raised when MultipartManager does not support the given Storage."""
 
     pass
 
 
-class ObjectNotFoundException(Exception):
+class ObjectNotFoundError(Exception):
     """Raised when an object cannot be found in the object store."""
 
     pass
@@ -136,13 +136,13 @@ class MultipartManager:
 
                 return MinioMultipartManager(storage)
 
-        raise UnsupportedStorageException('Unsupported storage provider.')
+        raise UnsupportedStorageError('Unsupported storage provider.')
 
     @classmethod
     def supported_storage(cls, storage: Storage) -> bool:
         try:
             cls.from_storage(storage)
-        except UnsupportedStorageException:
+        except UnsupportedStorageError:
             return False
         # Allow other exceptions to propagate
         else:
