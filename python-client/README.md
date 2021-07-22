@@ -19,7 +19,7 @@ s3ff_client = S3FileFieldClient(
     'http://localhost:8000/api/v1/s3-upload/',  # The path mounted in urlpatterns
     api_client,  # This argument is optional
 )
-with open('/path/to/my_file.txt') as file_stream:
+with open('/path/to/my_file.txt', 'rb') as file_stream:  # Open in binary mode
     field_value = s3ff_client.upload_file(
         file_stream,  # This can be any file-like object
         'my_file.txt',
