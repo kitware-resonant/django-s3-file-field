@@ -19,7 +19,8 @@
     "prepack": "npm-run-all build"
   },
   "dependencies": {
-    "axios": "^0.21.1"
+    "axios": "^0.21.1",
+    "retry-axios": "^2.4.0"
   },
   "devDependencies": {
     "@tsconfig/recommended": "^1.0.1",
