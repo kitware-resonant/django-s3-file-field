@@ -37,7 +37,7 @@ def initialization() -> PresignedTransfer:
 def test_upload_initialization_request_deserialization():
     serializer = UploadInitializationRequestSerializer(
         data={
-            'field_id': 'package.Class.field',
+            'field_id': 'test_app.Resource.blob',
             'file_name': 'test-name.jpg',
             'file_size': 15,
         }

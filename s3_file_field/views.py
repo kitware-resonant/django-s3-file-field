@@ -19,6 +19,13 @@ class UploadInitializationRequestSerializer(serializers.Serializer):
     # part_size = serializers.IntegerField(min_value=1)
     content_type = serializers.CharField(required=False)
 
+    def validate_field_id(self, field_id):
+        try:
+            _registry.get_field(field_id)
+        except KeyError:
+            raise serializers.ValidationError(f'Invalid field {field_id}')
+        return field_id
+
 
 class PartInitializationResponseSerializer(serializers.Serializer):
     part_number = serializers.IntegerField(min_value=1)
