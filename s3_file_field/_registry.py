@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING, Iterator, cast
 from weakref import WeakValueDictionary
 
 from django.core.files.storage import Storage
@@ -22,7 +22,7 @@ def register_field(field: 'S3FileField') -> None:
         raise Exception(f'Cannot overwrite existing S3FileField declaration for {field_id}')
     _fields[field_id] = field
 
-    storage = field.storage
+    storage = cast(Storage, field.storage)
     storage_label = id(storage)
     _storages[storage_label] = storage
 

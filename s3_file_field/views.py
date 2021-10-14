@@ -1,6 +1,7 @@
-from typing import Dict
+from typing import Dict, cast
 
 from django.core import signing
+from django.core.files.storage import Storage
 from django.http.response import HttpResponseBase
 from rest_framework import serializers
 from rest_framework.decorators import api_view, parser_classes
@@ -87,7 +88,8 @@ def upload_initialize(request: Request) -> HttpResponseBase:
 
     content_type = upload_request.get('content_type')
 
-    initialization = _multipart.MultipartManager.from_storage(field.storage).initialize_upload(
+    storage = cast(Storage, field.storage)
+    initialization = _multipart.MultipartManager.from_storage(storage).initialize_upload(
         object_key,
         upload_request['file_size'],
         content_type=content_type,
@@ -133,7 +135,8 @@ def upload_complete(request: Request) -> HttpResponseBase:
     # ):
     #     raise BadSignature()
 
-    completed_upload = _multipart.MultipartManager.from_storage(field.storage).complete_upload(
+    storage = cast(Storage, field.storage)
+    completed_upload = _multipart.MultipartManager.from_storage(storage).complete_upload(
         transferred_parts
     )
 
@@ -162,10 +165,11 @@ def finalize(request: Request) -> HttpResponseBase:
 
     field = _registry.get_field(field_id)
 
+    storage = cast(Storage, field.storage)
     # get_object_size implicitly verifies that the object exists.
     # We don't want to distribute the field value if the upload did not complete.
     try:
-        size = _multipart.MultipartManager.from_storage(field.storage).get_object_size(object_key)
+        size = _multipart.MultipartManager.from_storage(storage).get_object_size(object_key)
     except ObjectNotFoundError:
         return Response('Object not found', status=400)
 
