@@ -43,7 +43,7 @@ def resource() -> Resource:
 def stored_file_object() -> Generator[File, None, None]:
     """Return a File object, already saved directly into Storage."""
     # Ensure the name is always randomized, even if the key doesn't exist already
-    key = default_storage.get_alternative_name('test_key', '')
+    key = default_storage.get_alternative_name('test_key', '')  # type: ignore[attr-defined]
     # In theory, Storage.save can change the key, though this shouldn't happen with a randomized key
     key = default_storage.save(key, ContentFile(b'test content'))
     # Storage.open will return a File object, which knows its size and can access its content

@@ -4,6 +4,7 @@ from uuid import uuid4
 
 from django.core import checks
 from django.core.checks import CheckMessage
+from django.core.files.storage import Storage
 from django.db import models
 from django.db.models.fields.files import FileField
 from django.forms import Field as FormField
@@ -27,6 +28,8 @@ class S3FileField(FileField):
         'A file field which is supports direct uploads to S3 via the '
         'UI and fallsback to uploaded to <randomuuid>/filename.'
     )
+
+    storage: Storage
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('max_length', 2000)
