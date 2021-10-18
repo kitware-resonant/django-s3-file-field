@@ -18,7 +18,7 @@ test_json_str = json.dumps(
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def s3ff_client(api_client):
     return S3FileFieldTestClient(api_client, '/api/s3ff_test')
 

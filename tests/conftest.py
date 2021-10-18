@@ -39,7 +39,7 @@ def resource() -> Resource:
     resource.blob.delete(save=False)
 
 
-@pytest.fixture()
+@pytest.fixture
 def stored_file_object() -> Generator[File, None, None]:
     """Return a File object, already saved directly into Storage."""
     # Ensure the name is always randomized, even if the key doesn't exist already
