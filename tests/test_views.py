@@ -31,6 +31,16 @@ def test_prepare(api_client):
     }
 
 
+def test_initialize_file_id_invalid(api_client):
+    resp = api_client.post(
+        reverse('s3_file_field:upload-initialize'),
+        {'field_id': 'bad.id', 'file_name': 'test.txt', 'file_size': mb(12)},
+        format='json',
+    )
+    assert resp.status_code == 400
+    assert resp.json() == {'field_id': ['Invalid field bad.id']}
+
+
 def test_prepare_two_parts(api_client):
     resp = api_client.post(
         reverse('s3_file_field:upload-initialize'),
@@ -154,13 +164,3 @@ def test_full_upload_flow(
         assert object_resp.headers['Content-Type'] == content_type
 
     default_storage.delete(initialization['object_key'])
-
-
-def test_field_id_validation(api_client):
-    resp = api_client.post(
-        reverse('s3_file_field:upload-initialize'),
-        {'field_id': 'bad.id', 'file_name': 'test.txt', 'file_size': mb(12)},
-        format='json',
-    )
-    assert resp.status_code == 400
-    assert resp.json() == {'field_id': ['Invalid field bad.id']}
