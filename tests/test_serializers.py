@@ -1,5 +1,6 @@
 from django.core import signing
 import pytest
+from rest_framework.exceptions import ValidationError
 
 from s3_file_field._multipart import (
     PresignedPartTransfer,
@@ -45,6 +46,19 @@ def test_upload_initialization_request_deserialization():
     assert serializer.is_valid(raise_exception=True)
     request = serializer.validated_data
     assert isinstance(request, dict)
+
+
+def test_upload_initialization_request_deserialization_file_id_invalid():
+    serializer = UploadInitializationRequestSerializer(
+        data={
+            'field_id': 'bad.id',
+            'file_name': 'test-name.jpg',
+            'file_size': 15,
+        }
+    )
+    with pytest.raises(ValidationError) as e:
+        serializer.is_valid(raise_exception=True)
+    assert e.value.detail == {'field_id': ['Invalid field ID: "bad.id".']}
 
 
 def test_upload_initialization_response_serialization(
