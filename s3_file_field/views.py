@@ -23,7 +23,7 @@ class UploadInitializationRequestSerializer(serializers.Serializer):
         try:
             _registry.get_field(field_id)
         except KeyError:
-            raise serializers.ValidationError(f'Invalid field {field_id}')
+            raise serializers.ValidationError(f'Invalid field ID: "{field_id}".')
         return field_id
 
 

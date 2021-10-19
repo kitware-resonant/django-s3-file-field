@@ -38,7 +38,7 @@ def test_initialize_file_id_invalid(api_client):
         format='json',
     )
     assert resp.status_code == 400
-    assert resp.json() == {'field_id': ['Invalid field bad.id']}
+    assert resp.json() == {'field_id': ['Invalid field ID: "bad.id".']}
 
 
 def test_prepare_two_parts(api_client):
