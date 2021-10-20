@@ -11,7 +11,9 @@
     "/dist/"
   ],
   "scripts": {
-    "lint": "eslint ./src/**.ts",
+    "lint:eslint": "eslint ./src/**.ts",
+    "lint:tsc": "tsc --noEmit",
+    "lint": "npm-run-all lint:*",
     "watch": "tsc --watch",
     "build:clean": "rimraf ./dist",
     "build:compile": "tsc",
