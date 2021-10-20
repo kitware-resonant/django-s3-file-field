@@ -142,6 +142,7 @@ from rest_framework.test import APIClient
 def test_resource_create(s3ff_field_value_factory):
     client = APIClient()
     stored_file = default_storage.open('some_existing_file.txt')
-    resp = client.post('/resource', data={'blob': s3ff_field_value_factory(stored_file)})
+    s3ff_field_value = s3ff_field_value_factory(stored_file)
+    resp = client.post('/resource', data={'blob': s3ff_field_value})
     assert resp.status_code == 201
 ```
