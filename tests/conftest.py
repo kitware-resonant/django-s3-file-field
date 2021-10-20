@@ -1,8 +1,4 @@
-from typing import Generator
-
-from django.core import signing
-from django.core.files.base import ContentFile, File
-from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
 import factory
 import pytest
 from rest_framework.test import APIClient
@@ -37,27 +33,3 @@ def resource() -> Resource:
     resource = ResourceFactory.build()
     yield resource
     resource.blob.delete(save=False)
-
-
-@pytest.fixture
-def stored_file_object() -> Generator[File, None, None]:
-    """Return a File object, already saved directly into Storage."""
-    # Ensure the name is always randomized, even if the key doesn't exist already
-    key = default_storage.get_alternative_name('test_key', '')  # type: ignore[attr-defined]
-    # In theory, Storage.save can change the key, though this shouldn't happen with a randomized key
-    key = default_storage.save(key, ContentFile(b'test content'))
-    # Storage.open will return a File object, which knows its size and can access its content
-    file_object = default_storage.open(key)
-    yield file_object
-    default_storage.delete(key)
-
-
-@pytest.fixture
-def field_value(stored_file_object: File) -> str:
-    """Return a valid field_value for an existent stored object."""
-    return signing.dumps(
-        {
-            'object_key': stored_file_object.name,
-            'file_size': stored_file_object.size,
-        }
-    )

@@ -24,13 +24,13 @@ def test_form_invalid():
     assert not form.is_valid()
 
 
-def test_form_validation(field_value):
-    form = ResourceForm(data={'blob': field_value})
+def test_form_validation(s3ff_field_value):
+    form = ResourceForm(data={'blob': s3ff_field_value})
     assert form.is_valid()
 
 
-def test_form_instance(field_value):
-    form = ResourceForm(data={'blob': field_value})
+def test_form_instance(s3ff_field_value):
+    form = ResourceForm(data={'blob': s3ff_field_value})
 
     # full_clean has the side effect of populating instance
     form.full_clean()
@@ -41,8 +41,8 @@ def test_form_instance(field_value):
 
 
 @pytest.mark.django_db
-def test_form_instance_saved(field_value):
-    form = ResourceForm(data={'blob': field_value})
+def test_form_instance_saved(s3ff_field_value):
+    form = ResourceForm(data={'blob': s3ff_field_value})
 
     resource = form.save()
     resource.refresh_from_db()

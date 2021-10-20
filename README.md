@@ -116,3 +116,33 @@ Clients interacting with these RESTful APIs will need to use a corresponding dja
 client library. Client libraries (and associated documentation) are available for:
 * [Python](python-client/README.md)
 * [Javascript / TypeScript](javascript-client/README.md)
+
+### Pytest
+When installed, django-s3-file-field makes several
+[Pytest fixtures](https://docs.pytest.org/en/latest/explanation/fixtures.html) automatically
+available for use.
+
+The `s3ff_field_value` fixture will return a valid input value for Django `ModelForm` or
+Django Rest Framework `ModelSerializer` subclasses:
+```python
+from .forms import ResourceForm
+
+def test_resource_form(s3ff_field_value):
+    form = ResourceForm(data={'blob': s3ff_field_value})
+    assert form.is_valid()
+```
+
+Alternatively, the `s3ff_field_value_factory` fixture transforms a `File` object into a valid input
+value (for Django `ModelForm` or Django Rest Framework), providing more control over the uploaded
+file:
+`ModelSerializer` subclasses:
+```python
+from django.core.files.storage import default_storage
+from rest_framework.test import APIClient
+
+def test_resource_create(s3ff_field_value_factory):
+    client = APIClient()
+    stored_file = default_storage.open('some_existing_file.txt')
+    resp = client.post('/resource', data={'blob': s3ff_field_value_factory(stored_file)})
+    assert resp.status_code == 201
+```
