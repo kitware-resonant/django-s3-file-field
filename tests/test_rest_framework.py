@@ -26,14 +26,14 @@ def test_serializer_data_invalid():
     assert serializer.errors['blob'][0].code == 'invalid'
 
 
-def test_serializer_is_valid(field_value):
-    serializer = ResourceSerializer(data={'blob': field_value})
+def test_serializer_is_valid(s3ff_field_value):
+    serializer = ResourceSerializer(data={'blob': s3ff_field_value})
 
     assert serializer.is_valid()
 
 
-def test_serializer_validated_data(stored_file_object, field_value):
-    serializer = ResourceSerializer(data={'blob': field_value})
+def test_serializer_validated_data(stored_file_object, s3ff_field_value):
+    serializer = ResourceSerializer(data={'blob': s3ff_field_value})
     serializer.is_valid(raise_exception=True)
 
     assert 'blob' in serializer.validated_data
@@ -42,8 +42,8 @@ def test_serializer_validated_data(stored_file_object, field_value):
 
 
 @pytest.mark.django_db
-def test_serializer_save_create(stored_file_object, field_value):
-    serializer = ResourceSerializer(data={'blob': field_value})
+def test_serializer_save_create(stored_file_object, s3ff_field_value):
+    serializer = ResourceSerializer(data={'blob': s3ff_field_value})
 
     serializer.is_valid(raise_exception=True)
     resource = serializer.save()
@@ -52,8 +52,8 @@ def test_serializer_save_create(stored_file_object, field_value):
 
 
 @pytest.mark.django_db
-def test_serializer_save_update(resource, stored_file_object, field_value):
-    serializer = ResourceSerializer(resource, data={'blob': field_value})
+def test_serializer_save_update(resource, stored_file_object, s3ff_field_value):
+    serializer = ResourceSerializer(resource, data={'blob': s3ff_field_value})
     # Sanity check
     assert resource.blob.name != stored_file_object.name
 

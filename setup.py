@@ -67,6 +67,13 @@ setup(
     extras_require={
         'boto3': ['django-storages[boto3]', 'boto3'],
         'minio': ['django-minio-storage', 'minio<7'],
+        # The "fixtures.py" module (containing the "pytest" requirement) is only loaded
+        # automatically via entry point by consumers who already have "pytest" installed, so
+        # "pytest" isn't actually a hard requirement.
+        'pytest': ['pytest'],
+    },
+    entry_points={
+        'pytest11': ['s3_file_field = s3_file_field.fixtures'],
     },
     cmdclass={
         'build_py': js_prerelease(build_py),
