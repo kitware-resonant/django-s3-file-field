@@ -133,9 +133,8 @@ def test_resource_form(s3ff_field_value):
 ```
 
 Alternatively, the `s3ff_field_value_factory` fixture transforms a `File` object into a valid input
-value (for Django `ModelForm` or Django Rest Framework), providing more control over the uploaded
-file:
-`ModelSerializer` subclasses:
+value (for Django `ModelForm` or Django Rest Framework `ModelSerializer` subclasses), providing
+more control over the uploaded file:
 ```python
 from django.core.files.storage import default_storage
 from rest_framework.test import APIClient
