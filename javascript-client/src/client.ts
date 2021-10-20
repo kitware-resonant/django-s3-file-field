@@ -19,6 +19,13 @@ interface UploadedPart {
   size: number;
   etag: string;
 }
+interface CompletionResponse {
+  complete_url: string;
+  body: string;
+}
+interface FinalizationResponse {
+  field_value: string;
+}
 
 export enum S3FileFieldResultState {
   Aborted,
@@ -82,7 +89,7 @@ export default class S3FileFieldClient {
    * @param fieldId - The Django field identifier.
    */
   protected async initializeUpload(file: File, fieldId: string): Promise<MultipartInfo> {
-    const response = await this.api.post('upload-initialize/', {
+    const response = await this.api.post<MultipartInfo>('upload-initialize/', {
       field_id: fieldId,
       file_name: file.name,
       file_size: file.size,
@@ -138,7 +145,7 @@ export default class S3FileFieldClient {
   protected async completeUpload(
     multipartInfo: MultipartInfo, parts: UploadedPart[],
   ): Promise<void> {
-    const response = await this.api.post('upload-complete/', {
+    const response = await this.api.post<CompletionResponse>('upload-complete/', {
       upload_signature: multipartInfo.upload_signature,
       upload_id: multipartInfo.upload_id,
       parts,
@@ -153,7 +160,10 @@ export default class S3FileFieldClient {
         // to include in the signature validation, causing it to fail.
         // So, do not send this request with any Content-Type, as that is what's specified by the
         // CompleteMultipartUpload docs.
-        'Content-Type': null,
+        // Unsetting default headers via "transformRequest" is awkward (since the headers aren't
+        // flattened), so this is actually; the most straightforward way; the null value is passed
+        // through to XMLHttpRequest, then ignored.
+        'Content-Type': null as unknown as string,
       },
     });
   }
@@ -166,7 +176,7 @@ export default class S3FileFieldClient {
    * @param multipartInfo - Signed information returned from /upload-complete/.
    */
   protected async finalize(multipartInfo: MultipartInfo): Promise<string> {
-    const response = await this.api.post('finalize/', {
+    const response = await this.api.post<FinalizationResponse>('finalize/', {
       upload_signature: multipartInfo.upload_signature,
     });
     return response.data.field_value;
