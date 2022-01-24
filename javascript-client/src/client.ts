@@ -143,7 +143,8 @@ export default class S3FileFieldClient {
    * @param parts - The parts that were uploaded.
    */
   protected async completeUpload(
-    multipartInfo: MultipartInfo, parts: UploadedPart[],
+    multipartInfo: MultipartInfo,
+    parts: UploadedPart[],
   ): Promise<void> {
     const response = await this.api.post<CompletionResponse>('upload-complete/', {
       upload_signature: multipartInfo.upload_signature,
