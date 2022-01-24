@@ -21,17 +21,17 @@
     "prepack": "npm-run-all build"
   },
   "dependencies": {
-    "axios": "^0.23.0"
+    "axios": "^0.25.0"
   },
   "devDependencies": {
     "@tsconfig/recommended": "^1.0.1",
-    "@typescript-eslint/eslint-plugin": "^4.29.3",
-    "@typescript-eslint/parser": "^4.29.3",
-    "eslint": "^7",
-    "eslint-config-airbnb-typescript": "^14.0.1",
+    "@typescript-eslint/eslint-plugin": "^5.10.0",
+    "@typescript-eslint/parser": "^5.10.0",
+    "eslint": "^8",
+    "eslint-config-airbnb-typescript": "^16.1.0",
     "npm-run-all": "^4.1.5",
     "rimraf": "^3.0.2",
-    "typescript": "^4.4.4"
+    "typescript": "^4.5.5"
   },
   "eslintConfig": {
     "parser": "@typescript-eslint/parser",
