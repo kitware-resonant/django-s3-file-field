@@ -6,12 +6,12 @@ jobs:
   publish-python:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           # Tags are needed to compute the current version number
           fetch-depth: 0
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: "3.x"
       - name: Install tox
@@ -38,14 +38,14 @@ jobs:
   publish-javascript:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           # Tags are needed to compute the current version number
           fetch-depth: 0
       - name: Set up Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
-          node-version: "16.x"
+          node-version: current
       - name: Publish Javascript client to npm
         working-directory: ./javascript-client
         env:
