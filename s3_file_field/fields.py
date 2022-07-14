@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List
+from typing import Any, List, Optional
 from uuid import uuid4
 
 from django.core import checks
@@ -66,7 +66,9 @@ class S3FileField(FileField):
     def uuid_prefix_filename(instance: Any, filename: str):
         return f'{uuid4()}/{filename}'
 
-    def formfield(self, **kwargs) -> FormField:
+    def formfield(
+        self, form_class: Optional[Any] = None, choices_form_class: Optional[Any] = None, **kwargs
+    ) -> FormField:
         """
         Return a forms.Field instance for this model field.
 
@@ -74,10 +76,12 @@ class S3FileField(FileField):
         """
         if MultipartManager.supported_storage(self.storage):
             # Use S3FormFileField as a default, instead of forms.FileField from the superclass
-            kwargs.setdefault('form_class', S3FormFileField)
+            form_class = S3FormFileField if form_class is None else form_class
             # Allow the form and widget to lookup this field instance later, using its id
             kwargs.setdefault('model_field_id', self.id)
-        return super().formfield(**kwargs)
+        return super().formfield(
+            form_class=form_class, choices_form_class=choices_form_class, **kwargs
+        )
 
     def save_form_data(self, instance: models.Model, data):
         """Coerce a form field value and assign it to a model instance's field."""
