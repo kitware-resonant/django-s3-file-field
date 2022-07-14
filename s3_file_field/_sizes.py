@@ -1,14 +1,14 @@
 def kb(bytes_size: int) -> int:
-    return bytes_size * 2 ** 10
+    return bytes_size * 2**10
 
 
 def mb(bytes_size: int) -> int:
-    return bytes_size * 2 ** 20
+    return bytes_size * 2**20
 
 
 def gb(bytes_size: int) -> int:
-    return bytes_size * 2 ** 30
+    return bytes_size * 2**30
 
 
 def tb(bytes_size: int) -> int:
-    return bytes_size * 2 ** 40
+    return bytes_size * 2**40

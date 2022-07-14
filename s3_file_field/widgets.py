@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import functools
 import posixpath
-from typing import Any, Dict, Iterable, Mapping, Optional
+from typing import Any, Mapping, Optional
 
 from django.core import signing
 from django.core.files import File
+from django.core.files.uploadedfile import UploadedFile
 from django.forms import ClearableFileInput
 from django.forms.widgets import FILE_INPUT_CONTRADICTION, CheckboxInput  # type: ignore
 from django.urls import reverse
+from django.utils.datastructures import MultiValueDict
 
 
 @functools.lru_cache(maxsize=1)
@@ -63,8 +65,8 @@ class S3FileInput(ClearableFileInput):
         return super().get_context(*args, **kwargs)
 
     def value_from_datadict(
-        self, data: Dict[str, Any], files: Mapping[str, Iterable[Any]], name: str
-    ):
+        self, data: Mapping[str, Any], files: MultiValueDict[str, UploadedFile], name: str
+    ) -> Any:
         if name in data:
             upload = data[name]
             # An empty string indicates the field was not populated, so don't wrap it in a File

@@ -62,18 +62,18 @@ class NPM(Command):
     def finalize_options(self):
         pass
 
-    @property
+    @staticmethod
     @lru_cache(maxsize=1)
-    def npm_name(self):
+    def npm_name():
         if platform.system() == 'Windows':
             return 'npm.cmd'
         return 'npm'
 
-    @property
+    @staticmethod
     @lru_cache(maxsize=1)
-    def has_npm(self):
+    def has_npm():
         try:
-            check_call([self.npm_name, '--version'])
+            check_call([NPM.npm_name(), '--version'])
             return True
         except CalledProcessError:
             return False
@@ -83,7 +83,7 @@ class NPM(Command):
 
         log.info(f'Installing build dependencies of {project} with npm.  This may take a while...')
         check_call(
-            [self.npm_name, 'install'],
+            [self.npm_name(), 'install'],
             cwd=project_root,
             stdout=sys.stdout,
             stderr=sys.stderr,
@@ -94,14 +94,14 @@ class NPM(Command):
 
         log.info(f'Building {project} with npm.  This may take a while...')
         check_call(
-            [self.npm_name, 'run', build_script],
+            [self.npm_name(), 'run', build_script],
             cwd=project_root,
             stdout=sys.stdout,
             stderr=sys.stderr,
         )
 
     def run(self):
-        if not self.has_npm:
+        if not self.has_npm():
             log.error(
                 '`npm` unavailable.  '
                 "If you're running this command using sudo, make sure `npm` is available to sudo"
