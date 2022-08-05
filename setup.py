@@ -64,7 +64,7 @@ setup(
     package_data={'': ['*.html', '*.js']},
     include_package_data=True,
     install_requires=[
-        'django>=3',
+        'django>=3.2',
         'djangorestframework',
     ],
     extras_require={
