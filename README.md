@@ -100,7 +100,7 @@ along with the Form. Typically, this can be done in any Form-containing Template
 
 ### Django Rest Framework
 When defining a
-[Django Rest Frameowrk `ModelSerializer`](https://www.django-rest-framework.org/api-guide/serializers/#modelserializer),
+[Django Rest Framework `ModelSerializer`](https://www.django-rest-framework.org/api-guide/serializers/#modelserializer),
 the appropriate Serializer `Field` will be automatically used:
 ```python
 from rest_framework import serializers
