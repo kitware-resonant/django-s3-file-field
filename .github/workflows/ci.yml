@@ -48,12 +48,12 @@ jobs:
       - name: Build and test Javascript client
         working-directory: ./javascript-client
         run: |
-          yarn ci
+          yarn install --frozen-lockfile
           yarn run build
           yarn run lint
       - name: Build and test widget
         working-directory: ./widget
         run: |
-          yarn ci
+          yarn install --frozen-lockfile
           yarn run build
           yarn run lint
