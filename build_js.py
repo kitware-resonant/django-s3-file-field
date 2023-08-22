@@ -49,8 +49,8 @@ def js_prerelease(command, strict=False):
     return DecoratedCommand
 
 
-class NPM(Command):
-    description = 'install package.json dependencies using npm'
+class YARN(Command):
+    description = 'install package.json dependencies using yarn'
     user_options: List[Tuple[str, str, str]] = []
 
     build_scripts = [('javascript-client', 'build'), ('widget', 'build')]
@@ -64,16 +64,16 @@ class NPM(Command):
 
     @staticmethod
     @lru_cache(maxsize=1)
-    def npm_name():
+    def yarn_name():
         if platform.system() == 'Windows':
-            return 'npm.cmd'
-        return 'npm'
+            return 'yarn.cmd'
+        return 'yarn'
 
     @staticmethod
     @lru_cache(maxsize=1)
-    def has_npm():
+    def has_yarn():
         try:
-            check_call([NPM.npm_name(), '--version'])
+            check_call([YARN.yarn_name(), '--version'])
             return True
         except CalledProcessError:
             return False
@@ -81,9 +81,9 @@ class NPM(Command):
     def install_and_build(self, project, build_script):
         project_root = os.path.join(here, project)
 
-        log.info(f'Installing build dependencies of {project} with npm.  This may take a while...')
+        log.info(f'Installing build dependencies of {project} with yarn.  This may take a while...')
         check_call(
-            [self.npm_name(), 'install'],
+            [self.yarn_name(), 'install'],
             cwd=project_root,
             stdout=sys.stdout,
             stderr=sys.stderr,
@@ -92,19 +92,19 @@ class NPM(Command):
         # TODO is this necessary?
         os.utime(os.path.join(project_root, 'node_modules'), None)
 
-        log.info(f'Building {project} with npm.  This may take a while...')
+        log.info(f'Building {project} with yarn.  This may take a while...')
         check_call(
-            [self.npm_name(), 'run', build_script],
+            [self.yarn_name(), 'run', build_script],
             cwd=project_root,
             stdout=sys.stdout,
             stderr=sys.stderr,
         )
 
     def run(self):
-        if not self.has_npm():
+        if not self.has_yarn():
             log.error(
-                '`npm` unavailable.  '
-                "If you're running this command using sudo, make sure `npm` is available to sudo"
+                '`yarn` unavailable.  '
+                "If you're running this command using sudo, make sure `yarn` is available to sudo"
             )
 
         for project, build_script in self.build_scripts:
