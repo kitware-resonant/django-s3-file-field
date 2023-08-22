@@ -48,12 +48,12 @@ jobs:
       - name: Build and test Javascript client
         working-directory: ./javascript-client
         run: |
-          npm ci
-          npm run build
-          npm run lint
+          yarn ci
+          yarn run build
+          yarn run lint
       - name: Build and test widget
         working-directory: ./widget
         run: |
-          npm ci
-          npm run build
-          npm run lint
+          yarn ci
+          yarn run build
+          yarn run lint

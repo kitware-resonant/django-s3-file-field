@@ -51,7 +51,7 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          npm ci
-          npm version --no-git-tag-version $(git describe --tags --match '*[0-9]*' --abbrev=0 | sed 's/^v//')
+          yarn ci
+          yarn version --no-git-tag-version $(git describe --tags --match '*[0-9]*' --abbrev=0 | sed 's/^v//')
           echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > ./.npmrc
-          npm publish
+          yarn publish
