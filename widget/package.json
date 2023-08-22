@@ -6,7 +6,7 @@
   "scripts": {
     "lint:eslint": "eslint ./src/**.ts",
     "lint:tsc": "tsc --noEmit",
-    "lint": "yarn run lint:*",
+    "lint": "yarn run lint:tsc && yarn run lint:eslint",
     "watch": "parcel watch ./src/widget.ts --dist-dir ../s3_file_field/static/s3_file_field/",
     "build:clean": "rimraf ../s3_file_field/static/s3_file_field",
     "build:compile": "parcel build ./src/widget.ts --dist-dir ../s3_file_field/static/s3_file_field/ --no-source-maps --no-cache",
