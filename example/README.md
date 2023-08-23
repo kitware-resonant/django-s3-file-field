@@ -13,7 +13,7 @@ Some settings used here are not appropriate for production use.
 
 * In the main terminal:
   ```bash
-  pip install -e ..[dev]
+  pip install -e ..[minio]
   ./manage.py migrate
   ```
 
