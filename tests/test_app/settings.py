@@ -1,5 +1,7 @@
 import os
 
+import django
+
 SECRET_KEY = 'test_key'
 
 INSTALLED_APPS = [
@@ -27,10 +29,20 @@ ROOT_URLCONF = 'test_app.urls'
 # Django will use a memory resident database
 DATABASES = {'default': {'ENGINE': 'django.db.backends.sqlite3'}}
 
-# Prevent a Django 4.x warning
-USE_TZ = True
+if django.VERSION < (5, 0):
+    USE_TZ = True
 
-DEFAULT_FILE_STORAGE = 'minio_storage.storage.MinioMediaStorage'
+if django.VERSION < (4, 2):
+    DEFAULT_FILE_STORAGE = 'minio_storage.storage.MinioMediaStorage'
+else:
+    STORAGES = {
+        'default': {
+            'BACKEND': 'minio_storage.storage.MinioMediaStorage',
+        },
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        },
+    }
 # Use values compatible with Docker Compose as defaults, in case environment variables are not set
 MINIO_STORAGE_ENDPOINT = os.environ.get('MINIO_STORAGE_ENDPOINT', 'localhost:9000')
 MINIO_STORAGE_USE_HTTPS = False
