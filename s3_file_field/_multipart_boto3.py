@@ -15,6 +15,7 @@ class Boto3MultipartManager(MultipartManager):
         resource: s3.ServiceResource = storage.connection
         self._client: s3.Client = cast('s3.Client', resource.meta.client)
         self._bucket_name: str = storage.bucket_name
+        self.storage = storage
 
     def _create_upload_id(
         self,
@@ -26,7 +27,7 @@ class Boto3MultipartManager(MultipartManager):
             boto3_kwargs['ContentType'] = content_type
         resp = self._client.create_multipart_upload(
             Bucket=self._bucket_name,
-            Key=object_key,
+            Key=self.storage._normalize_name(object_key),
             **boto3_kwargs,  # type: ignore[arg-type]
             # TODO: filename in Metadata
             # TODO: ensure ServerSideEncryption is set, even if not specified
@@ -37,7 +38,7 @@ class Boto3MultipartManager(MultipartManager):
     def _abort_upload_id(self, object_key: str, upload_id: str) -> None:
         self._client.abort_multipart_upload(
             Bucket=self._bucket_name,
-            Key=object_key,
+            Key=self.storage._normalize_name(object_key),
             UploadId=upload_id,
         )
 
@@ -48,7 +49,7 @@ class Boto3MultipartManager(MultipartManager):
             ClientMethod='upload_part',
             Params={
                 'Bucket': self._bucket_name,
-                'Key': object_key,
+                'Key': self.storage._normalize_name(object_key),
                 'UploadId': upload_id,
                 'PartNumber': part_number,
                 'ContentLength': part_size,
@@ -61,7 +62,7 @@ class Boto3MultipartManager(MultipartManager):
             ClientMethod='complete_multipart_upload',
             Params={
                 'Bucket': self._bucket_name,
-                'Key': transferred_parts.object_key,
+                'Key': self.storage._normalize_name(transferred_parts.object_key),
                 'UploadId': transferred_parts.upload_id,
             },
             ExpiresIn=int(self._url_expiration.total_seconds()),
@@ -71,7 +72,7 @@ class Boto3MultipartManager(MultipartManager):
         try:
             stats = self._client.head_object(
                 Bucket=self._bucket_name,
-                Key=object_key,
+                Key=self.storage._normalize_name(object_key),
             )
             return stats['ContentLength']
         except ClientError:
