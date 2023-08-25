@@ -13,7 +13,9 @@
     "build": "npm-run-all build:clean build:compile"
   },
   "dependencies": {
-    "django-s3-file-field": "file:../javascript-client"
+    "django-s3-file-field": "file:../javascript-client",
+    "svelte": "^4.2.0",
+    "svelte-preprocess": "^5.0.4"
   },
   "devDependencies": {
     "@parcel/transformer-sass": "^2.10.0",
@@ -27,7 +29,11 @@
     "npm-run-all": "^4.1.5",
     "parcel": "^2.10.0",
     "rimraf": "^5.0.5",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "@tsconfig/svelte": "^5.0.2",
+    "parcel-transformer-svelte3-plus": "^0.2.10",
+    "process": "^0.11.10",
+    "svelte-check": "^3.5.0"
   },
   "alias": {
     "buffer": false
@@ -36,7 +42,13 @@
     "last 1 chrome version",
     "last 1 firefox version"
   ],
+  "@parcel/resolver-default": {
+    "packageExports": true
+  },
   "eslintConfig": {
+    "env": {
+      "node": true
+    },
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
       "project": true
@@ -53,6 +65,20 @@
     ],
     "rules": {
       "no-restricted-syntax": 0
-    }
+    },
+    "settings": {
+      "import/resolver": {
+        "typescript": {}
+      }
+    },
+    "overrides": [
+      {
+        "files": [
+          "**/*.ts",
+          "**/*.js",
+          "**/*.svelte"
+        ]
+      }
+    ]
   }
 }
