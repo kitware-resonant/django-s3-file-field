@@ -16,17 +16,18 @@
     "django-s3-file-field": "file:../javascript-client"
   },
   "devDependencies": {
-    "@parcel/transformer-sass": "^2.2.1",
-    "@tsconfig/recommended": "^1.0.1",
-    "@typescript-eslint/eslint-plugin": "^5.10.0",
-    "@typescript-eslint/parser": "^5.10.0",
+    "@parcel/transformer-sass": "^2.9.3",
+    "@tsconfig/recommended": "^1.0.2",
+    "@typescript-eslint/eslint-plugin": "^6.4.1",
+    "@typescript-eslint/parser": "^6.4.1",
+    "buffer": "^6.0.3",
     "eslint": "^8",
-    "eslint-config-airbnb-typescript": "^17.0.0",
-    "eslint-plugin-import": "^2.25.4",
+    "eslint-config-airbnb-typescript": "^17.1.0",
+    "eslint-plugin-import": "^2.28.1",
     "npm-run-all": "^4.1.5",
-    "parcel": "^2.2.1",
-    "rimraf": "^3.0.2",
-    "typescript": "^4.5.5"
+    "parcel": "^2.9.3",
+    "rimraf": "^5.0.1",
+    "typescript": "^5.2.2"
   },
   "browserslist": [
     "last 1 chrome version",
@@ -35,7 +36,7 @@
   "eslintConfig": {
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
-      "project": "./tsconfig.json"
+      "project": true
     },
     "plugins": [
       "@typescript-eslint"
@@ -43,7 +44,7 @@
     "extends": [
       "eslint:recommended",
       "plugin:@typescript-eslint/eslint-recommended",
-      "plugin:@typescript-eslint/recommended",
+      "plugin:@typescript-eslint/recommended-type-checked",
       "airbnb-base",
       "airbnb-typescript/base"
     ],
