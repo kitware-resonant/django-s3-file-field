@@ -124,10 +124,16 @@ export default class S3FileFieldClient {
           });
         },
       });
+      const { etag } = response.headers;
+      // ETag might be absent due to CORS misconfiguration, but dumb typings from Axios also make it
+      // structurally possible to be many other types
+      if (typeof etag !== 'string') {
+        throw new Error('ETag header missing from response.');
+      }
       uploadedParts.push({
         part_number: part.part_number,
         size: part.size,
-        etag: response.headers.etag,
+        etag,
       });
       fileOffset += part.size;
     }
