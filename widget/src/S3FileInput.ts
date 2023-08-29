@@ -69,10 +69,10 @@ export default class S3FileInput {
     )!;
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
-    this.input.onchange = (evt): void => {
+    this.input.onchange = async (evt): Promise<void> => {
       evt.preventDefault();
       if (this.input.type === 'file') {
-        this.uploadFiles();
+        await this.uploadFiles();
       } else if (this.input.value === '') {
         // already processed but user resetted it -> convert bak
         this.input.type = 'file';
