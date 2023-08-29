@@ -42,7 +42,7 @@ setup(
     author='Kitware, Inc.',
     author_email='kitware@kitware.com',
     license='Apache 2.0',
-    python_requires='>=3.8.0',
+    python_requires='>=3.8',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Web Environment',
@@ -56,6 +56,7 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
         'Programming Language :: Python',
     ],
     packages=find_packages(include=['s3_file_field']),
