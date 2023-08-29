@@ -14,10 +14,10 @@ facilitating deployment to environments like
 
 ### Scope
 The principal API of django-s3-file-field is the `S3FileField`, which is a subclass of
-[Django's `FileField`](https://docs.djangoproject.com/en/4.1/ref/models/fields/#filefield).
+[Django's `FileField`](https://docs.djangoproject.com/en/4.2/ref/models/fields/#filefield).
 django-s3-file-field does not affect any operations other than uploading from external HTTP
 clients; for all other file operations (downloading, uploading from the Python API, etc.), refer to
-[Django's file management documentation](https://docs.djangoproject.com/en/4.1/topics/files/).
+[Django's file management documentation](https://docs.djangoproject.com/en/4.2/topics/files/).
 
 django-s3-file-field supports both the creation and modification (by overwrite) of
 `S3FileField`-containing `Model` instances.
@@ -76,7 +76,7 @@ class Resource(models.Model):
 
 ### Django Forms
 When defining a
-[Django `ModelForm`](https://docs.djangoproject.com/en/4.1/topics/forms/modelforms/),
+[Django `ModelForm`](https://docs.djangoproject.com/en/4.2/topics/forms/modelforms/),
 the appropriate Form `Field` will be automatically used:
 ```python
 from django.forms import ModelForm
@@ -89,7 +89,7 @@ class ResourceForm(ModelForm):
 ```
 
 Forms using django-s3-file-field include additional
-[assets](https://docs.djangoproject.com/en/4.1/topics/forms/media/), which it's essential to render
+[assets](https://docs.djangoproject.com/en/4.2/topics/forms/media/), which it's essential to render
 along with the Form. Typically, this can be done in any Form-containing Template as:
 ```
 <head>
