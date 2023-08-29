@@ -29,6 +29,9 @@
     "rimraf": "^5.0.1",
     "typescript": "^5.2.2"
   },
+  "alias": {
+    "buffer": false
+  },
   "browserslist": [
     "last 1 chrome version",
     "last 1 firefox version"
