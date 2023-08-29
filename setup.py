@@ -34,7 +34,10 @@ setup(
     name='django-s3-file-field',
     use_scm_version={'local_scheme': prerelease_local_scheme},
     setup_requires=['setuptools-scm'],
-    description='A Django library for uploading files directly to AWS S3 or MinIO Storage from HTTP clients.',
+    description=(
+        'A Django library for uploading files directly to AWS S3 or '
+        'MinIO Storage from HTTP clients.'
+    ),
     long_description=readme,
     long_description_content_type='text/markdown',
     url='https://github.com/girder/django-s3-file-field',
