@@ -126,3 +126,13 @@ plugins = [
     "mypy_django_plugin.main",
     "mypy_drf_plugin.main",
 ]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --showlocals --verbose"
+filterwarnings = [
+    "error",
+    # pytest often causes unclosed socket warnings
+    'ignore:unclosed <socket\.socket:ResourceWarning',
+    "ignore::DeprecationWarning:minio",
+]
+DJANGO_SETTINGS_MODULE = "test_app.settings"
