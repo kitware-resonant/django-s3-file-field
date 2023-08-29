@@ -37,7 +37,7 @@ def test_fields_save_refresh(resource):
 def test_fields_save_uuid_prefix(resource):
     resource.save()
 
-    assert re.match(
+    assert re.search(
         r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test_key_',
         resource.blob.name,
     )

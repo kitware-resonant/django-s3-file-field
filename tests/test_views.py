@@ -9,7 +9,7 @@ from rest_framework.test import APIClient
 
 from s3_file_field._sizes import mb
 
-from .fuzzy import URL_RE, UUID_RE, Re
+from .fuzzy import FUZZY_UPLOAD_ID, FUZZY_URL, Fuzzy
 
 
 def test_prepare(api_client):
@@ -20,13 +20,17 @@ def test_prepare(api_client):
     )
     assert resp.status_code == 200
     assert resp.data == {
-        'object_key': Re(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt'),
-        'upload_id': UUID_RE,
-        'parts': [{'part_number': 1, 'size': 10, 'upload_url': URL_RE}],
-        'upload_signature': Re(r'.*:.*'),
+        'object_key': Fuzzy(
+            r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt'
+        ),
+        'upload_id': FUZZY_UPLOAD_ID,
+        'parts': [{'part_number': 1, 'size': 10, 'upload_url': FUZZY_URL}],
+        'upload_signature': Fuzzy(r'.*:.*'),
     }
     assert signing.loads(resp.data['upload_signature']) == {
-        'object_key': Re(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt'),
+        'object_key': Fuzzy(
+            r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt'
+        ),
         'field_id': 'test_app.Resource.blob',
     }
 
@@ -39,14 +43,16 @@ def test_prepare_two_parts(api_client):
     )
     assert resp.status_code == 200
     assert resp.data == {
-        'object_key': Re(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt'),
-        'upload_id': UUID_RE,
+        'object_key': Fuzzy(
+            r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt'
+        ),
+        'upload_id': FUZZY_UPLOAD_ID,
         'parts': [
             # 5 MB size
-            {'part_number': 1, 'size': mb(5), 'upload_url': URL_RE},
-            {'part_number': 2, 'size': mb(5), 'upload_url': URL_RE},
+            {'part_number': 1, 'size': mb(5), 'upload_url': FUZZY_URL},
+            {'part_number': 2, 'size': mb(5), 'upload_url': FUZZY_URL},
         ],
-        'upload_signature': Re(r'.*:.*'),
+        'upload_signature': Fuzzy(r'.*:.*'),
     }
 
 
@@ -58,14 +64,16 @@ def test_prepare_three_parts(api_client):
     )
     assert resp.status_code == 200
     assert resp.data == {
-        'object_key': Re(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt'),
-        'upload_id': UUID_RE,
+        'object_key': Fuzzy(
+            r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt'
+        ),
+        'upload_id': FUZZY_UPLOAD_ID,
         'parts': [
-            {'part_number': 1, 'size': mb(5), 'upload_url': URL_RE},
-            {'part_number': 2, 'size': mb(5), 'upload_url': URL_RE},
-            {'part_number': 3, 'size': mb(2), 'upload_url': URL_RE},
+            {'part_number': 1, 'size': mb(5), 'upload_url': FUZZY_URL},
+            {'part_number': 2, 'size': mb(5), 'upload_url': FUZZY_URL},
+            {'part_number': 3, 'size': mb(2), 'upload_url': FUZZY_URL},
         ],
-        'upload_signature': Re(r'.*:.*'),
+        'upload_signature': Fuzzy(r'.*:.*'),
     }
 
 
@@ -119,8 +127,8 @@ def test_full_upload_flow(
     )
     assert resp.status_code == 200
     assert resp.data == {
-        'complete_url': Re(r'.*'),
-        'body': Re(r'.*'),
+        'complete_url': Fuzzy(r'.*'),
+        'body': Fuzzy(r'.*'),
     }
     completion_data = cast(Dict, resp.data)
 
@@ -146,7 +154,7 @@ def test_full_upload_flow(
     )
     assert resp.status_code == 200
     assert resp.data == {
-        'field_value': Re(r'.*:.*'),
+        'field_value': Fuzzy(r'.*:.*'),
     }
 
     # Verify that the Content headers were stored correctly on the object

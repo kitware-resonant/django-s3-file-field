@@ -19,8 +19,8 @@ def stored_file_object() -> Generator[File, None, None]:
     # In theory, Storage.save can change the key, though this shouldn't happen with a randomized key
     key = default_storage.save(key, ContentFile(b'test content'))
     # Storage.open will return a File object, which knows its size and can access its content
-    file_object = default_storage.open(key)
-    yield file_object
+    with default_storage.open(key) as file_object:
+        yield file_object
     default_storage.delete(key)
 
 
