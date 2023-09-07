@@ -29,6 +29,6 @@ class S3FileSerializerField(FileSerializerField):
 
         # fields.S3FileField.save_form_data is not called by DRF, so the same behavior must be
         # implemented here
-        internal_value = file_object.name
+        internal_value = file_object
 
         return internal_value
