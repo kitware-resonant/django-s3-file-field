@@ -1,3 +1,71 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "django-s3-file-field"
+description = "A Django library for uploading files directly to AWS S3 or MinIO Storage from HTTP clients."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "Apache 2.0" }
+maintainers = [{ name = "Kitware, Inc.", email = "kitware@kitware.com" }]
+keywords = [
+  "django",
+  "django-widget",
+  "minio",
+  "s3",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Web Environment",
+  "Framework :: Django :: 3.2",
+  "Framework :: Django :: 4.1",
+  "Framework :: Django :: 4.2",
+  "Framework :: Django",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python",
+]
+dependencies = [
+  "django>=3.2",
+  "djangorestframework",
+]
+dynamic = ["version"]
+
+[project.urls]
+Repository = "https://github.com/girder/django-s3-file-field"
+"Bug Reports" = "https://github.com/girder/django-s3-file-field/issues"
+
+[project.entry-points.pytest11]
+s3_file_field = "s3_file_field.fixtures"
+
+[project.optional-dependencies]
+boto3 = [
+  "django-storages[boto3]",
+  "boto3",
+]
+minio = [
+  "django-minio-storage",
+  "minio<7",
+]
+pytest = [
+  # The "fixtures.py" module (containing the "pytest" requirement) is only loaded
+  # automatically via entry point by consumers who already have "pytest" installed, so
+  # "pytest" isn't actually a hard requirement.
+  "pytest",
+]
+
+[tool.setuptools.packages.find]
+include = ["s3_file_field"]
+
+[tool.setuptools_scm]
+
 [tool.black]
 line-length = 100
 skip-string-normalization = true

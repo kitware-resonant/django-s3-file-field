@@ -2,5 +2,44 @@
 requires = ["setuptools >= 42", "wheel", "setuptools-scm[toml]>=3.4"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "django-s3-file-field-client"
+description = "A Python client library for django-s3-file-field."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "Apache 2.0" }
+maintainers = [{ name = "Kitware, Inc.", email = "kitware@kitware.com" }]
+keywords = [
+  "django",
+  "django-widget",
+  "minio",
+  "s3",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Web Environment",
+  "Framework :: Django :: 3.2",
+  "Framework :: Django :: 4.1",
+  "Framework :: Django :: 4.2",
+  "Framework :: Django",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python",
+]
+dependencies = [
+  "requests",
+]
+dynamic = ["version"]
+
+[project.urls]
+Repository = "https://github.com/girder/django-s3-file-field"
+"Bug Reports" = "https://github.com/girder/django-s3-file-field/issues"
+
 [tool.setuptools_scm]
 root = ".."
