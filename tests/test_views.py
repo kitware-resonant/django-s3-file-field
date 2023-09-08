@@ -12,7 +12,7 @@ from s3_file_field._sizes import mb
 from fuzzy import FUZZY_UPLOAD_ID, FUZZY_URL, Fuzzy
 
 
-def test_prepare(api_client):
+def test_prepare(api_client: APIClient) -> None:
     resp = api_client.post(
         reverse("s3_file_field:upload-initialize"),
         {
@@ -40,7 +40,7 @@ def test_prepare(api_client):
     }
 
 
-def test_prepare_two_parts(api_client):
+def test_prepare_two_parts(api_client: APIClient) -> None:
     resp = api_client.post(
         reverse("s3_file_field:upload-initialize"),
         {
@@ -66,7 +66,7 @@ def test_prepare_two_parts(api_client):
     }
 
 
-def test_prepare_three_parts(api_client):
+def test_prepare_three_parts(api_client: APIClient) -> None:
     resp = api_client.post(
         reverse("s3_file_field:upload-initialize"),
         {
@@ -96,7 +96,7 @@ def test_prepare_three_parts(api_client):
 def test_full_upload_flow(
     api_client: APIClient,
     file_size: int,
-):
+) -> None:
     # Initialize the multipart upload
     resp = api_client.post(
         reverse("s3_file_field:upload-initialize"),

@@ -35,7 +35,7 @@ def initialization() -> PresignedTransfer:
     )
 
 
-def test_upload_initialization_request_deserialization():
+def test_upload_initialization_request_deserialization() -> None:
     serializer = UploadInitializationRequestSerializer(
         data={
             "field_id": "test_app.Resource.blob",
@@ -49,7 +49,7 @@ def test_upload_initialization_request_deserialization():
     assert isinstance(request, dict)
 
 
-def test_upload_initialization_request_deserialization_file_id_invalid():
+def test_upload_initialization_request_deserialization_file_id_invalid() -> None:
     serializer = UploadInitializationRequestSerializer(
         data={
             "field_id": "bad.id",
@@ -65,7 +65,7 @@ def test_upload_initialization_request_deserialization_file_id_invalid():
 
 def test_upload_initialization_response_serialization(
     initialization: PresignedTransfer,
-):
+) -> None:
     serializer = UploadInitializationResponseSerializer(
         {
             "object_key": initialization.object_key,
@@ -77,7 +77,7 @@ def test_upload_initialization_response_serialization(
     assert isinstance(serializer.data, dict)
 
 
-def test_upload_completion_request_deserialization():
+def test_upload_completion_request_deserialization() -> None:
     upload_signature = signing.dumps({"object_key": "test-object-key", "field_id": "test-field-id"})
     serializer = UploadCompletionRequestSerializer(
         data={

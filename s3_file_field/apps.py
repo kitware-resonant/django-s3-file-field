@@ -9,7 +9,7 @@ class S3FileFieldConfig(AppConfig):
     name = "s3_file_field"
     verbose_name = "S3 File Field"
 
-    def ready(self):
+    def ready(self) -> None:
         # import checks to register them
         from . import checks  # noqa: F401
 

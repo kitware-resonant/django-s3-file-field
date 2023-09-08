@@ -1,9 +1,18 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
 
 from test_app.rest import ResourceSerializer
 
+if TYPE_CHECKING:
+    from django.core.files import File
 
-def test_serializer_data_missing():
+    from test_app.models import Resource
+
+
+def test_serializer_data_missing() -> None:
     serializer = ResourceSerializer(
         data={
             # Omitted field
@@ -14,7 +23,7 @@ def test_serializer_data_missing():
     assert serializer.errors["blob"][0].code == "required"
 
 
-def test_serializer_data_invalid():
+def test_serializer_data_invalid() -> None:
     serializer = ResourceSerializer(
         data={
             # Invalid, this must be a signed field_value
@@ -26,13 +35,13 @@ def test_serializer_data_invalid():
     assert serializer.errors["blob"][0].code == "invalid"
 
 
-def test_serializer_is_valid(s3ff_field_value):
+def test_serializer_is_valid(s3ff_field_value: str) -> None:
     serializer = ResourceSerializer(data={"blob": s3ff_field_value})
 
     assert serializer.is_valid()
 
 
-def test_serializer_validated_data(stored_file_object, s3ff_field_value):
+def test_serializer_validated_data(stored_file_object: File[bytes], s3ff_field_value: str) -> None:
     serializer = ResourceSerializer(data={"blob": s3ff_field_value})
     serializer.is_valid(raise_exception=True)
 
@@ -42,7 +51,7 @@ def test_serializer_validated_data(stored_file_object, s3ff_field_value):
 
 
 @pytest.mark.django_db()
-def test_serializer_save_create(stored_file_object, s3ff_field_value):
+def test_serializer_save_create(stored_file_object: File[bytes], s3ff_field_value: str) -> None:
     serializer = ResourceSerializer(data={"blob": s3ff_field_value})
 
     serializer.is_valid(raise_exception=True)
@@ -52,7 +61,9 @@ def test_serializer_save_create(stored_file_object, s3ff_field_value):
 
 
 @pytest.mark.django_db()
-def test_serializer_save_update(resource, stored_file_object, s3ff_field_value):
+def test_serializer_save_update(
+    resource: Resource, stored_file_object: File[bytes], s3ff_field_value: str
+) -> None:
     serializer = ResourceSerializer(resource, data={"blob": s3ff_field_value})
     # Sanity check
     assert resource.blob.name != stored_file_object.name

@@ -1,7 +1,13 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import minio
-from minio_storage.storage import MinioStorage
 
 from ._multipart import MultipartManager, ObjectNotFoundError, TransferredParts
+
+if TYPE_CHECKING:
+    from minio_storage.storage import MinioStorage
 
 
 class MinioMultipartManager(MultipartManager):
@@ -68,4 +74,6 @@ class MinioMultipartManager(MultipartManager):
             if e.code == "NoSuchKey":
                 raise ObjectNotFoundError from e
             raise
+        if stats.size is None:
+            raise ObjectNotFoundError("MinIO did not return a size for object.", object_key)
         return stats.size

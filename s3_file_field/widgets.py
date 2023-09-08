@@ -2,15 +2,17 @@ from __future__ import annotations
 
 import functools
 import posixpath
-from typing import Any, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Dict, Mapping, NoReturn, Optional
 
 from django.core import signing
 from django.core.files import File
-from django.core.files.uploadedfile import UploadedFile
 from django.forms import ClearableFileInput
-from django.forms.widgets import FILE_INPUT_CONTRADICTION, CheckboxInput  # type: ignore
+from django.forms.widgets import FILE_INPUT_CONTRADICTION, CheckboxInput
 from django.urls import reverse
-from django.utils.datastructures import MultiValueDict
+
+if TYPE_CHECKING:
+    from django.core.files.uploadedfile import UploadedFile
+    from django.utils.datastructures import MultiValueDict
 
 
 @functools.lru_cache(maxsize=1)
@@ -22,20 +24,23 @@ def get_base_url() -> str:
 
 
 class S3PlaceholderFile(File):
-    def __init__(self, name, size):
+    name: str
+    size: int
+
+    def __init__(self, name: str, size: int) -> None:
         self.name = name
         self.size = size
 
-    def open(self, mode=None):
+    def open(self, mode: Optional[str] = None) -> NoReturn:
         raise NotImplementedError
 
-    def close(self):
+    def close(self) -> NoReturn:
         raise NotImplementedError
 
-    def chunks(self, chunk_size=None):
+    def chunks(self, chunk_size: Optional[int] = None) -> NoReturn:
         raise NotImplementedError
 
-    def multiple_chunks(self, chunk_size=None) -> bool:
+    def multiple_chunks(self, chunk_size: Optional[int] = None) -> bool:
         # Since it's in memory, we'll never have multiple chunks.
         return False
 
@@ -56,7 +61,7 @@ class S3FileInput(ClearableFileInput):
         js = ["s3_file_field/widget.js"]
         css = {"all": ["s3_file_field/widget.css"]}
 
-    def get_context(self, *args, **kwargs):
+    def get_context(self, *args, **kwargs) -> Dict[str, Any]:
         # The base URL cannot be determined at the time the widget is instantiated
         # (when S3FormFileField.widget_attrs is called).
         # Additionally, because this method is called on a deep copy of the widget each

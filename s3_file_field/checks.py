@@ -1,18 +1,22 @@
-import logging
-from typing import Iterable, List, Optional
+from __future__ import annotations
 
-from django.apps import AppConfig
+import logging
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional
+
 from django.core import checks
 
 from ._multipart import MultipartManager
 from ._registry import iter_storages
+
+if TYPE_CHECKING:
+    from django.apps import AppConfig
 
 logger = logging.getLogger(__name__)
 
 
 @checks.register()
 def test_bucket_access(
-    app_configs: Optional[Iterable[AppConfig]], **kwargs
+    app_configs: Optional[Iterable[AppConfig]], **kwargs: Any
 ) -> List[checks.CheckMessage]:
     for storage in iter_storages():
         if not MultipartManager.supported_storage(storage):

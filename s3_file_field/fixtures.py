@@ -1,16 +1,19 @@
 # This module shouldn't be imported explicitly, as it will be loaded by pytest via entry point.
+from __future__ import annotations
 
-from typing import Callable, Generator
+from typing import TYPE_CHECKING, Callable, Generator
 
 from django.core import signing
-from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import Storage, default_storage
 import pytest
 
+if TYPE_CHECKING:
+    from django.core.files import File
+
 
 @pytest.fixture()
-def stored_file_object() -> Generator[File, None, None]:
+def stored_file_object() -> Generator[File[bytes], None, None]:
     """Return a File object, already saved directly into the default Storage."""
     # Fix https://github.com/typeddjango/django-stubs/issues/1610
     assert isinstance(default_storage, Storage)
@@ -25,10 +28,10 @@ def stored_file_object() -> Generator[File, None, None]:
 
 
 @pytest.fixture()
-def s3ff_field_value_factory() -> Callable[[File], str]:
+def s3ff_field_value_factory() -> Callable[[File[bytes]], str]:
     """Return a function to produce a valid field_value from a File object."""
 
-    def s3ff_field_value_factory(file_object: File) -> str:
+    def s3ff_field_value_factory(file_object: File[bytes]) -> str:
         return signing.dumps(
             {
                 "object_key": file_object.name,
@@ -40,6 +43,8 @@ def s3ff_field_value_factory() -> Callable[[File], str]:
 
 
 @pytest.fixture()
-def s3ff_field_value(s3ff_field_value_factory, stored_file_object: File) -> str:
+def s3ff_field_value(
+    s3ff_field_value_factory: Callable[[File[bytes]], str], stored_file_object: File[bytes]
+) -> str:
     """Return a valid field_value for an existent File in the default Storage."""
     return s3ff_field_value_factory(stored_file_object)

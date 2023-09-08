@@ -15,28 +15,28 @@ def s3ff_field() -> S3FileField:
     return cast(S3FileField, Resource._meta.get_field("blob"))
 
 
-def test_field_id(s3ff_field: S3FileField):
+def test_field_id(s3ff_field: S3FileField) -> None:
     assert s3ff_field.id == "test_app.Resource.blob"
 
 
-def test_field_id_premature():
+def test_field_id_premature() -> None:
     s3ff_field = S3FileField()
     with pytest.raises(Exception, match=r"contribute_to_class"):
         s3ff_field.id
 
 
-def test_registry_get_field(s3ff_field: S3FileField):
+def test_registry_get_field(s3ff_field: S3FileField) -> None:
     assert _registry.get_field(s3ff_field.id) is s3ff_field
 
 
-def test_registry_iter_fields(s3ff_field: S3FileField):
+def test_registry_iter_fields(s3ff_field: S3FileField) -> None:
     fields = list(_registry.iter_fields())
 
     assert len(fields) == 3
     assert any(field is s3ff_field for field in fields)
 
 
-def test_registry_iter_storages():
+def test_registry_iter_storages() -> None:
     fields = list(_registry.iter_storages())
 
     assert len(fields) == 1

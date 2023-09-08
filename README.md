@@ -127,7 +127,7 @@ Django Rest Framework `ModelSerializer` subclasses:
 ```python
 from .forms import ResourceForm
 
-def test_resource_form(s3ff_field_value):
+def test_resource_form(s3ff_field_value: str) -> None:
     form = ResourceForm(data={'blob': s3ff_field_value})
     assert form.is_valid()
 ```

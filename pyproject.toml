@@ -131,15 +131,17 @@ plugins = [
   "mypy_django_plugin.main",
   "mypy_drf_plugin.main",
 ]
-# Use the same pythonpath for MyPy as for Pytest
-mypy_path = "tests"
+mypy_path = [
+  "$MYPY_CONFIG_FILE_DIR/stubs",
+  # Use the same pythonpath for MyPy as for Pytest
+  "tests",
+]
 # Don't allow "tests/" to be accidently imported as a namespace package,
 # as that allows multiple possible import paths
 namespace_packages = false
 
 [[tool.mypy.overrides]]
 module = [
-  "minio",
   "minio_storage.storage",
   "storages.backends.s3boto3",
 ]
