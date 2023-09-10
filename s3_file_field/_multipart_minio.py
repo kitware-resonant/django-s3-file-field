@@ -19,18 +19,18 @@ class MinioMultipartManager(MultipartManager):
         object_key: str,
         content_type: Optional[str] = None,
     ) -> str:
-        metadata = {}
+        headers = {}
         if content_type is not None:
-            metadata['Content-Type'] = content_type
-        return self._client._new_multipart_upload(
+            headers['Content-Type'] = content_type
+        return self._client._create_multipart_upload(
             bucket_name=self._bucket_name,
             object_name=object_key,
-            metadata=metadata
-            # TODO: filename in Metadata
+            headers=headers
+            # TODO: filename in headers
         )
 
     def _abort_upload_id(self, object_key: str, upload_id: str) -> None:
-        self._client._remove_incomplete_upload(
+        self._client._abort_multipart_upload(
             bucket_name=self._bucket_name,
             object_name=object_key,
             upload_id=upload_id,
@@ -39,7 +39,7 @@ class MinioMultipartManager(MultipartManager):
     def _generate_presigned_part_url(
         self, object_key: str, upload_id: str, part_number: int, part_size: int
     ) -> str:
-        return self._signing_client.presigned_url(
+        return self._signing_client.get_presigned_url(
             method='PUT',
             bucket_name=self._bucket_name,
             object_name=object_key,
@@ -49,15 +49,11 @@ class MinioMultipartManager(MultipartManager):
             response_headers={
                 'uploadId': upload_id,
                 'partNumber': str(part_number),
-            },
-            # TODO: presigned_url does not allow arbitrary headers, but presign_v4 within it does
-            # headers={
-            #     'Content-Length': str(part_size)
-            # }
+            }
         )
 
     def _generate_presigned_complete_url(self, transferred_parts: TransferredParts) -> str:
-        return self._signing_client.presigned_url(
+        return self._signing_client.get_presigned_url(
             method='POST',
             bucket_name=self._bucket_name,
             object_name=transferred_parts.object_key,
