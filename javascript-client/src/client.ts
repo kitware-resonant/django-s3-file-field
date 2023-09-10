@@ -93,6 +93,7 @@ export default class S3FileFieldClient {
       field_id: fieldId,
       file_name: file.name,
       file_size: file.size,
+      content_type: file.type,
     });
     return response.data;
   }
