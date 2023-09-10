@@ -37,6 +37,7 @@ class S3FileFieldClient:
                 'field_id': field_id,
                 'file_name': file.name,
                 'file_size': file.size,
+                'content_type': file.type,
             },
         )
         resp.raise_for_status()
