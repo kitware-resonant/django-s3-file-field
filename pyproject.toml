@@ -102,7 +102,6 @@ source = "vcs"
 [tool.black]
 line-length = 100
 target-version = ["py38"]
-exclude='\.eggs|\.git|\.mypy_cache|\.tox|\.venv|_build|build|dist|node_modules'
 
 [tool.django-stubs]
 django_settings_module = "tests.test_app.settings"
