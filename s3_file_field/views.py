@@ -17,7 +17,7 @@ class UploadInitializationRequestSerializer(serializers.Serializer):
     file_name = serializers.CharField(trim_whitespace=False)
     file_size = serializers.IntegerField(min_value=1)
     # part_size = serializers.IntegerField(min_value=1)
-    content_type = serializers.CharField(required=False)
+    content_type = serializers.CharField()
 
     def validate_field_id(self, field_id):
         try:
@@ -92,12 +92,10 @@ def upload_initialize(request: Request) -> HttpResponseBase:
     # Maybe we need a different generate method/upload_to with a different signature?
     object_key = field.generate_filename(None, file_name)
 
-    content_type = upload_request.get("content_type")
-
     initialization = _multipart.MultipartManager.from_storage(field.storage).initialize_upload(
         object_key,
         upload_request["file_size"],
-        content_type=content_type,
+        upload_request["content_type"],
     )
 
     # signals.s3_file_field_upload_prepare.send(
