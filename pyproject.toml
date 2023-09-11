@@ -52,7 +52,7 @@ boto3 = [
 ]
 minio = [
   "django-minio-storage",
-  "minio<7",
+  "minio>=7",
 ]
 pytest = [
   # The "fixtures.py" module (containing the "pytest" requirement) is only loaded
