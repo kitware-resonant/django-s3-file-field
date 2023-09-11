@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
 [project]
 name = "django-s3-file-field"
@@ -61,10 +61,43 @@ pytest = [
   "pytest",
 ]
 
-[tool.setuptools.packages.find]
-include = ["s3_file_field"]
+[tool.hatch.build]
+only-include = [
+  "s3_file_field",
+]
+artifacts = [
+  "s3_file_field/static",
+]
 
-[tool.setuptools_scm]
+[tool.hatch.build.targets.sdist]
+only-include = [
+  "s3_file_field",
+  # The builder needs to run again when installing the sdist, although it will no-op
+  "multi_npm_builder.py",
+]
+
+[tool.hatch.build.hooks.jupyter-builder]
+dependencies = ["hatch-jupyter-builder"]
+build-function = "multi_npm_builder.multi_npm_builder"
+ensured-targets = [
+  "s3_file_field/static/s3_file_field/widget.js",
+  "s3_file_field/static/s3_file_field/widget.css",
+]
+
+[[tool.hatch.build.hooks.jupyter-builder.build-kwargs.projects]]
+build_cmd = "build"
+path = "javascript-client"
+source_dir = "javascript-client"
+build_dir = "javascript-client/dist"
+
+[[tool.hatch.build.hooks.jupyter-builder.build-kwargs.projects]]
+build_cmd = "build"
+path = "widget"
+source_dir = "widget"
+build_dir = "s3_file_field/static/s3_file_field"
+
+[tool.hatch.version]
+source = "vcs"
 
 [tool.black]
 line-length = 100

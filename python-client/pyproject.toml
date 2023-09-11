@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools >= 42", "wheel", "setuptools-scm[toml]>=3.4"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
 [project]
 name = "django-s3-file-field-client"
@@ -41,5 +41,11 @@ dynamic = ["version"]
 Repository = "https://github.com/girder/django-s3-file-field"
 "Bug Reports" = "https://github.com/girder/django-s3-file-field/issues"
 
-[tool.setuptools_scm]
-root = ".."
+[tool.hatch.build]
+only-include = [
+  "s3_file_field_client",
+]
+
+[tool.hatch.version]
+source = "vcs"
+raw-options = { root = ".." }
