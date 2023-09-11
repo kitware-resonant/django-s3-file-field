@@ -18,8 +18,8 @@
   "devDependencies": {
     "@parcel/transformer-sass": "^2.9.3",
     "@tsconfig/recommended": "^1.0.2",
-    "@typescript-eslint/eslint-plugin": "^6.5.0",
-    "@typescript-eslint/parser": "^6.5.0",
+    "@typescript-eslint/eslint-plugin": "^6.6.0",
+    "@typescript-eslint/parser": "^6.6.0",
     "buffer": "^6.0.3",
     "eslint": "^8",
     "eslint-config-airbnb-typescript": "^17.1.0",
