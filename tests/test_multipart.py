@@ -206,8 +206,8 @@ def test_multipart_manager_generate_presigned_complete_body(multipart_manager: M
 def test_multipart_manager_get_object_size(
     storage, multipart_manager: MultipartManager, file_size: int
 ):
-    key = f"object-with-size-{file_size}"
-    # Storage.save may rename this, if the key is not unique
+    key = storage.get_alternative_name(f"object-with-size-{file_size}", "")
+    # In theory, Storage.save can change the key, though this shouldn't happen with a randomized key
     key = storage.save(name=key, content=BytesIO(b"X" * file_size))
 
     size = multipart_manager.get_object_size(
