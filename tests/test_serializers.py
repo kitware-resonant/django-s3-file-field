@@ -18,18 +18,18 @@ from s3_file_field.views import (
 @pytest.fixture
 def initialization() -> PresignedTransfer:
     return PresignedTransfer(
-        object_key='test-object-key',
-        upload_id='test-upload-id',
+        object_key="test-object-key",
+        upload_id="test-upload-id",
         parts=[
             PresignedPartTransfer(
                 part_number=1,
                 size=10_000,
-                upload_url='http://minio.test/test-bucket/1',
+                upload_url="http://minio.test/test-bucket/1",
             ),
             PresignedPartTransfer(
                 part_number=2,
                 size=3_500,
-                upload_url='http://minio.test/test-bucket/2',
+                upload_url="http://minio.test/test-bucket/2",
             ),
         ],
     )
@@ -38,9 +38,9 @@ def initialization() -> PresignedTransfer:
 def test_upload_initialization_request_deserialization():
     serializer = UploadInitializationRequestSerializer(
         data={
-            'field_id': 'test_app.Resource.blob',
-            'file_name': 'test-name.jpg',
-            'file_size': 15,
+            "field_id": "test_app.Resource.blob",
+            "file_name": "test-name.jpg",
+            "file_size": 15,
         }
     )
     assert serializer.is_valid(raise_exception=True)
@@ -51,14 +51,14 @@ def test_upload_initialization_request_deserialization():
 def test_upload_initialization_request_deserialization_file_id_invalid():
     serializer = UploadInitializationRequestSerializer(
         data={
-            'field_id': 'bad.id',
-            'file_name': 'test-name.jpg',
-            'file_size': 15,
+            "field_id": "bad.id",
+            "file_name": "test-name.jpg",
+            "file_size": 15,
         }
     )
     with pytest.raises(ValidationError) as e:
         serializer.is_valid(raise_exception=True)
-    assert e.value.detail == {'field_id': ['Invalid field ID: "bad.id".']}
+    assert e.value.detail == {"field_id": ['Invalid field ID: "bad.id".']}
 
 
 def test_upload_initialization_response_serialization(
@@ -66,24 +66,24 @@ def test_upload_initialization_response_serialization(
 ):
     serializer = UploadInitializationResponseSerializer(
         {
-            'object_key': initialization.object_key,
-            'upload_id': initialization.upload_id,
-            'parts': initialization.parts,
-            'upload_signature': 'test-upload-signature',
+            "object_key": initialization.object_key,
+            "upload_id": initialization.upload_id,
+            "parts": initialization.parts,
+            "upload_signature": "test-upload-signature",
         }
     )
     assert isinstance(serializer.data, dict)
 
 
 def test_upload_completion_request_deserialization():
-    upload_signature = signing.dumps({'object_key': 'test-object-key', 'field_id': 'test-field-id'})
+    upload_signature = signing.dumps({"object_key": "test-object-key", "field_id": "test-field-id"})
     serializer = UploadCompletionRequestSerializer(
         data={
-            'upload_signature': upload_signature,
-            'upload_id': 'test-upload-id',
-            'parts': [
-                {'part_number': 1, 'size': 10_000, 'etag': 'test-etag-1'},
-                {'part_number': 2, 'size': 3_500, 'etag': 'test-etag-2'},
+            "upload_signature": upload_signature,
+            "upload_id": "test-upload-id",
+            "parts": [
+                {"part_number": 1, "size": 10_000, "etag": "test-etag-1"},
+                {"part_number": 2, "size": 3_500, "etag": "test-etag-2"},
             ],
         }
     )

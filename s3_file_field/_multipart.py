@@ -97,15 +97,15 @@ class MultipartManager:
         body = '<?xml version="1.0" encoding="UTF-8"?>'
         body += '<CompleteMultipartUpload xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
         for part in transferred_parts.parts:
-            body += '<Part>'
-            body += f'<PartNumber>{part.part_number}</PartNumber>'
-            body += f'<ETag>{part.etag}</ETag>'
-            body += '</Part>'
-        body += '</CompleteMultipartUpload>'
+            body += "<Part>"
+            body += f"<PartNumber>{part.part_number}</PartNumber>"
+            body += f"<ETag>{part.etag}</ETag>"
+            body += "</Part>"
+        body += "</CompleteMultipartUpload>"
         return body
 
     def test_upload(self):
-        object_key = '.s3-file-field-test-file'
+        object_key = ".s3-file-field-test-file"
         try:
             # TODO: is it possible to use a shorter timeout?
             upload_id = self._create_upload_id(object_key)
@@ -136,7 +136,7 @@ class MultipartManager:
 
                 return MinioMultipartManager(storage)
 
-        raise UnsupportedStorageError('Unsupported storage provider.')
+        raise UnsupportedStorageError("Unsupported storage provider.")
 
     @classmethod
     def supported_storage(cls, storage: Storage) -> bool:
@@ -180,7 +180,7 @@ class MultipartManager:
         # S3 multipart limits: https://docs.aws.amazon.com/AmazonS3/latest/dev/qfacts.html
 
         if file_size > tb(5):
-            raise Exception('File is larger than the S3 maximum object size.')
+            raise Exception("File is larger than the S3 maximum object size.")
 
         # 10k is the maximum number of allowed parts allowed by S3
         max_parts = 10_000

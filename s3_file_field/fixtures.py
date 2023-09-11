@@ -15,9 +15,9 @@ def stored_file_object() -> Generator[File, None, None]:
     # Fix https://github.com/typeddjango/django-stubs/issues/1610
     assert isinstance(default_storage, Storage)
     # Ensure the name is always randomized, even if the key doesn't exist already
-    key = default_storage.get_alternative_name('test_key', '')
+    key = default_storage.get_alternative_name("test_key", "")
     # In theory, Storage.save can change the key, though this shouldn't happen with a randomized key
-    key = default_storage.save(key, ContentFile(b'test content'))
+    key = default_storage.save(key, ContentFile(b"test content"))
     # Storage.open will return a File object, which knows its size and can access its content
     with default_storage.open(key) as file_object:
         yield file_object
@@ -31,8 +31,8 @@ def s3ff_field_value_factory() -> Callable[[File], str]:
     def s3ff_field_value_factory(file_object: File) -> str:
         return signing.dumps(
             {
-                'object_key': file_object.name,
-                'file_size': file_object.size,
+                "object_key": file_object.name,
+                "file_size": file_object.size,
             }
         )
 
