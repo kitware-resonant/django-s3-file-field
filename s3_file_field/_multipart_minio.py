@@ -49,6 +49,7 @@ class MinioMultipartManager(MultipartManager):
             response_headers={
                 "uploadId": upload_id,
                 "partNumber": str(part_number),
+                # MinIO server does not seem to enforce presigning of "Content-Length"
             },
         )
 
