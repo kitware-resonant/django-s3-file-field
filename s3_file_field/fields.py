@@ -24,29 +24,29 @@ class S3FileField(FileField):
     """
 
     description = (
-        'A file field which is supports direct uploads to S3 via the '
-        'UI and fallsback to uploaded to <randomuuid>/filename.'
+        "A file field which is supports direct uploads to S3 via the "
+        "UI and fallsback to uploaded to <randomuuid>/filename."
     )
 
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault('max_length', 2000)
-        kwargs.setdefault('upload_to', self.uuid_prefix_filename)
+        kwargs.setdefault("max_length", 2000)
+        kwargs.setdefault("upload_to", self.uuid_prefix_filename)
         super().__init__(*args, **kwargs)
 
     def deconstruct(self):
         name, path, args, kwargs = super().deconstruct()
-        if kwargs.get('max_length') == 2000:
-            del kwargs['max_length']
-        if kwargs.get('upload_to') is self.uuid_prefix_filename:
-            del kwargs['upload_to']
+        if kwargs.get("max_length") == 2000:
+            del kwargs["max_length"]
+        if kwargs.get("upload_to") is self.uuid_prefix_filename:
+            del kwargs["upload_to"]
         return name, path, args, kwargs
 
     @property
     def id(self) -> str:
         """Return the unique identifier for this field instance."""
-        if not hasattr(self, 'model'):
+        if not hasattr(self, "model"):
             # TODO: raise a more specific exception
-            raise Exception('contribute_to_class has not been called yet on this field.')
+            raise Exception("contribute_to_class has not been called yet on this field.")
         return str(self)
 
     def contribute_to_class(self, cls, name, **kwargs):
@@ -54,14 +54,14 @@ class S3FileField(FileField):
         # As a side effect, self.name is set and self.__str__ becomes usable as a unique
         # identifier for the Field.
         super().contribute_to_class(cls, name, **kwargs)
-        if cls.__module__ != '__fake__':
+        if cls.__module__ != "__fake__":
             # Django's makemigrations iteratively creates fake model instances.
             # To avoid registration collisions, don't register these.
             register_field(self)
 
     @staticmethod
     def uuid_prefix_filename(instance: Any, filename: str):
-        return f'{uuid4()}/{filename}'
+        return f"{uuid4()}/{filename}"
 
     def formfield(
         self, form_class: Optional[Any] = None, choices_form_class: Optional[Any] = None, **kwargs
@@ -75,7 +75,7 @@ class S3FileField(FileField):
             # Use S3FormFileField as a default, instead of forms.FileField from the superclass
             form_class = S3FormFileField if form_class is None else form_class
             # Allow the form and widget to lookup this field instance later, using its id
-            kwargs.setdefault('model_field_id', self.id)
+            kwargs.setdefault("model_field_id", self.id)
         return super().formfield(
             form_class=form_class, choices_form_class=choices_form_class, **kwargs
         )
@@ -100,8 +100,8 @@ class S3FileField(FileField):
 
     def _check_supported_storage_provider(self) -> List[checks.CheckMessage]:
         if not MultipartManager.supported_storage(self.storage):
-            msg = f'Incompatible storage type used with an {self.__class__.__name__}.'
+            msg = f"Incompatible storage type used with an {self.__class__.__name__}."
             logger.warning(msg)
-            return [checks.Warning(msg, obj=self, id='s3_file_field.W001')]
+            return [checks.Warning(msg, obj=self, id="s3_file_field.W001")]
         else:
             return []

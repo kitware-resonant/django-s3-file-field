@@ -12,7 +12,7 @@ class MinioMultipartManager(MultipartManager):
         self._bucket_name: str = storage.bucket_name
         # To support MinioStorage's "base_url" functionality, an alternative client must be used
         # for pre-signing URLs when it exists
-        self._signing_client: minio.Minio = getattr(storage, 'base_url_client', storage.client)
+        self._signing_client: minio.Minio = getattr(storage, "base_url_client", storage.client)
 
     def _create_upload_id(
         self,
@@ -21,7 +21,7 @@ class MinioMultipartManager(MultipartManager):
     ) -> str:
         headers = {}
         if content_type is not None:
-            headers['Content-Type'] = content_type
+            headers["Content-Type"] = content_type
         return self._client._create_multipart_upload(
             bucket_name=self._bucket_name,
             object_name=object_key,
@@ -40,26 +40,26 @@ class MinioMultipartManager(MultipartManager):
         self, object_key: str, upload_id: str, part_number: int, part_size: int
     ) -> str:
         return self._signing_client.get_presigned_url(
-            method='PUT',
+            method="PUT",
             bucket_name=self._bucket_name,
             object_name=object_key,
             expires=self._url_expiration,
             # Both "extra_query_params" and "response_headers" add a query string, but
             # "extra_query_params" does not sign them properly and results in incorrect URL syntax
             response_headers={
-                'uploadId': upload_id,
-                'partNumber': str(part_number),
-            }
+                "uploadId": upload_id,
+                "partNumber": str(part_number),
+            },
         )
 
     def _generate_presigned_complete_url(self, transferred_parts: TransferredParts) -> str:
         return self._signing_client.get_presigned_url(
-            method='POST',
+            method="POST",
             bucket_name=self._bucket_name,
             object_name=transferred_parts.object_key,
             expires=self._url_expiration,
             response_headers={
-                'uploadId': transferred_parts.upload_id,
+                "uploadId": transferred_parts.upload_id,
             },
         )
 

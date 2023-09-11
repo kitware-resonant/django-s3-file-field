@@ -6,4 +6,4 @@ from .models import Resource
 class ResourceForm(ModelForm):
     class Meta:
         model = Resource
-        fields = '__all__'
+        fields = "__all__"

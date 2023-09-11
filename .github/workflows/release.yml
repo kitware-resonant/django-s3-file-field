@@ -24,9 +24,7 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
           TWINE_NON_INTERACTIVE: "true"
         run: |
-          pip install setuptools wheel twine
-          python setup.py sdist bdist_wheel
-          twine upload dist/*
+          tox -e release
       - name: Publish Python client to PyPI
         env:
           TWINE_USERNAME: "__token__"
