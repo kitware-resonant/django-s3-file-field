@@ -11,10 +11,11 @@ import requests
 class _File:
     name: str
     size: int
+    content_type: str
     stream: BinaryIO
 
     @classmethod
-    def from_stream(cls, stream: BinaryIO, name: str) -> _File:
+    def from_stream(cls, stream: BinaryIO, name: str, content_type: str) -> _File:
         if not stream.seekable():
             raise Exception("File stream is not seekable.")
 
@@ -22,7 +23,7 @@ class _File:
         size = stream.tell()
         stream.seek(0, io.SEEK_SET)
 
-        return cls(name=name, size=size, stream=stream)
+        return cls(name=name, size=size, content_type=content_type, stream=stream)
 
 
 class S3FileFieldClient:
@@ -37,7 +38,7 @@ class S3FileFieldClient:
                 "field_id": field_id,
                 "file_name": file.name,
                 "file_size": file.size,
-                "content_type": file.type,
+                "content_type": file.content_type,
             },
         )
         resp.raise_for_status()
@@ -86,8 +87,10 @@ class S3FileFieldClient:
         resp.raise_for_status()
         return resp.json()["field_value"]
 
-    def upload_file(self, file_stream: BinaryIO, file_name: str, field_id: str) -> str:
-        file = _File.from_stream(file_stream, file_name)
+    def upload_file(
+        self, file_stream: BinaryIO, file_name: str, file_content_type: str, field_id: str
+    ) -> str:
+        file = _File.from_stream(file_stream, file_name, file_content_type)
         multipart_info = self._initialize_upload(file, field_id)
         upload_infos = self._upload_parts(file, multipart_info["parts"])
         self._complete_upload(multipart_info, upload_infos)
