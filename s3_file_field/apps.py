@@ -6,8 +6,8 @@ from .rest_framework import S3FileSerializerField
 
 
 class S3FileFieldConfig(AppConfig):
-    name = 's3_file_field'
-    verbose_name = 'S3 File Field'
+    name = "s3_file_field"
+    verbose_name = "S3 File Field"
 
     def ready(self):
         # import checks to register them

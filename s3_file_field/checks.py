@@ -21,7 +21,7 @@ def test_bucket_access(
         try:
             multipart.test_upload()
         except Exception:
-            msg = 'Unable to fully access the storage bucket.'
+            msg = "Unable to fully access the storage bucket."
             logger.exception(msg)
-            return [checks.Error(msg, obj=storage, id='s3_file_field.E002')]
+            return [checks.Error(msg, obj=storage, id="s3_file_field.E002")]
     return []

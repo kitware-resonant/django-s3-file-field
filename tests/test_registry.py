@@ -11,16 +11,16 @@ from test_app.models import Resource
 @pytest.fixture
 def s3ff_field() -> S3FileField:
     """Return an attached S3FileField (not S3FieldFile) instance."""
-    return cast(S3FileField, Resource._meta.get_field('blob'))
+    return cast(S3FileField, Resource._meta.get_field("blob"))
 
 
 def test_field_id(s3ff_field: S3FileField):
-    assert s3ff_field.id == 'test_app.Resource.blob'
+    assert s3ff_field.id == "test_app.Resource.blob"
 
 
 def test_field_id_premature():
     s3ff_field = S3FileField()
-    with pytest.raises(Exception, match=r'contribute_to_class'):
+    with pytest.raises(Exception, match=r"contribute_to_class"):
         s3ff_field.id
 
 
