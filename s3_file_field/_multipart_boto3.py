@@ -11,9 +11,9 @@ from ._multipart import MultipartManager, ObjectNotFoundError, TransferredParts
 
 
 class Boto3MultipartManager(MultipartManager):
-    def __init__(self, storage: 'S3Boto3Storage'):
+    def __init__(self, storage: "S3Boto3Storage"):
         resource: s3.ServiceResource = storage.connection
-        self._client: s3.Client = cast('s3.Client', resource.meta.client)
+        self._client: s3.Client = cast("s3.Client", resource.meta.client)
         self._bucket_name: str = storage.bucket_name
 
     def _create_upload_id(
@@ -23,7 +23,7 @@ class Boto3MultipartManager(MultipartManager):
     ) -> str:
         boto3_kwargs = {}
         if content_type is not None:
-            boto3_kwargs['ContentType'] = content_type
+            boto3_kwargs["ContentType"] = content_type
         resp = self._client.create_multipart_upload(
             Bucket=self._bucket_name,
             Key=object_key,
@@ -32,7 +32,7 @@ class Boto3MultipartManager(MultipartManager):
             # TODO: ensure ServerSideEncryption is set, even if not specified
             # TODO: use client._get_write_parameters?
         )
-        return resp['UploadId']
+        return resp["UploadId"]
 
     def _abort_upload_id(self, object_key: str, upload_id: str) -> None:
         self._client.abort_multipart_upload(
@@ -45,24 +45,24 @@ class Boto3MultipartManager(MultipartManager):
         self, object_key: str, upload_id: str, part_number: int, part_size: int
     ) -> str:
         return self._client.generate_presigned_url(
-            ClientMethod='upload_part',
+            ClientMethod="upload_part",
             Params={
-                'Bucket': self._bucket_name,
-                'Key': object_key,
-                'UploadId': upload_id,
-                'PartNumber': part_number,
-                'ContentLength': part_size,
+                "Bucket": self._bucket_name,
+                "Key": object_key,
+                "UploadId": upload_id,
+                "PartNumber": part_number,
+                "ContentLength": part_size,
             },
             ExpiresIn=int(self._url_expiration.total_seconds()),
         )
 
     def _generate_presigned_complete_url(self, transferred_parts: TransferredParts) -> str:
         return self._client.generate_presigned_url(
-            ClientMethod='complete_multipart_upload',
+            ClientMethod="complete_multipart_upload",
             Params={
-                'Bucket': self._bucket_name,
-                'Key': transferred_parts.object_key,
-                'UploadId': transferred_parts.upload_id,
+                "Bucket": self._bucket_name,
+                "Key": transferred_parts.object_key,
+                "UploadId": transferred_parts.upload_id,
             },
             ExpiresIn=int(self._url_expiration.total_seconds()),
         )
@@ -73,6 +73,6 @@ class Boto3MultipartManager(MultipartManager):
                 Bucket=self._bucket_name,
                 Key=object_key,
             )
-            return stats['ContentLength']
+            return stats["ContentLength"]
         except ClientError:
             raise ObjectNotFoundError()

@@ -32,7 +32,7 @@ class S3FormFileField(FileField):
                 if isinstance(widget, AdminFileWidget):
                     # We can't easily re-instantiate the Widget, since we need its initial
                     # parameters, so attempt to rebuild the constructor parameters
-                    widget = AdminS3FileInput(attrs={'type': widget.input_type, **widget.attrs})
+                    widget = AdminS3FileInput(attrs={"type": widget.input_type, **widget.attrs})
 
         super().__init__(widget=widget, **kwargs)
 
@@ -40,8 +40,8 @@ class S3FormFileField(FileField):
         attrs = super().widget_attrs(widget)
         attrs.update(
             {
-                'data-field-id': self.model_field_id,
-                'data-s3fileinput': '',
+                "data-field-id": self.model_field_id,
+                "data-s3fileinput": "",
             }
         )
         # 'data-s3fileinput' cannot be determined at this point, during app startup.

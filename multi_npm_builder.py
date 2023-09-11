@@ -22,8 +22,8 @@ def multi_npm_builder(
         npm_builder(
             target_name,
             version,
-            build_cmd=project['build_cmd'],
-            path=project['path'],
-            source_dir=project['source_dir'],
-            build_dir=project['build_dir'],
+            build_cmd=project["build_cmd"],
+            path=project["path"],
+            source_dir=project["source_dir"],
+            build_dir=project["build_dir"],
         )

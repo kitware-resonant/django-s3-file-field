@@ -25,21 +25,21 @@ if TYPE_CHECKING:
     import mypy_boto3_s3 as s3
 
 
-def s3boto3_storage_factory() -> 'S3Boto3Storage':
+def s3boto3_storage_factory() -> "S3Boto3Storage":
     storage = S3Boto3Storage(
         access_key=settings.MINIO_STORAGE_ACCESS_KEY,
         secret_key=settings.MINIO_STORAGE_SECRET_KEY,
-        region_name='test-region',
+        region_name="test-region",
         bucket_name=settings.MINIO_STORAGE_MEDIA_BUCKET_NAME,
         # For testing, connect to a local Minio instance
         endpoint_url=(
             f'{"https" if settings.MINIO_STORAGE_USE_HTTPS else "http"}:'
-            f'//{settings.MINIO_STORAGE_ENDPOINT}'
+            f"//{settings.MINIO_STORAGE_ENDPOINT}"
         ),
     )
 
     resource: s3.ServiceResource = storage.connection
-    client: s3.Client = cast('s3.Client', resource.meta.client)
+    client: s3.Client = cast("s3.Client", resource.meta.client)
     try:
         client.head_bucket(Bucket=settings.MINIO_STORAGE_MEDIA_BUCKET_NAME)
     except ClientError:
@@ -66,7 +66,7 @@ def minio_storage_factory() -> MinioStorage:
 
 
 @pytest.fixture
-def s3boto3_storage() -> 'S3Boto3Storage':
+def s3boto3_storage() -> "S3Boto3Storage":
     return s3boto3_storage_factory()
 
 
@@ -75,7 +75,7 @@ def minio_storage() -> MinioStorage:
     return minio_storage_factory()
 
 
-@pytest.fixture(params=[s3boto3_storage_factory, minio_storage_factory], ids=['s3boto3', 'minio'])
+@pytest.fixture(params=[s3boto3_storage_factory, minio_storage_factory], ids=["s3boto3", "minio"])
 def storage(request) -> Storage:
     storage_factory = request.param
     return storage_factory()
@@ -106,13 +106,13 @@ def test_multipart_manager_supported_storage_unsupported():
 
 
 @pytest.mark.parametrize(
-    'content_type',
-    [None, 'image/png', 'application/dicom'],
-    ids=['none', 'png', 'dicom'],
+    "content_type",
+    [None, "image/png", "application/dicom"],
+    ids=["none", "png", "dicom"],
 )
 def test_multipart_manager_initialize_upload(multipart_manager: MultipartManager, content_type):
     initialization = multipart_manager.initialize_upload(
-        'new-object',
+        "new-object",
         100,
         content_type=content_type,
     )
@@ -120,10 +120,10 @@ def test_multipart_manager_initialize_upload(multipart_manager: MultipartManager
     assert initialization
 
 
-@pytest.mark.parametrize('file_size', [10, mb(10), mb(12)], ids=['10B', '10MB', '12MB'])
+@pytest.mark.parametrize("file_size", [10, mb(10), mb(12)], ids=["10B", "10MB", "12MB"])
 def test_multipart_manager_complete_upload(multipart_manager: MultipartManager, file_size: int):
     initialization = multipart_manager.initialize_upload(
-        'new-object',
+        "new-object",
         file_size,
     )
 
@@ -132,10 +132,10 @@ def test_multipart_manager_complete_upload(multipart_manager: MultipartManager, 
     )
 
     for part in initialization.parts:
-        resp = requests.put(part.upload_url, data=b'a' * part.size)
+        resp = requests.put(part.upload_url, data=b"a" * part.size)
         resp.raise_for_status()
         transferred_parts.parts.append(
-            TransferredPart(part_number=part.part_number, size=part.size, etag=resp.headers['ETag'])
+            TransferredPart(part_number=part.part_number, size=part.size, etag=resp.headers["ETag"])
         )
 
     completed_upload = multipart_manager.complete_upload(transferred_parts)
@@ -149,13 +149,13 @@ def test_multipart_manager_test_upload(multipart_manager: MultipartManager):
 
 
 def test_multipart_manager_create_upload_id(multipart_manager: MultipartManager):
-    upload_id = multipart_manager._create_upload_id('new-object')
+    upload_id = multipart_manager._create_upload_id("new-object")
     assert isinstance(upload_id, str)
 
 
 def test_multipart_manager_generate_presigned_part_url(multipart_manager: MultipartManager):
     upload_url = multipart_manager._generate_presigned_part_url(
-        'new-object', 'fake-upload-id', 1, 100
+        "new-object", "fake-upload-id", 1, 100
     )
 
     assert isinstance(upload_url, str)
@@ -167,15 +167,15 @@ def test_multipart_manager_generate_presigned_part_url_content_length(
 ):
     # TODO: make this work for Minio
     upload_url = multipart_manager._generate_presigned_part_url(
-        'new-object', 'fake-upload-id', 1, 100
+        "new-object", "fake-upload-id", 1, 100
     )
     # Ensure Content-Length is a signed header
-    assert 'content-length' in upload_url
+    assert "content-length" in upload_url
 
 
 def test_multipart_manager_generate_presigned_complete_url(multipart_manager: MultipartManager):
     upload_url = multipart_manager._generate_presigned_complete_url(
-        TransferredParts(object_key='new-object', upload_id='fake-upload-id', parts=[])
+        TransferredParts(object_key="new-object", upload_id="fake-upload-id", parts=[])
     )
 
     assert isinstance(upload_url, str)
@@ -184,11 +184,11 @@ def test_multipart_manager_generate_presigned_complete_url(multipart_manager: Mu
 def test_multipart_manager_generate_presigned_complete_body(multipart_manager: MultipartManager):
     body = multipart_manager._generate_presigned_complete_body(
         TransferredParts(
-            object_key='new-object',
-            upload_id='fake-upload-id',
+            object_key="new-object",
+            upload_id="fake-upload-id",
             parts=[
-                TransferredPart(part_number=1, size=1, etag='fake-etag-1'),
-                TransferredPart(part_number=2, size=2, etag='fake-etag-2'),
+                TransferredPart(part_number=1, size=1, etag="fake-etag-1"),
+                TransferredPart(part_number=2, size=2, etag="fake-etag-2"),
             ],
         )
     )
@@ -196,19 +196,19 @@ def test_multipart_manager_generate_presigned_complete_body(multipart_manager: M
     assert body == (
         '<?xml version="1.0" encoding="UTF-8"?>'
         '<CompleteMultipartUpload xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
-        '<Part><PartNumber>1</PartNumber><ETag>fake-etag-1</ETag></Part>'
-        '<Part><PartNumber>2</PartNumber><ETag>fake-etag-2</ETag></Part>'
-        '</CompleteMultipartUpload>'
+        "<Part><PartNumber>1</PartNumber><ETag>fake-etag-1</ETag></Part>"
+        "<Part><PartNumber>2</PartNumber><ETag>fake-etag-2</ETag></Part>"
+        "</CompleteMultipartUpload>"
     )
 
 
-@pytest.mark.parametrize('file_size', [10, mb(10), mb(12)], ids=['10B', '10MB', '12MB'])
+@pytest.mark.parametrize("file_size", [10, mb(10), mb(12)], ids=["10B", "10MB", "12MB"])
 def test_multipart_manager_get_object_size(
     storage, multipart_manager: MultipartManager, file_size: int
 ):
-    key = f'object-with-size-{file_size}'
+    key = f"object-with-size-{file_size}"
     # Storage.save may rename this, if the key is not unique
-    key = storage.save(name=key, content=BytesIO(b'X' * file_size))
+    key = storage.save(name=key, content=BytesIO(b"X" * file_size))
 
     size = multipart_manager.get_object_size(
         object_key=key,
@@ -222,12 +222,12 @@ def test_multipart_manager_get_object_size(
 def test_multipart_manager_get_object_size_not_found(multipart_manager: MultipartManager):
     with pytest.raises(ObjectNotFoundError):
         multipart_manager.get_object_size(
-            object_key='no-such-object',
+            object_key="no-such-object",
         )
 
 
 @pytest.mark.parametrize(
-    'file_size,requested_part_size,initial_part_size,final_part_size,part_count',
+    "file_size,requested_part_size,initial_part_size,final_part_size,part_count",
     [
         # Base
         (mb(50), mb(10), mb(10), mb(10), 5),
@@ -244,18 +244,18 @@ def test_multipart_manager_get_object_size_not_found(multipart_manager: Multipar
         # TODO: file too large
     ],
     ids=[
-        'base',
-        'different_final',
-        'single_part',
-        'too_small_part',
-        'too_large_part',
-        'too_many_part',
+        "base",
+        "different_final",
+        "single_part",
+        "too_small_part",
+        "too_large_part",
+        "too_many_part",
     ],
 )
 def test_multipart_manager_iter_part_sizes(
     mocker, file_size, requested_part_size, initial_part_size, final_part_size, part_count
 ):
-    mocker.patch.object(MultipartManager, 'part_size', new=requested_part_size)
+    mocker.patch.object(MultipartManager, "part_size", new=requested_part_size)
 
     part_nums, part_sizes = zip(*MultipartManager._iter_part_sizes(file_size))
 
