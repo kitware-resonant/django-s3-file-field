@@ -105,6 +105,9 @@ skip-string-normalization = true
 target-version = ["py38"]
 exclude='\.eggs|\.git|\.mypy_cache|\.tox|\.venv|_build|build|dist|node_modules'
 
+[tool.django-stubs]
+django_settings_module = "tests.test_app.settings"
+
 [tool.isort]
 profile = "black"
 line_length = 100
@@ -115,3 +118,21 @@ combine_as_imports = true
 
 # test_app is local, but is provided by Django as an absolute import
 known_first_party = "test_app"
+
+[tool.mypy]
+ignore_missing_imports = true
+show_error_codes = true
+plugins = [
+    "mypy_django_plugin.main",
+    "mypy_drf_plugin.main",
+]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --showlocals --verbose"
+filterwarnings = [
+    "error",
+    # pytest often causes unclosed socket warnings
+    'ignore:unclosed <socket\.socket:ResourceWarning',
+    "ignore::DeprecationWarning:minio",
+]
+DJANGO_SETTINGS_MODULE = "test_app.settings"
