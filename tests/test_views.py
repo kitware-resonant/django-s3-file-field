@@ -106,7 +106,7 @@ def test_full_upload_flow(
 
     # Perform the upload
     for part in initialization["parts"]:
-        part_resp = requests.put(part["upload_url"], data=b"a" * part["size"])
+        part_resp = requests.put(part["upload_url"], data=b"a" * part["size"], timeout=5)
         part_resp.raise_for_status()
 
         # Modify the part to transform it from an initialization to a finalization
@@ -136,6 +136,7 @@ def test_full_upload_flow(
     complete_resp = requests.post(
         completion_data["complete_url"],
         data=completion_data["body"],
+        timeout=5,
     )
     complete_resp.raise_for_status()
 
@@ -158,7 +159,7 @@ def test_full_upload_flow(
     }
 
     # Verify that the Content headers were stored correctly on the object
-    object_resp = requests.get(default_storage.url(initialization["object_key"]))
+    object_resp = requests.get(default_storage.url(initialization["object_key"]), timeout=5)
     assert resp.status_code == 200
     if content_type is not None:
         assert object_resp.headers["Content-Type"] == content_type
