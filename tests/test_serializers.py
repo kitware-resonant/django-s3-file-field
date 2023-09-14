@@ -15,7 +15,7 @@ from s3_file_field.views import (
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def initialization() -> PresignedTransfer:
     return PresignedTransfer(
         object_key="test-object-key",

@@ -9,12 +9,12 @@ from test_app.models import Resource
 
 
 @pytest.fixture(autouse=True)
-def reduce_part_size(mocker):
+def _reduce_part_size(mocker):
     """To speed up tests, reduce the part size to the minimum supported by S3 (5MB)."""
     mocker.patch.object(MultipartManager, "part_size", new=mb(5))
 
 
-@pytest.fixture
+@pytest.fixture()
 def api_client() -> APIClient:
     return APIClient()
 
@@ -27,7 +27,7 @@ class ResourceFactory(factory.Factory):
     blob = factory.Sequence(lambda n: ContentFile(b"test content", name=f"test_key_{n}"))
 
 
-@pytest.fixture
+@pytest.fixture()
 def resource() -> Resource:
     # Do not save by default
     resource = ResourceFactory.build()

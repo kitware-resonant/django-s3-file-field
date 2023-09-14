@@ -40,7 +40,7 @@ def test_form_instance(s3ff_field_value):
         assert blob_stream.read() == b"test content"
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_form_instance_saved(s3ff_field_value):
     form = ResourceForm(data={"blob": s3ff_field_value})
 
