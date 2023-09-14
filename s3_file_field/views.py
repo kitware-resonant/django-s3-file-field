@@ -87,7 +87,7 @@ def upload_initialize(request: Request) -> HttpResponseBase:
     field = _registry.get_field(upload_request["field_id"])
 
     file_name = upload_request["file_name"]
-    # TODO The first argument to generate_filename() is an instance of the model.
+    # TODO: The first argument to generate_filename() is an instance of the model.
     # We do not and will never have an instance of the model during field upload.
     # Maybe we need a different generate method/upload_to with a different signature?
     object_key = field.generate_filename(None, file_name)

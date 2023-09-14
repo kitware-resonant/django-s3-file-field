@@ -101,5 +101,4 @@ class S3FileFieldClient:
         multipart_info = self._initialize_upload(file, field_id)
         upload_infos = self._upload_parts(file, multipart_info["parts"])
         self._complete_upload(multipart_info, upload_infos)
-        field_value = self._finalize(multipart_info)
-        return field_value
+        return self._finalize(multipart_info)

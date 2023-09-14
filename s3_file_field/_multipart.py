@@ -47,13 +47,9 @@ class PresignedUploadCompletion:
 class UnsupportedStorageError(Exception):
     """Raised when MultipartManager does not support the given Storage."""
 
-    pass
-
 
 class ObjectNotFoundError(Exception):
     """Raised when an object cannot be found in the object store."""
-
-    pass
 
 
 class MultipartManager:

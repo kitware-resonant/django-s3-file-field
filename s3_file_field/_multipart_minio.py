@@ -70,6 +70,5 @@ class MinioMultipartManager(MultipartManager):
         except minio.S3Error as e:
             if e.code == "NoSuchKey":
                 raise ObjectNotFoundError from e
-            else:
-                raise
+            raise
         return stats.size

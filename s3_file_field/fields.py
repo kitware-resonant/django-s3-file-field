@@ -103,5 +103,4 @@ class S3FileField(FileField):
             msg = f"Incompatible storage type used with an {self.__class__.__name__}."
             logger.warning(msg)
             return [checks.Warning(msg, obj=self, id="s3_file_field.W001")]
-        else:
-            return []
+        return []

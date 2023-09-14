@@ -9,7 +9,7 @@ from django.core.files.storage import Storage, default_storage
 import pytest
 
 
-@pytest.fixture
+@pytest.fixture()
 def stored_file_object() -> Generator[File, None, None]:
     """Return a File object, already saved directly into the default Storage."""
     # Fix https://github.com/typeddjango/django-stubs/issues/1610
@@ -24,7 +24,7 @@ def stored_file_object() -> Generator[File, None, None]:
     default_storage.delete(key)
 
 
-@pytest.fixture
+@pytest.fixture()
 def s3ff_field_value_factory() -> Callable[[File], str]:
     """Return a function to produce a valid field_value from a File object."""
 
@@ -39,7 +39,7 @@ def s3ff_field_value_factory() -> Callable[[File], str]:
     return s3ff_field_value_factory
 
 
-@pytest.fixture
+@pytest.fixture()
 def s3ff_field_value(s3ff_field_value_factory, stored_file_object: File) -> str:
     """Return a valid field_value for an existent File in the default Storage."""
     return s3ff_field_value_factory(stored_file_object)

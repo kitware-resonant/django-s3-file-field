@@ -8,7 +8,7 @@ from s3_file_field.fields import S3FileField
 from test_app.models import Resource
 
 
-@pytest.fixture
+@pytest.fixture()
 def s3ff_field() -> S3FileField:
     """Return an attached S3FileField (not S3FieldFile) instance."""
     return cast(S3FileField, Resource._meta.get_field("blob"))

@@ -65,12 +65,12 @@ def minio_storage_factory() -> MinioStorage:
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def s3boto3_storage() -> "S3Boto3Storage":
     return s3boto3_storage_factory()
 
 
-@pytest.fixture
+@pytest.fixture()
 def minio_storage() -> MinioStorage:
     return minio_storage_factory()
 
@@ -81,17 +81,17 @@ def storage(request) -> Storage:
     return storage_factory()
 
 
-@pytest.fixture
+@pytest.fixture()
 def boto3_multipart_manager(s3boto3_storage: S3Boto3Storage) -> Boto3MultipartManager:
     return Boto3MultipartManager(s3boto3_storage)
 
 
-@pytest.fixture
+@pytest.fixture()
 def minio_multipart_manager(minio_storage: MinioStorage) -> MinioMultipartManager:
     return MinioMultipartManager(minio_storage)
 
 
-@pytest.fixture
+@pytest.fixture()
 def multipart_manager(storage: Storage) -> MultipartManager:
     return MultipartManager.from_storage(storage)
 
@@ -161,7 +161,7 @@ def test_multipart_manager_generate_presigned_part_url(multipart_manager: Multip
     assert isinstance(upload_url, str)
 
 
-@pytest.mark.skip
+@pytest.mark.skip()
 def test_multipart_manager_generate_presigned_part_url_content_length(
     multipart_manager: MultipartManager,
 ):
@@ -227,7 +227,7 @@ def test_multipart_manager_get_object_size_not_found(multipart_manager: Multipar
 
 
 @pytest.mark.parametrize(
-    "file_size,requested_part_size,initial_part_size,final_part_size,part_count",
+    ("file_size", "requested_part_size", "initial_part_size", "final_part_size", "part_count"),
     [
         # Base
         (mb(50), mb(10), mb(10), mb(10), 5),
@@ -259,7 +259,7 @@ def test_multipart_manager_iter_part_sizes(
 
     part_nums, part_sizes = zip(*MultipartManager._iter_part_sizes(file_size))
 
-    # TOOD: zip(*) returns a tuple, but semantically this should be a list
+    # TODO: zip(*) returns a tuple, but semantically this should be a list
     assert part_nums == tuple(range(1, part_count + 1))
 
     assert all(part_size == initial_part_size for part_size in part_sizes[:-1])
