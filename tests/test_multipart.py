@@ -132,7 +132,7 @@ def test_multipart_manager_complete_upload(multipart_manager: MultipartManager, 
     )
 
     for part in initialization.parts:
-        resp = requests.put(part.upload_url, data=b"a" * part.size)
+        resp = requests.put(part.upload_url, data=b"a" * part.size, timeout=5)
         resp.raise_for_status()
         transferred_parts.parts.append(
             TransferredPart(part_number=part.part_number, size=part.size, etag=resp.headers["ETag"])

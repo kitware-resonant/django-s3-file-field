@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import io
-from typing import BinaryIO, Dict, List, Optional
+from typing import BinaryIO, ClassVar, Dict, List, Optional
 
 import requests
 
@@ -26,6 +26,8 @@ class _File:
 
 
 class S3FileFieldClient:
+    request_timeout: ClassVar[int] = 5
+
     def __init__(self, base_url: str, api_session: Optional[requests.Session] = None):
         self.base_url = base_url.rstrip("/")
         self.api_session = requests.Session() if api_session is None else api_session
@@ -38,12 +40,15 @@ class S3FileFieldClient:
                 "file_name": file.name,
                 "file_size": file.size,
             },
+            timeout=self.request_timeout,
         )
         resp.raise_for_status()
         return resp.json()
 
     def _upload_part(self, part_bytes: bytes, part_initialization: Dict):
-        resp = requests.put(part_initialization["upload_url"], data=part_bytes)
+        resp = requests.put(
+            part_initialization["upload_url"], data=part_bytes, timeout=self.request_timeout
+        )
         resp.raise_for_status()
 
         etag = resp.headers["ETag"]
@@ -68,11 +73,16 @@ class S3FileFieldClient:
                 "parts": upload_infos,
                 "upload_signature": multipart_info["upload_signature"],
             },
+            timeout=self.request_timeout,
         )
         resp.raise_for_status()
         completion_data = resp.json()
 
-        complete_resp = requests.post(completion_data["complete_url"], data=completion_data["body"])
+        complete_resp = requests.post(
+            completion_data["complete_url"],
+            data=completion_data["body"],
+            timeout=self.request_timeout,
+        )
         complete_resp.raise_for_status()
 
     def _finalize(self, multipart_info: Dict) -> str:
@@ -81,6 +91,7 @@ class S3FileFieldClient:
             json={
                 "upload_signature": multipart_info["upload_signature"],
             },
+            timeout=self.request_timeout,
         )
         resp.raise_for_status()
         return resp.json()["field_value"]
