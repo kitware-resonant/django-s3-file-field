@@ -105,16 +105,11 @@ def test_multipart_manager_supported_storage_unsupported():
     assert not MultipartManager.supported_storage(storage)
 
 
-@pytest.mark.parametrize(
-    "content_type",
-    [None, "image/png", "application/dicom"],
-    ids=["none", "png", "dicom"],
-)
-def test_multipart_manager_initialize_upload(multipart_manager: MultipartManager, content_type):
+def test_multipart_manager_initialize_upload(multipart_manager: MultipartManager):
     initialization = multipart_manager.initialize_upload(
         "new-object",
         100,
-        content_type=content_type,
+        "text/plain",
     )
 
     assert initialization
@@ -122,10 +117,7 @@ def test_multipart_manager_initialize_upload(multipart_manager: MultipartManager
 
 @pytest.mark.parametrize("file_size", [10, mb(10), mb(12)], ids=["10B", "10MB", "12MB"])
 def test_multipart_manager_complete_upload(multipart_manager: MultipartManager, file_size: int):
-    initialization = multipart_manager.initialize_upload(
-        "new-object",
-        file_size,
-    )
+    initialization = multipart_manager.initialize_upload("new-object", file_size, "text/plain")
 
     transferred_parts = TransferredParts(
         object_key=initialization.object_key, upload_id=initialization.upload_id, parts=[]
@@ -149,7 +141,7 @@ def test_multipart_manager_test_upload(multipart_manager: MultipartManager):
 
 
 def test_multipart_manager_create_upload_id(multipart_manager: MultipartManager):
-    upload_id = multipart_manager._create_upload_id("new-object")
+    upload_id = multipart_manager._create_upload_id("new-object", "text/plain")
     assert isinstance(upload_id, str)
 
 

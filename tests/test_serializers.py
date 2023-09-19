@@ -41,6 +41,7 @@ def test_upload_initialization_request_deserialization():
             "field_id": "test_app.Resource.blob",
             "file_name": "test-name.jpg",
             "file_size": 15,
+            "content_type": "image/jpeg",
         }
     )
     assert serializer.is_valid(raise_exception=True)
@@ -54,6 +55,7 @@ def test_upload_initialization_request_deserialization_file_id_invalid():
             "field_id": "bad.id",
             "file_name": "test-name.jpg",
             "file_size": 15,
+            "content_type": "image/jpeg",
         }
     )
     with pytest.raises(ValidationError) as e:

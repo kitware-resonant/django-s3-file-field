@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, cast
 
 from botocore.exceptions import ClientError
 from storages.backends.s3boto3 import S3Boto3Storage
@@ -19,15 +19,12 @@ class Boto3MultipartManager(MultipartManager):
     def _create_upload_id(
         self,
         object_key: str,
-        content_type: Optional[str] = None,
+        content_type: str,
     ) -> str:
-        boto3_kwargs = {}
-        if content_type is not None:
-            boto3_kwargs["ContentType"] = content_type
         resp = self._client.create_multipart_upload(
             Bucket=self._bucket_name,
             Key=object_key,
-            **boto3_kwargs,  # type: ignore[arg-type]
+            ContentType=content_type,
             # TODO: filename in Metadata
             # TODO: ensure ServerSideEncryption is set, even if not specified
             # TODO: use client._get_write_parameters?

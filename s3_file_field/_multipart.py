@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import timedelta
 import math
-from typing import Iterator, List, Optional, Tuple
+from typing import Iterator, List, Tuple
 
 from django.core.files.storage import Storage
 
@@ -61,11 +61,11 @@ class MultipartManager:
         self,
         object_key: str,
         file_size: int,
-        content_type: Optional[str] = None,
+        content_type: str,
     ) -> PresignedTransfer:
         upload_id = self._create_upload_id(
             object_key,
-            content_type=content_type,
+            content_type,
         )
         parts = [
             PresignedPartTransfer(
@@ -104,7 +104,7 @@ class MultipartManager:
         object_key = ".s3-file-field-test-file"
         try:
             # TODO: is it possible to use a shorter timeout?
-            upload_id = self._create_upload_id(object_key)
+            upload_id = self._create_upload_id(object_key, "application/octet-stream")
             self._abort_upload_id(object_key, upload_id)
         except Exception:
             # TODO: Capture and raise more specific exceptions, abstracted over the clients
@@ -150,7 +150,7 @@ class MultipartManager:
     def _create_upload_id(
         self,
         object_key: str,
-        content_type: Optional[str] = None,
+        content_type: str,
     ) -> str:
         # Require content headers here
         raise NotImplementedError

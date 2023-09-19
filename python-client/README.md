@@ -21,16 +21,17 @@ s3ff_client = S3FileFieldClient(
 )
 with open('/path/to/my_file.txt', 'rb') as file_stream:  # Open in binary mode
     field_value = s3ff_client.upload_file(
-        file_stream,  # This can be any file-like object
-        'my_file.txt',
-        'core.File.blob'  # The "<app>.<model>.<field>" to upload to
+        file_stream=file_stream,  # This can be any file-like object
+        file_name='my_file.txt',
+        file_content_type='text/plain',
+        field_id='core.File.blob',  # The "<app>.<model>.<field>" to upload to
     )
 
 api_client.post(
     'http://localhost:8000/api/v1/file/',  # This is particular to the application
     json={
         'blob': field_value,  # This should match the field uploaded to (e.g. 'core.File.blob')
-        ...: ...,   # Other fields for the POST request 
+        ...: ...,   # Other fields for the POST request
     }
 )
 ```

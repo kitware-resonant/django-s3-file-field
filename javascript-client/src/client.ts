@@ -93,6 +93,8 @@ export default class S3FileFieldClient {
       field_id: fieldId,
       file_name: file.name,
       file_size: file.size,
+      // An unknown type is ''
+      content_type: file.type || 'application/octet-stream',
     });
     return response.data;
   }
