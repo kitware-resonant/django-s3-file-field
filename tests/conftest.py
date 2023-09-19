@@ -1,3 +1,5 @@
+from typing import Generator
+
 from django.core.files.base import ContentFile
 import factory
 import pytest
@@ -5,6 +7,7 @@ from rest_framework.test import APIClient
 
 from s3_file_field._multipart import MultipartManager
 from s3_file_field._sizes import mb
+
 from test_app.models import Resource
 
 
@@ -28,7 +31,7 @@ class ResourceFactory(factory.Factory):
 
 
 @pytest.fixture()
-def resource() -> Resource:
+def resource() -> Generator[Resource, None, None]:
     # Do not save by default
     resource = ResourceFactory.build()
     yield resource

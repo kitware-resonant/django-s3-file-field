@@ -9,7 +9,7 @@ from rest_framework.test import APIClient
 
 from s3_file_field._sizes import mb
 
-from .fuzzy import FUZZY_UPLOAD_ID, FUZZY_URL, Fuzzy
+from fuzzy import FUZZY_UPLOAD_ID, FUZZY_URL, Fuzzy
 
 
 def test_prepare(api_client):

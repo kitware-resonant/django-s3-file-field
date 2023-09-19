@@ -5,6 +5,7 @@ import pytest
 
 from s3_file_field import _registry
 from s3_file_field.fields import S3FileField
+
 from test_app.models import Resource
 
 
