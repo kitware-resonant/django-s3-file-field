@@ -1,19 +1,21 @@
-from typing import TYPE_CHECKING, cast
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from botocore.exceptions import ClientError
-from storages.backends.s3boto3 import S3Boto3Storage
 
 if TYPE_CHECKING:
     # mypy_boto3_s3 only provides types
     import mypy_boto3_s3 as s3
+    from storages.backends.s3boto3 import S3Boto3Storage
 
 from ._multipart import MultipartManager, ObjectNotFoundError, TransferredParts
 
 
 class Boto3MultipartManager(MultipartManager):
-    def __init__(self, storage: "S3Boto3Storage"):
+    def __init__(self, storage: S3Boto3Storage) -> None:
         resource: s3.ServiceResource = storage.connection
-        self._client: s3.Client = cast("s3.Client", resource.meta.client)
+        self._client: s3.Client = resource.meta.client
         self._bucket_name: str = storage.bucket_name
 
     def _create_upload_id(

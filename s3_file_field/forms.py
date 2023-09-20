@@ -13,7 +13,7 @@ class S3FormFileField(FileField):
 
     def __init__(
         self, *, model_field_id: str, widget: Optional[Union[Type[Widget], Widget]] = None, **kwargs
-    ):
+    ) -> None:
         self.model_field_id = model_field_id
 
         # For form fields created under django.contrib.admin.options.BaseModelAdmin, any form

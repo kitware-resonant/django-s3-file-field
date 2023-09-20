@@ -1,15 +1,19 @@
-from typing import Dict
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Dict
 
 from django.core import signing
-from django.http.response import HttpResponseBase
 from rest_framework import serializers
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import JSONParser
-from rest_framework.request import Request
 from rest_framework.response import Response
 
 from . import _multipart, _registry
 from ._multipart import ObjectNotFoundError, TransferredPart, TransferredParts
+
+if TYPE_CHECKING:
+    from django.http.response import HttpResponseBase
+    from rest_framework.request import Request
 
 
 class UploadInitializationRequestSerializer(serializers.Serializer):
@@ -19,7 +23,7 @@ class UploadInitializationRequestSerializer(serializers.Serializer):
     # part_size = serializers.IntegerField(min_value=1)
     content_type = serializers.CharField()
 
-    def validate_field_id(self, field_id):
+    def validate_field_id(self, field_id: str) -> str:
         try:
             _registry.get_field(field_id)
         except KeyError:
@@ -40,21 +44,21 @@ class UploadInitializationResponseSerializer(serializers.Serializer):
     upload_signature = serializers.CharField(trim_whitespace=False)
 
 
-class TransferredPartRequestSerializer(serializers.Serializer):
+class TransferredPartRequestSerializer(serializers.Serializer[TransferredPart]):
     part_number = serializers.IntegerField(min_value=1)
     size = serializers.IntegerField(min_value=1)
     etag = serializers.CharField()
 
-    def create(self, validated_data) -> TransferredPart:
+    def create(self, validated_data: Dict[str, Any]) -> TransferredPart:
         return TransferredPart(**validated_data)
 
 
-class UploadCompletionRequestSerializer(serializers.Serializer):
+class UploadCompletionRequestSerializer(serializers.Serializer[TransferredParts]):
     upload_signature = serializers.CharField(trim_whitespace=False)
     upload_id = serializers.CharField()
     parts = TransferredPartRequestSerializer(many=True, allow_empty=False)
 
-    def create(self, validated_data) -> TransferredParts:
+    def create(self, validated_data: Dict[str, Any]) -> TransferredParts:
         parts = [
             TransferredPart(**part)
             for part in sorted(validated_data.pop("parts"), key=lambda part: part["part_number"])

@@ -3,11 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import timedelta
 import math
-from typing import Iterator, List, Tuple
-
-from django.core.files.storage import Storage
+from typing import TYPE_CHECKING, Iterator, List, Tuple
 
 from s3_file_field._sizes import gb, mb, tb
+
+if TYPE_CHECKING:
+    from django.core.files.storage import Storage
 
 
 @dataclass
@@ -100,7 +101,7 @@ class MultipartManager:
         body += "</CompleteMultipartUpload>"
         return body
 
-    def test_upload(self):
+    def test_upload(self) -> None:
         object_key = ".s3-file-field-test-file"
         try:
             # TODO: is it possible to use a shorter timeout?

@@ -28,8 +28,10 @@ class _File:
 
 class S3FileFieldClient:
     request_timeout: ClassVar[int] = 5
+    base_url: str
+    api_session: requests.Session
 
-    def __init__(self, base_url: str, api_session: Optional[requests.Session] = None):
+    def __init__(self, base_url: str, api_session: Optional[requests.Session] = None) -> None:
         self.base_url = base_url.rstrip("/")
         self.api_session = requests.Session() if api_session is None else api_session
 
@@ -47,7 +49,7 @@ class S3FileFieldClient:
         resp.raise_for_status()
         return resp.json()
 
-    def _upload_part(self, part_bytes: bytes, part_initialization: Dict):
+    def _upload_part(self, part_bytes: bytes, part_initialization: Dict) -> Dict:
         resp = requests.put(
             part_initialization["upload_url"], data=part_bytes, timeout=self.request_timeout
         )

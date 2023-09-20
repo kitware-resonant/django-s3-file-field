@@ -1,17 +1,23 @@
+from __future__ import annotations
+
 import logging
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 from uuid import uuid4
 
 from django.core import checks
-from django.core.checks import CheckMessage
-from django.db import models
 from django.db.models.fields.files import FileField
-from django.forms import Field as FormField
 
 from ._multipart import MultipartManager
 from ._registry import register_field
 from .forms import S3FormFileField
 from .widgets import S3PlaceholderFile
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from django import forms
+    from django.core.checks import CheckMessage
+    from django.db import models
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +34,12 @@ class S3FileField(FileField):
         "UI and fallsback to uploaded to <randomuuid>/filename."
     )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         kwargs.setdefault("max_length", 2000)
         kwargs.setdefault("upload_to", self.uuid_prefix_filename)
         super().__init__(*args, **kwargs)
 
-    def deconstruct(self):
+    def deconstruct(self) -> Tuple[str, str, Sequence[Any], Dict[str, Any]]:
         name, path, args, kwargs = super().deconstruct()
         if kwargs.get("max_length") == 2000:
             del kwargs["max_length"]
@@ -60,12 +66,15 @@ class S3FileField(FileField):
             register_field(self)
 
     @staticmethod
-    def uuid_prefix_filename(instance: Any, filename: str):
+    def uuid_prefix_filename(instance: models.Model, filename: str) -> str:
         return f"{uuid4()}/{filename}"
 
     def formfield(
-        self, form_class: Optional[Any] = None, choices_form_class: Optional[Any] = None, **kwargs
-    ) -> FormField:
+        self,
+        form_class: Optional[Type[forms.Field]] = None,
+        choices_form_class: Optional[Type[forms.ChoiceField]] = None,
+        **kwargs: Any,
+    ) -> forms.Field:
         """
         Return a forms.Field instance for this model field.
 
@@ -76,11 +85,11 @@ class S3FileField(FileField):
             form_class = S3FormFileField if form_class is None else form_class
             # Allow the form and widget to lookup this field instance later, using its id
             kwargs.setdefault("model_field_id", self.id)
-        return super().formfield(
+        return super().formfield(  # type: ignore[no-any-return]
             form_class=form_class, choices_form_class=choices_form_class, **kwargs
         )
 
-    def save_form_data(self, instance: models.Model, data):
+    def save_form_data(self, instance: models.Model, data) -> None:
         """Coerce a form field value and assign it to a model instance's field."""
         # The FileField's FileDescriptor behavior provides that when a File object is
         # assigned to the field, the content is considered uncommitted, and is saved.
@@ -92,7 +101,7 @@ class S3FileField(FileField):
             data = data.name
         super().save_form_data(instance, data)
 
-    def check(self, **kwargs) -> List[CheckMessage]:
+    def check(self, **kwargs: Any) -> List[CheckMessage]:
         return [
             *super().check(**kwargs),
             *self._check_supported_storage_provider(),

@@ -4,6 +4,8 @@ import re
 
 
 class Fuzzy:
+    pattern: re.Pattern[str]
+
     def __init__(self, pattern: str | re.Pattern) -> None:
         self.pattern: re.Pattern = (
             pattern if isinstance(pattern, re.Pattern) else re.compile(pattern)

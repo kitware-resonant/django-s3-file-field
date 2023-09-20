@@ -8,14 +8,14 @@ from test_app.models import Resource
 
 
 @pytest.mark.django_db()
-def test_fields_save(resource):
+def test_fields_save(resource: Resource) -> None:
     resource.save()
 
     with resource.blob.open() as blob_stream:
         assert blob_stream.read() == b"test content"
 
 
-def test_fields_save_field():
+def test_fields_save_field() -> None:
     resource = Resource()
     # Upload the file, but do not save the model instance
     resource.blob.save("test_key", ContentFile(b"test content"), save=False)
@@ -25,7 +25,7 @@ def test_fields_save_field():
 
 
 @pytest.mark.django_db()
-def test_fields_save_refresh(resource):
+def test_fields_save_refresh(resource: Resource) -> None:
     resource.save()
     resource.refresh_from_db()
 
@@ -34,7 +34,7 @@ def test_fields_save_refresh(resource):
 
 
 @pytest.mark.django_db()
-def test_fields_save_uuid_prefix(resource):
+def test_fields_save_uuid_prefix(resource: Resource) -> None:
     resource.save()
 
     assert re.search(
@@ -43,18 +43,18 @@ def test_fields_save_uuid_prefix(resource):
     )
 
 
-def test_fields_clean(resource):
+def test_fields_clean(resource: Resource) -> None:
     resource.full_clean()
 
 
 @pytest.mark.django_db()
-def test_fields_clean_refresh(resource):
+def test_fields_clean_refresh(resource: Resource) -> None:
     resource.save()
     resource.refresh_from_db()
     resource.full_clean()
 
 
-def test_fields_clean_empty():
+def test_fields_clean_empty() -> None:
     resource = Resource()
     with pytest.raises(ValidationError, match=r"This field cannot be blank\."):
         resource.full_clean()
