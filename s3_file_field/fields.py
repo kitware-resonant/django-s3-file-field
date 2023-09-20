@@ -52,7 +52,7 @@ class S3FileField(FileField):
         """Return the unique identifier for this field instance."""
         if not hasattr(self, "model"):
             # TODO: raise a more specific exception
-            raise Exception("contribute_to_class has not been called yet on this field.")
+            raise RuntimeError("contribute_to_class has not been called yet on this field.")
         return str(self)
 
     def contribute_to_class(self, cls, name, **kwargs):

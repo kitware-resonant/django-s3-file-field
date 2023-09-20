@@ -5,12 +5,16 @@ from typing import TYPE_CHECKING
 import minio
 
 from ._multipart import MultipartManager, ObjectNotFoundError, TransferredParts
+from ._sizes import tb
 
 if TYPE_CHECKING:
     from minio_storage.storage import MinioStorage
 
 
 class MinioMultipartManager(MultipartManager):
+    # MinIO limits: https://min.io/docs/minio/container/operations/checklists/thresholds.html
+    max_object_size = tb(50)
+
     def __init__(self, storage: MinioStorage):
         self._client: minio.Minio = storage.client
         self._bucket_name: str = storage.bucket_name
@@ -75,5 +79,5 @@ class MinioMultipartManager(MultipartManager):
                 raise ObjectNotFoundError from e
             raise
         if stats.size is None:
-            raise ObjectNotFoundError("MinIO did not return a size for object.", object_key)
+            raise RuntimeError("MinIO did not return a size for object.", object_key)
         return stats.size

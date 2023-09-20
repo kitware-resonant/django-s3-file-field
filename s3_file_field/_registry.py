@@ -19,7 +19,7 @@ def register_field(field: "S3FileField") -> None:
     field_id = field.id
     if field_id in _fields and not (_fields[field_id] is field):
         # This might be called multiple times, but it should always be consistent
-        raise Exception(f"Cannot overwrite existing S3FileField declaration for {field_id}")
+        raise RuntimeError(f"Cannot overwrite existing S3FileField declaration for {field_id}")
     _fields[field_id] = field
 
     storage = field.storage

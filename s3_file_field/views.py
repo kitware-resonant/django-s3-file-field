@@ -9,7 +9,7 @@ from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 
 from . import _multipart, _registry
-from ._multipart import ObjectNotFoundError, TransferredPart, TransferredParts
+from ._multipart import ObjectNotFoundError, TransferredPart, TransferredParts, UploadTooLargeError
 
 if TYPE_CHECKING:
     from django.http.response import HttpResponseBase
@@ -27,7 +27,7 @@ class UploadInitializationRequestSerializer(serializers.Serializer):
         try:
             _registry.get_field(field_id)
         except KeyError:
-            raise serializers.ValidationError(f'Invalid field ID: "{field_id}".')
+            raise serializers.ValidationError(f'Invalid field ID: "{field_id}".') from None
         return field_id
 
 
@@ -96,11 +96,14 @@ def upload_initialize(request: Request) -> HttpResponseBase:
     # Maybe we need a different generate method/upload_to with a different signature?
     object_key = field.generate_filename(None, file_name)
 
-    initialization = _multipart.MultipartManager.from_storage(field.storage).initialize_upload(
-        object_key,
-        upload_request["file_size"],
-        upload_request["content_type"],
-    )
+    try:
+        initialization = _multipart.MultipartManager.from_storage(field.storage).initialize_upload(
+            object_key,
+            upload_request["file_size"],
+            upload_request["content_type"],
+        )
+    except UploadTooLargeError:
+        return Response("Upload size is too large.", status=400)
 
     # signals.s3_file_field_upload_prepare.send(
     #     sender=upload_prepare, name=name, object_key=object_key

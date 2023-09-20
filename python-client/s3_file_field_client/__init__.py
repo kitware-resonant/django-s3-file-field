@@ -17,7 +17,7 @@ class _File:
     @classmethod
     def from_stream(cls, stream: BinaryIO, name: str, content_type: str) -> _File:
         if not stream.seekable():
-            raise Exception("File stream is not seekable.")
+            raise RuntimeError("File stream is not seekable.")
 
         stream.seek(0, io.SEEK_END)
         size = stream.tell()

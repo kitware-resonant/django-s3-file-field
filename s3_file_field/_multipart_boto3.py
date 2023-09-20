@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING
 
 from botocore.exceptions import ClientError
 
+from ._sizes import tb
+
 if TYPE_CHECKING:
     # mypy_boto3_s3 only provides types
     import mypy_boto3_s3 as s3
@@ -13,6 +15,9 @@ from ._multipart import MultipartManager, ObjectNotFoundError, TransferredParts
 
 
 class Boto3MultipartManager(MultipartManager):
+    # S3 multipart limits: https://docs.aws.amazon.com/AmazonS3/latest/dev/qfacts.html
+    max_object_size = tb(5)
+
     def __init__(self, storage: S3Boto3Storage) -> None:
         resource: s3.ServiceResource = storage.connection
         self._client: s3.Client = resource.meta.client
@@ -73,5 +78,5 @@ class Boto3MultipartManager(MultipartManager):
                 Key=object_key,
             )
             return stats["ContentLength"]
-        except ClientError:
-            raise ObjectNotFoundError()
+        except ClientError as e:
+            raise ObjectNotFoundError from e

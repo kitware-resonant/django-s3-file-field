@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import timedelta
 import math
-from typing import TYPE_CHECKING, Iterator, List, Tuple
+from typing import TYPE_CHECKING, Any, ClassVar, Iterator, List, Tuple
 
-from s3_file_field._sizes import gb, mb, tb
+from s3_file_field._sizes import gb, mb
 
 if TYPE_CHECKING:
     from django.core.files.storage import Storage
@@ -48,15 +48,26 @@ class PresignedUploadCompletion:
 class UnsupportedStorageError(Exception):
     """Raised when MultipartManager does not support the given Storage."""
 
+    def __init__(self, *args: Any) -> None:
+        super().__init__("Unsupported storage provider.", *args)
+
 
 class ObjectNotFoundError(Exception):
     """Raised when an object cannot be found in the object store."""
 
 
+class UploadTooLargeError(Exception):
+    """Raised when an upload exceeds the maximum object size for a Storage."""
+
+    def __init__(self, *args: Any) -> None:
+        super().__init__("File is larger than the maximum object size.", *args)
+
+
 class MultipartManager:
     """A facade providing management of S3 multipart uploads to multiple Storages."""
 
-    part_size = mb(64)
+    part_size: ClassVar[int] = mb(64)
+    max_object_size: ClassVar[int]
 
     def initialize_upload(
         self,
@@ -64,6 +75,9 @@ class MultipartManager:
         file_size: int,
         content_type: str,
     ) -> PresignedTransfer:
+        if file_size > self.max_object_size:
+            raise UploadTooLargeError("File is larger than the S3 maximum object size.")
+
         upload_id = self._create_upload_id(
             object_key,
             content_type,
@@ -103,13 +117,9 @@ class MultipartManager:
 
     def test_upload(self) -> None:
         object_key = ".s3-file-field-test-file"
-        try:
-            # TODO: is it possible to use a shorter timeout?
-            upload_id = self._create_upload_id(object_key, "application/octet-stream")
-            self._abort_upload_id(object_key, upload_id)
-        except Exception:
-            # TODO: Capture and raise more specific exceptions, abstracted over the clients
-            raise
+        # TODO: is it possible to use a shorter timeout?
+        upload_id = self._create_upload_id(object_key, "application/octet-stream")
+        self._abort_upload_id(object_key, upload_id)
 
     @classmethod
     def from_storage(cls, storage: Storage) -> MultipartManager:
@@ -133,7 +143,7 @@ class MultipartManager:
 
                 return MinioMultipartManager(storage)
 
-        raise UnsupportedStorageError("Unsupported storage provider.")
+        raise UnsupportedStorageError
 
     @classmethod
     def supported_storage(cls, storage: Storage) -> bool:
@@ -173,11 +183,6 @@ class MultipartManager:
     @classmethod
     def _iter_part_sizes(cls, file_size: int) -> Iterator[Tuple[int, int]]:
         part_size = cls.part_size
-
-        # S3 multipart limits: https://docs.aws.amazon.com/AmazonS3/latest/dev/qfacts.html
-
-        if file_size > tb(5):
-            raise Exception("File is larger than the S3 maximum object size.")
 
         # 10k is the maximum number of allowed parts allowed by S3
         max_parts = 10_000
