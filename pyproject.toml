@@ -46,8 +46,8 @@ Repository = "https://github.com/girder/django-s3-file-field"
 s3_file_field = "s3_file_field.fixtures"
 
 [project.optional-dependencies]
-boto3 = [
-  "django-storages[boto3]",
+s3 = [
+  "django-storages[s3]>=1.14",
   "boto3",
 ]
 minio = [
@@ -143,7 +143,7 @@ namespace_packages = false
 [[tool.mypy.overrides]]
 module = [
   "minio_storage.storage",
-  "storages.backends.s3boto3",
+  "storages.backends.s3",
 ]
 ignore_missing_imports = true
 
