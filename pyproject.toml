@@ -166,6 +166,7 @@ filterwarnings = [
   "error",
   # pytest often causes unclosed socket warnings
   'ignore:unclosed <socket\.socket:ResourceWarning',
-  "ignore::DeprecationWarning:minio",
+  # Django 3.2 emites some deprecation warnings
+  "ignore::DeprecationWarning:django"
 ]
 DJANGO_SETTINGS_MODULE = "test_app.settings"
