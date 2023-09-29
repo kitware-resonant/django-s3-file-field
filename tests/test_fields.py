@@ -58,3 +58,7 @@ def test_fields_clean_empty() -> None:
     resource = Resource()
     with pytest.raises(ValidationError, match=r"This field cannot be blank\."):
         resource.full_clean()
+
+
+def test_fields_check_success(resource: Resource) -> None:
+    assert resource._meta.get_field("blob").check() == []
