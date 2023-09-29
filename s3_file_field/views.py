@@ -49,9 +49,6 @@ class TransferredPartRequestSerializer(serializers.Serializer[TransferredPart]):
     size = serializers.IntegerField(min_value=1)
     etag = serializers.CharField()
 
-    def create(self, validated_data: Dict[str, Any]) -> TransferredPart:
-        return TransferredPart(**validated_data)
-
 
 class UploadCompletionRequestSerializer(serializers.Serializer[TransferredParts]):
     upload_signature = serializers.CharField(trim_whitespace=False)
