@@ -103,6 +103,17 @@ source = "vcs"
 line-length = 100
 target-version = ["py38"]
 
+[tool.coverage.run]
+source_pkgs = [
+  "s3_file_field",
+]
+
+[tool.coverage.paths]
+source = [
+  "s3_file_field/",
+  ".tox/**/site-packages/s3_file_field/",
+]
+
 [tool.django-stubs]
 django_settings_module = "test_app.settings"
 
@@ -161,6 +172,10 @@ addopts = [
   "--strict-markers",
   "--showlocals",
   "--verbose",
+  # Disable the entry point loading of "s3_file_field" fixtures, to support coverage.
+  # See the comment with "pytest_plugins" in "conftest.py" for full details.
+  "-p", "no:s3_file_field",
+  "--cov",
 ]
 filterwarnings = [
   "error",
