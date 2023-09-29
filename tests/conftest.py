@@ -11,6 +11,15 @@ from s3_file_field._sizes import mb
 
 from test_app.models import Resource
 
+# Explicitly load s3_file_field fixtures, late in Pytest plugin load order.
+# If this is auto-loaded via entry point, the import happens before coverage tracing is started by
+# pytest-cov, and import-time code doesn't get covered.
+# See https://pytest-cov.readthedocs.io/en/latest/plugins.html for a description of the problem.
+# See
+# https://docs.pytest.org/en/7.1.x/how-to/writing_plugins.html#plugin-discovery-order-at-tool-startup
+# for info on Pytest plugin load order.
+pytest_plugins = ["s3_file_field.fixtures"]
+
 
 @pytest.fixture(autouse=True)
 def _reduce_part_size(mocker: MockerFixture) -> None:
