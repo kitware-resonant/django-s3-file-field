@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional
+from typing import TYPE_CHECKING, Any, Iterable
 
 from django.core import checks
 
@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 @checks.register()
 def test_bucket_access(
-    app_configs: Optional[Iterable[AppConfig]], **kwargs: Any
-) -> List[checks.CheckMessage]:
+    app_configs: Iterable[AppConfig] | None, **kwargs: Any
+) -> list[checks.CheckMessage]:
     for storage in iter_storages():
         if not MultipartManager.supported_storage(storage):
             continue

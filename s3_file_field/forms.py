@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Type, Union
+from __future__ import annotations
 
 from django.contrib.admin.widgets import AdminFileWidget
 from django.forms import FileField, Widget
@@ -12,7 +12,7 @@ class S3FormFileField(FileField):
     widget = S3FileInput
 
     def __init__(
-        self, *, model_field_id: str, widget: Optional[Union[Type[Widget], Widget]] = None, **kwargs
+        self, *, model_field_id: str, widget: type[Widget] | Widget | None = None, **kwargs
     ) -> None:
         self.model_field_id = model_field_id
 
@@ -36,7 +36,7 @@ class S3FormFileField(FileField):
 
         super().__init__(widget=widget, **kwargs)
 
-    def widget_attrs(self, widget: Widget) -> Dict[str, str]:
+    def widget_attrs(self, widget: Widget) -> dict[str, str]:
         attrs = super().widget_attrs(widget)
         attrs.update(
             {

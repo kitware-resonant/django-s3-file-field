@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from django.core import checks
@@ -39,7 +39,7 @@ class S3FileField(FileField):
         kwargs.setdefault("upload_to", self.uuid_prefix_filename)
         super().__init__(*args, **kwargs)
 
-    def deconstruct(self) -> Tuple[str, str, Sequence[Any], Dict[str, Any]]:
+    def deconstruct(self) -> tuple[str, str, Sequence[Any], dict[str, Any]]:
         name, path, args, kwargs = super().deconstruct()
         if kwargs.get("max_length") == 2000:
             del kwargs["max_length"]
@@ -71,8 +71,8 @@ class S3FileField(FileField):
 
     def formfield(
         self,
-        form_class: Optional[Type[forms.Field]] = None,
-        choices_form_class: Optional[Type[forms.ChoiceField]] = None,
+        form_class: type[forms.Field] | None = None,
+        choices_form_class: type[forms.ChoiceField] | None = None,
         **kwargs: Any,
     ) -> forms.Field:
         """
@@ -101,13 +101,13 @@ class S3FileField(FileField):
             data = data.name
         super().save_form_data(instance, data)
 
-    def check(self, **kwargs: Any) -> List[CheckMessage]:
+    def check(self, **kwargs: Any) -> list[CheckMessage]:
         return [
             *super().check(**kwargs),
             *self._check_supported_storage_provider(),
         ]
 
-    def _check_supported_storage_provider(self) -> List[checks.CheckMessage]:
+    def _check_supported_storage_provider(self) -> list[checks.CheckMessage]:
         if not MultipartManager.supported_storage(self.storage):
             msg = f"Incompatible storage type used with an {self.__class__.__name__}."
             logger.warning(msg)

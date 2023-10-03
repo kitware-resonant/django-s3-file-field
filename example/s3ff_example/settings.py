@@ -1,12 +1,13 @@
+from __future__ import annotations
+
 import os
 from pathlib import Path
-from typing import List
 
 SECRET_KEY = "example-secret"
 
 DEBUG = True
 
-ALLOWED_HOSTS: List[str] = []
+ALLOWED_HOSTS: list[str] = []
 
 INSTALLED_APPS = [
     "django.contrib.admin",

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import functools
 import posixpath
-from typing import TYPE_CHECKING, Any, Dict, Mapping, NoReturn, Optional
+from typing import TYPE_CHECKING, Any, Mapping, NoReturn
 
 from django.core import signing
 from django.core.files import File
@@ -31,21 +31,21 @@ class S3PlaceholderFile(File):
         self.name = name
         self.size = size
 
-    def open(self, mode: Optional[str] = None) -> NoReturn:
+    def open(self, mode: str | None = None) -> NoReturn:
         raise NotImplementedError
 
     def close(self) -> NoReturn:
         raise NotImplementedError
 
-    def chunks(self, chunk_size: Optional[int] = None) -> NoReturn:
+    def chunks(self, chunk_size: int | None = None) -> NoReturn:
         raise NotImplementedError
 
-    def multiple_chunks(self, chunk_size: Optional[int] = None) -> bool:
+    def multiple_chunks(self, chunk_size: int | None = None) -> bool:
         # Since it's in memory, we'll never have multiple chunks.
         return False
 
     @classmethod
-    def from_field(cls, field_value: str) -> Optional[S3PlaceholderFile]:
+    def from_field(cls, field_value: str) -> S3PlaceholderFile | None:
         try:
             parsed_field = signing.loads(field_value)
         except signing.BadSignature:
@@ -61,7 +61,7 @@ class S3FileInput(ClearableFileInput):
         js = ["s3_file_field/widget.js"]
         css = {"all": ["s3_file_field/widget.css"]}
 
-    def get_context(self, *args, **kwargs) -> Dict[str, Any]:
+    def get_context(self, *args, **kwargs) -> dict[str, Any]:
         # The base URL cannot be determined at the time the widget is instantiated
         # (when S3FormFileField.widget_attrs is called).
         # Additionally, because this method is called on a deep copy of the widget each
