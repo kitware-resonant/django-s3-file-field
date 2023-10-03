@@ -9,16 +9,16 @@ from ._sizes import tb
 if TYPE_CHECKING:
     # mypy_boto3_s3 only provides types
     import mypy_boto3_s3 as s3
-    from storages.backends.s3boto3 import S3Boto3Storage
+    from storages.backends.s3 import S3Storage
 
 from ._multipart import MultipartManager, ObjectNotFoundError, TransferredParts
 
 
-class Boto3MultipartManager(MultipartManager):
+class S3MultipartManager(MultipartManager):
     # S3 multipart limits: https://docs.aws.amazon.com/AmazonS3/latest/dev/qfacts.html
     max_object_size = tb(5)
 
-    def __init__(self, storage: S3Boto3Storage) -> None:
+    def __init__(self, storage: S3Storage) -> None:
         resource: s3.ServiceResource = storage.connection
         self._client: s3.Client = resource.meta.client
         self._bucket_name: str = storage.bucket_name

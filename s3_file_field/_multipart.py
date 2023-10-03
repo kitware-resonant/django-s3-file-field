@@ -124,14 +124,14 @@ class MultipartManager:
     @classmethod
     def from_storage(cls, storage: Storage) -> MultipartManager:
         try:
-            from storages.backends.s3boto3 import S3Boto3Storage
+            from storages.backends.s3 import S3Storage
         except ImportError:
             pass
         else:
-            if isinstance(storage, S3Boto3Storage):
-                from ._multipart_boto3 import Boto3MultipartManager
+            if isinstance(storage, S3Storage):
+                from ._multipart_s3 import S3MultipartManager
 
-                return Boto3MultipartManager(storage)
+                return S3MultipartManager(storage)
 
         try:
             from minio_storage.storage import MinioStorage

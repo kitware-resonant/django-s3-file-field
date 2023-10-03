@@ -28,7 +28,7 @@ Serializer `Field` subclass which will automatically be used for `ModelSerialize
 
 ## Installation
 django-s3-file-field must be used with a compatible Django Storage, which are:
-* `S3Boto3Storage` in [django-storages](https://django-storages.readthedocs.io/),
+* `S3Storage` in [django-storages](https://django-storages.readthedocs.io/),
   for [AWS S3](https://aws.amazon.com/s3/)
 * `MinioStorage` or `MinioMediaStorage` in [django-minio-storage](https://django-minio-storage.readthedocs.io/),
   for [MinIO](https://min.io/)
@@ -36,7 +36,7 @@ django-s3-file-field must be used with a compatible Django Storage, which are:
 After the appropriate Storage is installed and configured, install django-s3-file-field, using the
 corresponding extra:
 ```bash
-pip install django-s3-file-field[boto3]
+pip install django-s3-file-field[s3]
 ```
 or
 ```bash

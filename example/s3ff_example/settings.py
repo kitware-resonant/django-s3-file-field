@@ -61,7 +61,7 @@ STORAGES = {
 }
 if "AWS_ACCESS_KEY_ID" in os.environ:
     STORAGES["default"] = {
-        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        "BACKEND": "storages.backends.s3.S3Storage",
     }
     AWS_S3_REGION_NAME = os.environ.get("AWS_DEFAULT_REGION", "us-east1")
     AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")

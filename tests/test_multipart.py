@@ -9,7 +9,7 @@ from minio_storage.storage import MinioStorage
 import pytest
 from pytest_mock import MockerFixture
 import requests
-from storages.backends.s3boto3 import S3Boto3Storage
+from storages.backends.s3 import S3Storage
 
 from s3_file_field._multipart import (
     MultipartManager,
@@ -17,8 +17,8 @@ from s3_file_field._multipart import (
     TransferredPart,
     TransferredParts,
 )
-from s3_file_field._multipart_boto3 import Boto3MultipartManager
 from s3_file_field._multipart_minio import MinioMultipartManager
+from s3_file_field._multipart_s3 import S3MultipartManager
 from s3_file_field._sizes import gb, mb
 
 if TYPE_CHECKING:
@@ -26,8 +26,8 @@ if TYPE_CHECKING:
     import mypy_boto3_s3 as s3
 
 
-def s3boto3_storage_factory() -> "S3Boto3Storage":
-    storage = S3Boto3Storage(
+def s3_storage_factory() -> "S3Storage":
+    storage = S3Storage(
         access_key=settings.MINIO_STORAGE_ACCESS_KEY,
         secret_key=settings.MINIO_STORAGE_SECRET_KEY,
         region_name="test-region",
@@ -67,8 +67,8 @@ def minio_storage_factory() -> MinioStorage:
 
 
 @pytest.fixture()
-def s3boto3_storage() -> "S3Boto3Storage":
-    return s3boto3_storage_factory()
+def s3_storage() -> "S3Storage":
+    return s3_storage_factory()
 
 
 @pytest.fixture()
@@ -76,15 +76,15 @@ def minio_storage() -> MinioStorage:
     return minio_storage_factory()
 
 
-@pytest.fixture(params=[s3boto3_storage_factory, minio_storage_factory], ids=["s3boto3", "minio"])
+@pytest.fixture(params=[s3_storage_factory, minio_storage_factory], ids=["s3", "minio"])
 def storage(request: pytest.FixtureRequest) -> Storage:
     storage_factory = cast(Callable[[], Storage], request.param)
     return storage_factory()
 
 
 @pytest.fixture()
-def boto3_multipart_manager(s3boto3_storage: S3Boto3Storage) -> Boto3MultipartManager:
-    return Boto3MultipartManager(s3boto3_storage)
+def s3_multipart_manager(s3_storage: S3Storage) -> S3MultipartManager:
+    return S3MultipartManager(s3_storage)
 
 
 @pytest.fixture()
