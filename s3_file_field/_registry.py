@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, Iterator
+import warnings
 from weakref import WeakValueDictionary
 
 from django.core.files.storage import Storage
@@ -17,9 +18,15 @@ _storages: "StoragesDictType" = WeakValueDictionary()
 
 def register_field(field: "S3FileField") -> None:
     field_id = field.id
-    if field_id in _fields and not (_fields[field_id] is field):
+    if field_id in _fields and _fields[field_id] is not field:
         # This might be called multiple times, but it should always be consistent
-        raise RuntimeError(f"Cannot overwrite existing S3FileField declaration for {field_id}")
+        warnings.warn(
+            f"Overwriting existing S3FileField declaration for {field_id}",
+            RuntimeWarning,
+            # This should attribute to the re-defining class (instead of S3FF or Django internals),
+            # but it was determined empirically and could break if Django is restructured.
+            stacklevel=5,
+        )
     _fields[field_id] = field
 
     storage = field.storage
