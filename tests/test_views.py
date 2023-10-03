@@ -5,11 +5,11 @@ from django.core.files.storage import default_storage
 from django.urls import reverse
 import pytest
 import requests
+from requests.status_codes import codes
 from rest_framework.test import APIClient
 
-from s3_file_field._sizes import mb
-
 from fuzzy import FUZZY_UPLOAD_ID, FUZZY_URL, Fuzzy
+from s3_file_field._sizes import mb
 
 
 def test_prepare(api_client: APIClient) -> None:
@@ -23,7 +23,7 @@ def test_prepare(api_client: APIClient) -> None:
         },
         format="json",
     )
-    assert resp.status_code == 200
+    assert resp.status_code == codes.ok
     assert resp.data == {
         "object_key": Fuzzy(
             r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt"
@@ -51,7 +51,7 @@ def test_prepare_two_parts(api_client: APIClient) -> None:
         },
         format="json",
     )
-    assert resp.status_code == 200
+    assert resp.status_code == codes.ok
     assert resp.data == {
         "object_key": Fuzzy(
             r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt"
@@ -77,7 +77,7 @@ def test_prepare_three_parts(api_client: APIClient) -> None:
         },
         format="json",
     )
-    assert resp.status_code == 200
+    assert resp.status_code == codes.ok
     assert resp.data == {
         "object_key": Fuzzy(
             r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt"
@@ -108,7 +108,7 @@ def test_full_upload_flow(
         },
         format="json",
     )
-    assert resp.status_code == 200
+    assert resp.status_code == codes.ok
     initialization = resp.data
     assert isinstance(initialization, dict)
     upload_signature = initialization["upload_signature"]
@@ -134,7 +134,7 @@ def test_full_upload_flow(
         },
         format="json",
     )
-    assert resp.status_code == 200
+    assert resp.status_code == codes.ok
     assert resp.data == {
         "complete_url": Fuzzy(r".*"),
         "body": Fuzzy(r".*"),
@@ -160,14 +160,14 @@ def test_full_upload_flow(
         },
         format="json",
     )
-    assert resp.status_code == 200
+    assert resp.status_code == codes.ok
     assert resp.data == {
         "field_value": Fuzzy(r".*:.*"),
     }
 
     # Verify that the Content headers were stored correctly on the object
     object_resp = requests.get(default_storage.url(initialization["object_key"]), timeout=5)
-    assert resp.status_code == 200
+    assert resp.status_code == codes.ok
     assert object_resp.headers["Content-Type"] == "text/plain"
 
     default_storage.delete(initialization["object_key"])

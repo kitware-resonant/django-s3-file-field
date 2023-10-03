@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import functools
 import posixpath
-from typing import TYPE_CHECKING, Any, Mapping, NoReturn
+from typing import TYPE_CHECKING, Any, ClassVar, Mapping, NoReturn
 
 from django.core import signing
 from django.core.files import File
@@ -28,10 +28,10 @@ class S3PlaceholderFile(File):
     size: int
 
     def __init__(self, name: str, size: int) -> None:
-        self.name = name
+        super().__init__(file=None, name=name)
         self.size = size
 
-    def open(self, mode: str | None = None) -> NoReturn:
+    def open(self, mode: str | None = None) -> NoReturn:  # noqa: A003
         raise NotImplementedError
 
     def close(self) -> NoReturn:
@@ -58,8 +58,8 @@ class S3FileInput(ClearableFileInput):
     """Widget to render the S3 File Input."""
 
     class Media:
-        js = ["s3_file_field/widget.js"]
-        css = {"all": ["s3_file_field/widget.css"]}
+        js: ClassVar[list[str]] = ["s3_file_field/widget.js"]
+        css: ClassVar[dict[str, list[str]]] = {"all": ["s3_file_field/widget.css"]}
 
     def get_context(self, *args, **kwargs) -> dict[str, Any]:
         # The base URL cannot be determined at the time the widget is instantiated

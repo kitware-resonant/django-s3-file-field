@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 
 @checks.register()
 def test_bucket_access(
-    app_configs: Iterable[AppConfig] | None, **kwargs: Any
+    app_configs: Iterable[AppConfig] | None,
+    **kwargs: Any,  # noqa: ARG001
 ) -> list[checks.CheckMessage]:
     for storage in iter_storages():
         if not MultipartManager.supported_storage(storage):

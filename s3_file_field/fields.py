@@ -33,22 +33,23 @@ class S3FileField(FileField):
         "A file field which is supports direct uploads to S3 via the "
         "UI and fallsback to uploaded to <randomuuid>/filename."
     )
+    _default_max_length = 2000
 
     def __init__(self, *args, **kwargs) -> None:
-        kwargs.setdefault("max_length", 2000)
+        kwargs.setdefault("max_length", self._default_max_length)
         kwargs.setdefault("upload_to", self.uuid_prefix_filename)
         super().__init__(*args, **kwargs)
 
     def deconstruct(self) -> tuple[str, str, Sequence[Any], dict[str, Any]]:
         name, path, args, kwargs = super().deconstruct()
-        if kwargs.get("max_length") == 2000:
+        if kwargs.get("max_length") == self._default_max_length:
             del kwargs["max_length"]
         if kwargs.get("upload_to") is self.uuid_prefix_filename:
             del kwargs["upload_to"]
         return name, path, args, kwargs
 
     @property
-    def id(self) -> str:
+    def id(self) -> str:  # noqa: A003
         """Return the unique identifier for this field instance."""
         if not hasattr(self, "model"):
             # TODO: raise a more specific exception
@@ -66,7 +67,7 @@ class S3FileField(FileField):
             register_field(self)
 
     @staticmethod
-    def uuid_prefix_filename(instance: models.Model, filename: str) -> str:
+    def uuid_prefix_filename(_instance: models.Model, filename: str) -> str:
         return f"{uuid4()}/{filename}"
 
     def formfield(

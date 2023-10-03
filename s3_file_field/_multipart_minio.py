@@ -27,7 +27,7 @@ class MinioMultipartManager(MultipartManager):
         object_key: str,
         content_type: str,
     ) -> str:
-        return self._client._create_multipart_upload(
+        return self._client._create_multipart_upload(  # noqa: SLF001
             bucket_name=self._bucket_name,
             object_name=object_key,
             headers={
@@ -37,7 +37,7 @@ class MinioMultipartManager(MultipartManager):
         )
 
     def _abort_upload_id(self, object_key: str, upload_id: str) -> None:
-        self._client._abort_multipart_upload(
+        self._client._abort_multipart_upload(  # noqa: SLF001
             bucket_name=self._bucket_name,
             object_name=object_key,
             upload_id=upload_id,
