@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 from django.core import signing
 from rest_framework import serializers
@@ -55,7 +55,7 @@ class UploadCompletionRequestSerializer(serializers.Serializer[TransferredParts]
     upload_id = serializers.CharField()
     parts = TransferredPartRequestSerializer(many=True, allow_empty=False)
 
-    def create(self, validated_data: Dict[str, Any]) -> TransferredParts:
+    def create(self, validated_data: dict[str, Any]) -> TransferredParts:
         parts = [
             TransferredPart(**part)
             for part in sorted(validated_data.pop("parts"), key=lambda part: part["part_number"])
@@ -84,7 +84,7 @@ class FinalizationResponseSerializer(serializers.Serializer):
 def upload_initialize(request: Request) -> HttpResponseBase:
     request_serializer = UploadInitializationRequestSerializer(data=request.data)
     request_serializer.is_valid(raise_exception=True)
-    upload_request: Dict = request_serializer.validated_data
+    upload_request: dict = request_serializer.validated_data
     field = _registry.get_field(upload_request["field_id"])
 
     file_name = upload_request["file_name"]

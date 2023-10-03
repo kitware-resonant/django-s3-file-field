@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping
 
 from urllib3 import PoolManager
 
@@ -11,33 +11,33 @@ class Minio:
     def __init__(
         self,
         endpoint: str,
-        access_key: Optional[str] = ...,
-        secret_key: Optional[str] = ...,
-        session_token: Optional[str] = ...,
+        access_key: str | None = ...,
+        secret_key: str | None = ...,
+        session_token: str | None = ...,
         secure: bool = ...,
-        region: Optional[str] = ...,
-        http_client: Optional[PoolManager] = ...,
-        credentials: Optional[Provider] = ...,
+        region: str | None = ...,
+        http_client: PoolManager | None = ...,
+        credentials: Provider | None = ...,
         cert_check: bool = ...,
     ) -> None: ...
     def stat_object(
         self,
         bucket_name: str,
         object_name: str,
-        ssec: Optional[SseCustomerKey] = ...,
-        version_id: Optional[str] = ...,
-        extra_query_params: Optional[Mapping[str, Any]] = ...,
+        ssec: SseCustomerKey | None = ...,
+        version_id: str | None = ...,
+        extra_query_params: Mapping[str, Any] | None = ...,
     ) -> Object: ...
     def get_presigned_url(
         self,
         method: str,
         bucket_name: str,
         object_name: str,
-        expires: timedelta=...,
-        response_headers: Optional[Mapping[str, Any]] = ...,
-        request_date: Optional[datetime] = ...,
-        version_id: Optional[str] = ...,
-        extra_query_params: Optional[Mapping[str, Any]] = ...,
+        expires: timedelta = ...,
+        response_headers: Mapping[str, Any] | None = ...,
+        request_date: datetime | None = ...,
+        version_id: str | None = ...,
+        extra_query_params: Mapping[str, Any] | None = ...,
     ) -> str: ...
     def _create_multipart_upload(
         self, bucket_name: str, object_name: str, headers: Mapping[str, Any]

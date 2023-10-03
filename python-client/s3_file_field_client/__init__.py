@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import io
-from typing import BinaryIO, ClassVar, Dict, List, Optional
+from typing import BinaryIO, ClassVar
 
 import requests
 
@@ -31,11 +31,11 @@ class S3FileFieldClient:
     base_url: str
     api_session: requests.Session
 
-    def __init__(self, base_url: str, api_session: Optional[requests.Session] = None) -> None:
+    def __init__(self, base_url: str, api_session: requests.Session | None = None) -> None:
         self.base_url = base_url.rstrip("/")
         self.api_session = requests.Session() if api_session is None else api_session
 
-    def _initialize_upload(self, file: _File, field_id: str) -> Dict:
+    def _initialize_upload(self, file: _File, field_id: str) -> dict:
         resp = self.api_session.post(
             f"{self.base_url}/upload-initialize/",
             json={
@@ -49,7 +49,7 @@ class S3FileFieldClient:
         resp.raise_for_status()
         return resp.json()
 
-    def _upload_part(self, part_bytes: bytes, part_initialization: Dict) -> Dict:
+    def _upload_part(self, part_bytes: bytes, part_initialization: dict) -> dict:
         resp = requests.put(
             part_initialization["upload_url"], data=part_bytes, timeout=self.request_timeout
         )
@@ -63,13 +63,13 @@ class S3FileFieldClient:
             "etag": etag,
         }
 
-    def _upload_parts(self, file: _File, part_initializations: List[Dict]) -> List[Dict]:
+    def _upload_parts(self, file: _File, part_initializations: list[dict]) -> list[dict]:
         return [
             self._upload_part(file.stream.read(part_initialization["size"]), part_initialization)
             for part_initialization in part_initializations
         ]
 
-    def _complete_upload(self, multipart_info: Dict, upload_infos: List[Dict]) -> None:
+    def _complete_upload(self, multipart_info: dict, upload_infos: list[dict]) -> None:
         resp = self.api_session.post(
             f"{self.base_url}/upload-complete/",
             json={
@@ -89,7 +89,7 @@ class S3FileFieldClient:
         )
         complete_resp.raise_for_status()
 
-    def _finalize(self, multipart_info: Dict) -> str:
+    def _finalize(self, multipart_info: dict) -> str:
         resp = self.api_session.post(
             f"{self.base_url}/finalize/",
             json={

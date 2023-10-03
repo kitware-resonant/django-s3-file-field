@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import timedelta
 import math
-from typing import TYPE_CHECKING, Any, ClassVar, Iterator, List, Tuple
+from typing import TYPE_CHECKING, Any, ClassVar, Iterator
 
 from s3_file_field._sizes import gb, mb
 
@@ -22,7 +22,7 @@ class PresignedPartTransfer:
 class PresignedTransfer:
     object_key: str
     upload_id: str
-    parts: List[PresignedPartTransfer]
+    parts: list[PresignedPartTransfer]
 
 
 @dataclass
@@ -36,7 +36,7 @@ class TransferredPart:
 class TransferredParts:
     object_key: str
     upload_id: str
-    parts: List[TransferredPart]
+    parts: list[TransferredPart]
 
 
 @dataclass
@@ -181,7 +181,7 @@ class MultipartManager:
         raise NotImplementedError
 
     @classmethod
-    def _iter_part_sizes(cls, file_size: int) -> Iterator[Tuple[int, int]]:
+    def _iter_part_sizes(cls, file_size: int) -> Iterator[tuple[int, int]]:
         part_size = cls.part_size
 
         # 10k is the maximum number of allowed parts allowed by S3

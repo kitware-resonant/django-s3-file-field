@@ -1,4 +1,6 @@
-from typing import List, TypedDict
+from __future__ import annotations
+
+from typing import TypedDict
 
 from hatch_jupyter_builder import npm_builder
 
@@ -14,7 +16,7 @@ def multi_npm_builder(
     target_name: str,
     version: str,
     *,
-    projects: List[BuildKwargs],
+    projects: list[BuildKwargs],
 ) -> None:
     for project in projects:
         # TODO: allow multiple source_dir for a build, so the "widget" will be rebuilt when
