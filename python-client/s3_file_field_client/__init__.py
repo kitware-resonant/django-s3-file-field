@@ -101,7 +101,7 @@ class S3FileFieldClient:
         return resp.json()["field_value"]
 
     def upload_file(
-        self, file_stream: BinaryIO, file_name: str, file_content_type: str, field_id: str
+        self, *, file_stream: BinaryIO, file_name: str, file_content_type: str, field_id: str
     ) -> str:
         file = _File.from_stream(file_stream, file_name, file_content_type)
         multipart_info = self._initialize_upload(file, field_id)
