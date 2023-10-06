@@ -47,11 +47,13 @@ s3_file_field = "s3_file_field.fixtures"
 
 [project.optional-dependencies]
 s3 = [
+  # 1.14 has some breaking renames which are adopted here
   "django-storages[s3]>=1.14",
   "boto3",
 ]
 minio = [
-  "django-minio-storage",
+  # This is the first version which supports minio>=7, so make dependency resolution easier
+  "django-minio-storage>=0.5",
   "minio>=7",
 ]
 pytest = [
