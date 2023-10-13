@@ -30,6 +30,7 @@ classifiers = [
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Programming Language :: Python",
 ]
 dependencies = [
@@ -184,6 +185,9 @@ filterwarnings = [
   # pytest often causes unclosed socket warnings
   'ignore:unclosed <socket\.socket:ResourceWarning',
   # Django 3.2 emites some deprecation warnings
-  "ignore::DeprecationWarning:django"
+  "ignore::DeprecationWarning:django",
+  # Python 3.12 deprecrates "datetime.datetime.utcnow"
+  'ignore:datetime\.datetime\.utcnow:DeprecationWarning:botocore',
+  'ignore:datetime\.datetime\.utcnow:DeprecationWarning:minio',
 ]
 DJANGO_SETTINGS_MODULE = "test_app.settings"
