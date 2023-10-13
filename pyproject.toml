@@ -172,6 +172,7 @@ addopts = [
   # Test utilies are imported absolutely from the pythonpath,
   # so use the Pytest-reccomended "importlib" mode
   "--import-mode=importlib",
+  "--strict-config",
   "--strict-markers",
   "--showlocals",
   "--verbose",
