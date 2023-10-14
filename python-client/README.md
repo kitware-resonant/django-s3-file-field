@@ -10,6 +10,8 @@ pip install django-s3-file-field-client
 
 ## Usage
 ```python
+import mimetypes
+import pathlib
 import requests
 from s3_file_field_client import S3FileFieldClient
 
@@ -19,11 +21,13 @@ s3ff_client = S3FileFieldClient(
     'http://localhost:8000/api/v1/s3-upload/',  # The path mounted in urlpatterns
     api_client,  # This argument is optional
 )
-with open('/path/to/my_file.txt', 'rb') as file_stream:  # Open in binary mode
+
+file_to_upload = pathlib.Path('/path/to/my_file.txt')
+with file_to_upload.open('rb') as file_stream:  # Open in binary mode
     field_value = s3ff_client.upload_file(
         file_stream=file_stream,  # This can be any file-like object
-        file_name='my_file.txt',
-        file_content_type='text/plain',
+        file_name=file_to_upload.name,
+        file_content_type=mimetypes.guess_type(file_to_upload)[0],
         field_id='core.File.blob',  # The "<app>.<model>.<field>" to upload to
     )
 
