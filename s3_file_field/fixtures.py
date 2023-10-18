@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Callable, Generator
 
 from django.core import signing
 from django.core.files.base import ContentFile
-from django.core.files.storage import Storage, default_storage
+from django.core.files.storage import default_storage
 import pytest
 
 if TYPE_CHECKING:
@@ -15,8 +15,6 @@ if TYPE_CHECKING:
 @pytest.fixture()
 def stored_file_object() -> Generator[File[bytes], None, None]:
     """Return a File object, already saved directly into the default Storage."""
-    # Fix https://github.com/typeddjango/django-stubs/issues/1610
-    assert isinstance(default_storage, Storage)
     # Ensure the name is always randomized, even if the key doesn't exist already
     key = default_storage.get_alternative_name("test_key", "")
     # In theory, Storage.save can change the key, though this shouldn't happen with a randomized key

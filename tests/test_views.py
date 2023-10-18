@@ -1,7 +1,7 @@
 from typing import cast
 
 from django.core import signing
-from django.core.files.storage import Storage, default_storage
+from django.core.files.storage import default_storage
 from django.urls import reverse
 import pytest
 import requests
@@ -149,8 +149,6 @@ def test_full_upload_flow(
     )
     complete_resp.raise_for_status()
 
-    # Fix https://github.com/typeddjango/django-stubs/issues/1610
-    assert isinstance(default_storage, Storage)
     # Verify the object is present in the store
     assert default_storage.exists(initialization["object_key"])
 
