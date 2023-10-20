@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any, Mapping
 
 class Object:
     @property
@@ -14,7 +15,7 @@ class Object:
     @property
     def size(self) -> int | None: ...
     @property
-    def metadata(self) -> Optional[Mapping[str, Any]]: ...
+    def metadata(self) -> Mapping[str, Any] | None: ...
     @property
     def version_id(self) -> str | None: ...
     @property
