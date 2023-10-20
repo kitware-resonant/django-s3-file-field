@@ -156,7 +156,6 @@ namespace_packages = false
 
 [[tool.mypy.overrides]]
 module = [
-  "minio_storage.storage",
   "storages.backends.s3",
 ]
 ignore_missing_imports = true
