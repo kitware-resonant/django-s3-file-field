@@ -85,7 +85,7 @@ class S3FileField(FileField):
             form_class = S3FormFileField if form_class is None else form_class
             # Allow the form and widget to lookup this field instance later, using its id
             kwargs.setdefault("model_field_id", self.id)
-        return super().formfield(  # type: ignore[no-any-return]
+        return super().formfield(
             form_class=form_class, choices_form_class=choices_form_class, **kwargs
         )
 

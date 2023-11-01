@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Callable
 
-from django.core.files.storage import Storage, default_storage
+from django.core.files.storage import default_storage
 
 from s3_file_field.widgets import S3PlaceholderFile
 
@@ -12,8 +12,6 @@ if TYPE_CHECKING:
 
 def test_fixtures_stored_file_object(stored_file_object: File[bytes]) -> None:
     """Test the stored_file_object Pytest fixture."""
-    # Fix https://github.com/typeddjango/django-stubs/issues/1610
-    assert isinstance(default_storage, Storage)
     assert stored_file_object.name
     assert default_storage.exists(stored_file_object.name)
 
