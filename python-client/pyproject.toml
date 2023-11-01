@@ -16,9 +16,11 @@ keywords = [
   "s3",
 ]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 5 - Production/Stable",
   "Environment :: Web Environment",
+  'Framework :: Django :: 3',
   "Framework :: Django :: 3.2",
+  'Framework :: Django :: 4',
   "Framework :: Django :: 4.1",
   "Framework :: Django :: 4.2",
   "Framework :: Django",
