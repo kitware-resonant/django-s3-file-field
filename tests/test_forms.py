@@ -1,7 +1,6 @@
 import pytest
 
 from s3_file_field.forms import S3FormFileField
-
 from test_app.forms import ResourceForm
 
 

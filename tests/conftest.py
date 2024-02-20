@@ -8,7 +8,6 @@ from rest_framework.test import APIClient
 
 from s3_file_field._multipart import MultipartManager
 from s3_file_field._sizes import mb
-
 from test_app.models import Resource
 
 # Explicitly load s3_file_field fixtures, late in Pytest plugin load order.

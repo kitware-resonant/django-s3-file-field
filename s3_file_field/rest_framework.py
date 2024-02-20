@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import ClassVar
+
 from django.core.files import File
 from rest_framework.fields import FileField as FileSerializerField
 
@@ -7,7 +9,7 @@ from s3_file_field.widgets import S3PlaceholderFile
 
 
 class S3FileSerializerField(FileSerializerField):
-    default_error_messages = {
+    default_error_messages: ClassVar[dict[str, str]] = {
         "invalid": "Not a valid signed S3 upload. Ensure that the S3 upload flow is correct.",
     }
 
@@ -25,7 +27,6 @@ class S3FileSerializerField(FileSerializerField):
 
         # This checks validity of the file name and size
         super().to_internal_value(file_object)
-        assert file_object.name
 
         # fields.S3FileField.save_form_data is not called by DRF, so the same behavior must be
         # implemented here

@@ -8,7 +8,6 @@ import pytest
 
 from s3_file_field import _registry
 from s3_file_field.fields import S3FileField
-
 from test_app.models import Resource
 
 
@@ -40,7 +39,7 @@ def test_field_id(s3ff_field: S3FileField) -> None:
 def test_field_id_premature() -> None:
     s3ff_field = S3FileField()
     with pytest.raises(Exception, match=r"contribute_to_class"):
-        s3ff_field.id
+        s3ff_field.id  # noqa:B018
 
 
 def test_registry_get_field(s3ff_field: S3FileField) -> None:
