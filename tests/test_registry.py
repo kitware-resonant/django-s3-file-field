@@ -62,6 +62,9 @@ def test_registry_iter_storages() -> None:
 
 
 @pytest.mark.skipif(sys.version_info < (3, 9), reason="Bug bpo-35113")
+@pytest.mark.filterwarnings(
+    "ignore:Model 'test_app\\.ephemeralresource' was already registered:RuntimeWarning"
+)
 def test_registry_register_field_multiple(ephemeral_s3ff_field: S3FileField) -> None:
     with pytest.warns(
         RuntimeWarning, match=r"Overwriting existing S3FileField declaration"
