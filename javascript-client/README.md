@@ -8,7 +8,7 @@ A Javascript (with TypeScript support) client library for django-s3-file-field.
 npm install django-s3-file-field
 ```
 
-or 
+or
 
 ```bash
 yarn add django-s3-file-field
@@ -29,7 +29,6 @@ const apiClient = axios.create(...); // This can be used to set authentication h
 
 const s3ffClient = new S3FileFieldClient({
   baseUrl: process.env.S3FF_BASE_URL, // e.g. 'http://localhost:8000/api/v1/s3-upload/', the path mounted in urlpatterns
-  onProgress: onUploadProgress, // This argument is optional
   apiConfig: apiClient.defaults, // This argument is optional
 });
 
@@ -37,15 +36,16 @@ const s3ffClient = new S3FileFieldClient({
 const file = document.getElementById('my-file-input').files[0];
 
 const fieldValue = await s3ffClient.uploadFile(
-  file, 
-  'core.File.blob' // The "<app>.<model>.<field>" to upload to
+  file,
+  'core.File.blob', // The "<app>.<model>.<field>" to upload to,
+  onUploadProgress, // This argument is optional
 );
 
 apiClient.post(
   'http://localhost:8000/api/v1/file/', // This is particular to the application
   {
     'blob': fieldValue, // This should match the field uploaded to (e.g. 'core.File.blob')
-    ...: ...,  // Other fields for the POST request 
+    ...: ...,  // Other fields for the POST request
   }
 );
 ```
