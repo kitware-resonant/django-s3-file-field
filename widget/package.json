@@ -7,9 +7,9 @@
     "lint:eslint": "eslint ./src/**.ts",
     "lint:tsc": "tsc --noEmit",
     "lint": "npm-run-all lint:*",
-    "watch": "parcel watch ./src/widget.ts --dist-dir ../s3_file_field/static/s3_file_field/",
+    "watch": "parcel watch",
     "build:clean": "rimraf ../s3_file_field/static/s3_file_field",
-    "build:compile": "parcel build ./src/widget.ts --dist-dir ../s3_file_field/static/s3_file_field/ --no-source-maps --no-cache",
+    "build:compile": "parcel build --no-source-maps --no-cache",
     "build": "npm-run-all build:clean build:compile"
   },
   "dependencies": {
@@ -28,6 +28,12 @@
     "parcel": "^2.12.0",
     "rimraf": "^5.0.5",
     "typescript": "^5.4.3"
+  },
+  "targets": {
+    "default": {
+      "source": "./src/widget.ts",
+      "distDir": "../s3_file_field/static/s3_file_field/"
+    }
   },
   "alias": {
     "buffer": false
