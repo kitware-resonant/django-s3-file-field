@@ -5,14 +5,14 @@ on:
 jobs:
   publish-python:
     runs-on: ubuntu-latest
-    environment: PyPI
+    environment: release
     permissions:
       id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
           # Tags are needed to compute the current version number
-          fetch-tags: true
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -33,11 +33,12 @@ jobs:
 
   publish-javascript:
     runs-on: ubuntu-latest
+    environment: release
     steps:
       - uses: actions/checkout@v4
         with:
           # Tags are needed to compute the current version number
-          fetch-tags: true
+          fetch-depth: 0
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
