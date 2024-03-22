@@ -5,7 +5,7 @@ on:
 jobs:
   publish-python:
     runs-on: ubuntu-latest
-    environment: PyPI
+    environment: release
     permissions:
       id-token: write
     steps:
@@ -33,6 +33,7 @@ jobs:
 
   publish-javascript:
     runs-on: ubuntu-latest
+    environment: release
     steps:
       - uses: actions/checkout@v4
         with:
