@@ -5,43 +5,41 @@ on:
 jobs:
   publish-python:
     runs-on: ubuntu-latest
+    environment: PyPI
+    permissions:
+      id-token: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           # Tags are needed to compute the current version number
-          fetch-depth: 0
+          fetch-tags: true
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.x"
-      - name: Install tox
+      - name: Install Python build
         run: |
           pip install --upgrade pip
-          pip install tox
-      - name: Publish to PyPI
-        env:
-          TWINE_USERNAME: "__token__"
-          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-          TWINE_NON_INTERACTIVE: "true"
+          pip install build
+      - name: Build the Python distribution
         run: |
-          tox -e release
-      - name: Publish Python client to PyPI
-        env:
-          TWINE_USERNAME: "__token__"
-          TWINE_PASSWORD: ${{ secrets.CLIENT_PYPI_TOKEN }}
-          TWINE_NON_INTERACTIVE: "true"
-        working-directory: ./python-client
+          python -m build
+      - name: Build the Python client distribution
+        # Place the output in the same directory, so it can all be uploaded together
         run: |
-          tox -e release
+          python -m build --outdir ./dist ./python-client
+      - name: Publish the Python distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
   publish-javascript:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           # Tags are needed to compute the current version number
-          fetch-depth: 0
+          fetch-tags: true
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: current
       - name: Publish Javascript client to npm
