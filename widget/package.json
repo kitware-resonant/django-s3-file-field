@@ -7,7 +7,7 @@
     "lint:eslint": "eslint ./src/**.ts",
     "lint:tsc": "tsc --noEmit",
     "lint": "npm-run-all lint:*",
-    "watch": "parcel watch",
+    "watch": "parcel watch --watch-dir ..",
     "build:clean": "rimraf ../s3_file_field/static/s3_file_field",
     "build:compile": "parcel build --no-source-maps --no-cache",
     "build": "npm-run-all build:clean build:compile"
