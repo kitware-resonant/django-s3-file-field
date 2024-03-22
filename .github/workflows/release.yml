@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           # Tags are needed to compute the current version number
-          fetch-tags: true
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -38,7 +38,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           # Tags are needed to compute the current version number
-          fetch-tags: true
+          fetch-depth: 0
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
