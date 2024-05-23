@@ -31,7 +31,7 @@ class S3PlaceholderFile(File):
         self.name = name
         self.size = size
 
-    def open(self, mode: str | None = None) -> NoReturn:
+    def open(self, mode: str | None = None) -> NoReturn:  # type: ignore[override]
         raise NotImplementedError
 
     def close(self) -> NoReturn:
