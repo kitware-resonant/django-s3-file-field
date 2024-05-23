@@ -1,4 +1,8 @@
-from typing import Annotated
+try:
+    from typing import Annotated
+except ImportError:
+    # Polyfill typing.Annotated on Python < 3.9
+    from typing_extensions import Annotated
 
 from pydantic import PlainValidator
 

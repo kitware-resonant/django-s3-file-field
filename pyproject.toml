@@ -61,6 +61,7 @@ minio = [
 ]
 pydantic = [
   "pydantic>=2",
+  "typing-extensions; python_version<'3.9'",
 ]
 pytest = [
   # The "fixtures.py" module (containing the "pytest" requirement) is only loaded
