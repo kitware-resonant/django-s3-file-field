@@ -13,6 +13,7 @@
     "build": "npm-run-all build:clean build:compile"
   },
   "dependencies": {
+    "axios": "^1.7.9",
     "django-s3-file-field": "file:../javascript-client"
   },
   "devDependencies": {
@@ -26,6 +27,7 @@
     "eslint-plugin-import": "^2.29.1",
     "npm-run-all": "^4.1.5",
     "parcel": "^2.12.0",
+    "process": "^0.11.10",
     "rimraf": "^5.0.5",
     "typescript": "^5.4.3"
   },
