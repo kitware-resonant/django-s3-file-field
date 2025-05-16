@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 import functools
 import posixpath
 from typing import TYPE_CHECKING, Any, Mapping, NoReturn
@@ -31,7 +32,16 @@ class S3PlaceholderFile(File):
         self.name = name
         self.size = size
 
-    def open(self, mode: str | None = None) -> NoReturn:
+    def open(
+        self,
+        mode: str | None = None,
+        buffering: int = -1,
+        encoding: str | None = None,
+        errors: str | None = None,
+        newline: str | None = None,
+        closefd: bool = True,
+        opener: Callable[[str, int], int] | None = None,
+    ) -> NoReturn:
         raise NotImplementedError
 
     def close(self) -> NoReturn:
