@@ -67,6 +67,40 @@ pytest = [
   "pytest",
 ]
 
+[dependency-groups]
+dev = [
+  "tox",
+]
+lint = [
+  "flake8",
+  "flake8-black",
+  "flake8-bugbear",
+  "flake8-docstrings",
+  "flake8-isort",
+  "pep8-naming",
+]
+format = [
+  "black",
+  "isort",
+]
+type = [
+  "mypy",
+  {include-group = "test"},
+  "boto3-stubs[s3]",
+  "django-stubs[compatible-mypy]",
+  "djangorestframework-stubs",
+  "types-requests",
+  "types-factory-boy",
+]
+test = [
+  "factory-boy",
+  "pytest",
+  "pytest-cov",
+  "pytest-django",
+  "pytest-mock",
+  "requests",
+]
+
 [tool.hatch.build]
 only-include = [
   "s3_file_field",
