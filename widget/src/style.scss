@@ -18,6 +18,10 @@ $css_prefix: s3fileinput;
   display: none;
 }
 
+.#{$css_prefix}-error {
+  color: #dc3545;
+}
+
 .#{$css_prefix}-info {
   flex: 1 1 0;
   font-style: italic;
