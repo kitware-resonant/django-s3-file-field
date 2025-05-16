@@ -6,8 +6,9 @@ build-backend = "hatchling.build"
 name = "django-s3-file-field-client"
 description = "A Python client library for django-s3-file-field."
 readme = "README.md"
-requires-python = ">=3.8"
-license = { text = "Apache 2.0" }
+requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 maintainers = [{ name = "Kitware, Inc.", email = "kitware@kitware.com" }]
 keywords = [
   "django",
@@ -18,21 +19,19 @@ keywords = [
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Environment :: Web Environment",
-  'Framework :: Django :: 3',
-  "Framework :: Django :: 3.2",
-  'Framework :: Django :: 4',
-  "Framework :: Django :: 4.1",
+  "Framework :: Django :: 4",
   "Framework :: Django :: 4.2",
+  "Framework :: Django :: 5",
+  "Framework :: Django :: 5.1",
+  "Framework :: Django :: 5.2",
   "Framework :: Django",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: Apache Software License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Programming Language :: Python",
 ]
 dependencies = [
@@ -41,8 +40,8 @@ dependencies = [
 dynamic = ["version"]
 
 [project.urls]
-Repository = "https://github.com/girder/django-s3-file-field"
-"Bug Reports" = "https://github.com/girder/django-s3-file-field/issues"
+Repository = "https://github.com/kitware-resonant/django-s3-file-field"
+"Bug Reports" = "https://github.com/kitware-resonant/django-s3-file-field/issues"
 
 [tool.hatch.build]
 only-include = [

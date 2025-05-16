@@ -74,7 +74,7 @@ class S3FileField(FileField):
         form_class: type[forms.Field] | None = None,
         choices_form_class: type[forms.ChoiceField] | None = None,
         **kwargs: Any,
-    ) -> forms.Field:
+    ) -> forms.Field | None:
         """
         Return a forms.Field instance for this model field.
 
