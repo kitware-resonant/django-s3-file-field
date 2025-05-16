@@ -40,8 +40,8 @@ dependencies = [
 dynamic = ["version"]
 
 [project.urls]
-Repository = "https://github.com/girder/django-s3-file-field"
-"Bug Reports" = "https://github.com/girder/django-s3-file-field/issues"
+Repository = "https://github.com/kitware-resonant/django-s3-file-field"
+"Bug Reports" = "https://github.com/kitware-resonant/django-s3-file-field/issues"
 
 [tool.hatch.build]
 only-include = [
