@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios';
 import S3FileFieldClient, {
   type S3FileFieldResult,
   S3FileFieldResultState,
@@ -82,7 +83,7 @@ export default class S3FileInput {
       this.input.type = 'file';
       this.input.value = '';
       this.info.innerText = '';
-      this.node.classList.remove(cssClass('set'));
+      this.node.classList.remove(cssClass('set'), cssClass('error'));
     };
   }
 
@@ -92,7 +93,7 @@ export default class S3FileInput {
     });
     this.input.dispatchEvent(startedEvent);
 
-    const result = await new S3FileFieldClient({
+    const client = new S3FileFieldClient({
       baseUrl: this.baseUrl,
       apiConfig: {
         // This will cause session and CSRF cookies to be sent for same-site requests.
@@ -104,7 +105,25 @@ export default class S3FileInput {
         // Explicitly disable this, to ensure that cross-site requests fail cleanly.
         withCredentials: false,
       },
-    }).uploadFile(file, this.fieldId);
+    });
+
+    let result;
+
+    try {
+      result = await client.uploadFile(file, this.fieldId);
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        console.error('Error uploading file', error.response?.status, error.response?.data);
+      } else {
+        console.error('Error uploading file', error);
+      }
+
+      return {
+        state: S3FileFieldResultState.Error,
+        value: 'Error uploading file, see console for details.',
+      };
+    }
+
     const completedEvent = new CustomEvent(EVENT_UPLOAD_COMPLETE, {
       detail: result,
     });
@@ -136,6 +155,11 @@ export default class S3FileInput {
       this.input.type = 'hidden';
       this.input.value = result.value;
       this.info.innerText = file.name;
+    } else if (result.state === S3FileFieldResultState.Error) {
+      this.node.classList.add(cssClass('set'), cssClass('error'));
+      this.input.setCustomValidity(result.value);
+      this.input.type = 'hidden';
+      this.info.innerText = result.value;
     }
   }
 }
