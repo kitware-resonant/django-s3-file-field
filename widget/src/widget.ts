@@ -1,5 +1,5 @@
 import './style.scss';
-import S3FileInput from './S3FileInput';
+import S3FileInput from './S3FileInput.js';
 
 function attachToFileInputs(): void {
   document.querySelectorAll<HTMLInputElement>('input[data-s3fileinput]')

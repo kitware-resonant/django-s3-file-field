@@ -1,4 +1,4 @@
-import S3FileFieldClient, { S3FileFieldResult, S3FileFieldResultState } from 'django-s3-file-field';
+import S3FileFieldClient, { type S3FileFieldResult, S3FileFieldResultState } from 'django-s3-file-field';
 
 export const EVENT_UPLOAD_STARTED = 's3UploadStarted';
 export const EVENT_UPLOAD_COMPLETE = 's3UploadComplete';

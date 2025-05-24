@@ -2,18 +2,24 @@
   "name": "django-s3-file-field",
   "version": "0.0.0",
   "description": "A Javascript client library for django-s3-file-field.",
+  "repository": "github:kitware-resonant/django-s3-file-field",
   "author": "Kitware, Inc. <kitware@kitware.com>",
   "license": "Apache-2.0",
-  "main": "dist/client.js",
-  "types": "dist/client.d.ts",
+  "type": "module",
+  "engines": {
+    "node": ">=16"
+  },
+  "module": "./dist/client.js",
+  "exports": "./dist/client.js",
+  "types": "./dist/client.d.ts",
   "files": [
     "/src/",
     "/dist/"
   ],
   "scripts": {
-    "lint:eslint": "eslint ./src/**.ts",
-    "lint:tsc": "tsc --noEmit",
-    "lint": "npm-run-all lint:*",
+    "test:lint": "eslint ./src/**.ts",
+    "test:type": "tsc --noEmit",
+    "test": "npm-run-all test:*",
     "watch": "tsc --watch",
     "build:clean": "rimraf ./dist",
     "build:compile": "tsc",
