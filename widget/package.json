@@ -16,13 +16,13 @@
     "django-s3-file-field": "file:../javascript-client"
   },
   "devDependencies": {
-    "@parcel/transformer-sass": "^2.12.0",
-    "@tsconfig/recommended": "^1.0.3",
+    "@parcel/transformer-sass": "^2.15.1",
+    "@tsconfig/recommended": "^1.0.8",
     "buffer": "^6.0.3",
     "npm-run-all": "^4.1.5",
-    "parcel": "^2.12.0",
-    "rimraf": "^5.0.5",
-    "typescript": "^5.4.3"
+    "parcel": "^2.15.1",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.8.3"
   },
   "targets": {
     "default": {
