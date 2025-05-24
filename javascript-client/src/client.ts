@@ -73,6 +73,7 @@ export default class S3FileFieldClient {
     this.api = axios.create({
       ...apiConfig,
       // Add a trailing slash
+      // biome-ignore lint/performance/useTopLevelRegex: constructor is called infrequently
       baseURL: baseUrl.replace(/\/?$/, '/'),
     });
   }

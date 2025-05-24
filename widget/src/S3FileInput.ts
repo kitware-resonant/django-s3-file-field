@@ -55,10 +55,13 @@ export default class S3FileInput {
       <div class="${cssClass('spinner')}"><div></div><div></div><div></div><div></div>
     </div>
   </div>`;
-    this.input.parentElement!.replaceChild(this.node, this.input);
+    this.input.parentElement?.replaceChild(this.node, this.input);
+    // biome-ignore lint/style/noNonNullAssertion: the element is known to exist
     this.clearButton = this.node.querySelector<HTMLButtonElement>(`.${cssClass('clear')}`)!;
+    // biome-ignore lint/style/noNonNullAssertion: the element is known to exist
     this.info = this.node.querySelector<HTMLElement>(`.${cssClass('info')}`)!;
     this.clearButton.insertAdjacentElement('beforebegin', this.input);
+    // biome-ignore lint/style/noNonNullAssertion: the element is known to exist
     this.spinnerWrapper = this.node.querySelector<HTMLElement>(`.${cssClass('spinner-wrapper')}`)!;
 
     this.input.onchange = async (evt): Promise<void> => {
