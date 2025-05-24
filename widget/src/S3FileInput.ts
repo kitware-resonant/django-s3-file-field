@@ -1,8 +1,4 @@
-import { AxiosError } from 'axios';
-import S3FileFieldClient, {
-  type S3FileFieldResult,
-  S3FileFieldResultState,
-} from 'django-s3-file-field';
+import S3FileFieldClient, {} from 'django-s3-file-field';
 
 export const EVENT_UPLOAD_STARTED = 's3UploadStarted';
 export const EVENT_UPLOAD_COMPLETE = 's3UploadComplete';
@@ -87,7 +83,7 @@ export default class S3FileInput {
     };
   }
 
-  private async uploadFile(file: File): Promise<S3FileFieldResult> {
+  private async uploadFile(file: File): Promise<string> {
     const startedEvent = new CustomEvent(EVENT_UPLOAD_STARTED, {
       detail: file,
     });
@@ -106,29 +102,14 @@ export default class S3FileInput {
         withCredentials: false,
       },
     });
-
-    let result;
-
-    try {
-      result = await client.uploadFile(file, this.fieldId);
-    } catch (error) {
-      if (error instanceof AxiosError) {
-        console.error('Error uploading file', error.response?.status, error.response?.data);
-      } else {
-        console.error('Error uploading file', error);
-      }
-
-      return {
-        state: S3FileFieldResultState.Error,
-        value: 'Error uploading file, see console for details.',
-      };
-    }
+    const fieldValue = client.uploadFile(file, this.fieldId);
 
     const completedEvent = new CustomEvent(EVENT_UPLOAD_COMPLETE, {
-      detail: result,
+      detail: fieldValue,
     });
     this.input.dispatchEvent(completedEvent);
-    return result;
+
+    return fieldValue;
   }
 
   private async uploadFiles(): Promise<void> {
@@ -147,19 +128,22 @@ export default class S3FileInput {
 
     const file = files[0];
 
-    const result = await this.uploadFile(file);
-    this.node.classList.remove(cssClass('uploading'));
-    if (result.state === S3FileFieldResultState.Successful) {
-      this.node.classList.add(cssClass('set'));
-      this.input.setCustomValidity(''); // no error
-      this.input.type = 'hidden';
-      this.input.value = result.value;
-      this.info.innerText = file.name;
-    } else if (result.state === S3FileFieldResultState.Error) {
+    let fieldValue: string;
+    try {
+      fieldValue = await this.uploadFile(file);
+    } catch (error) {
       this.node.classList.add(cssClass('set'), cssClass('error'));
-      this.input.setCustomValidity(result.value);
+      this.input.setCustomValidity('Error uploading file, see console for details.');
       this.input.type = 'hidden';
-      this.info.innerText = result.value;
+      this.info.innerText = 'Error uploading file, see console for details.';
+      throw error;
+    } finally {
+      this.node.classList.remove(cssClass('uploading'));
     }
+    this.node.classList.add(cssClass('set'));
+    this.input.setCustomValidity(''); // no error
+    this.input.type = 'hidden';
+    this.input.value = fieldValue;
+    this.info.innerText = file.name;
   }
 }
