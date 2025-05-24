@@ -5,9 +5,10 @@
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
-    "test:lint": "eslint ./src/**.ts",
+    "test:lint": "biome check",
     "test:type": "tsc --noEmit",
     "test": "npm-run-all test:*",
+    "format": "biome check --write",
     "watch": "parcel watch --watch-dir ..",
     "build:clean": "rimraf ../s3_file_field/static/s3_file_field",
     "build:compile": "parcel build --no-source-maps --no-cache",
@@ -17,6 +18,7 @@
     "django-s3-file-field": "file:../javascript-client"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
     "@parcel/transformer-sass": "^2.15.1",
     "@tsconfig/recommended": "^1.0.8",
     "buffer": "^6.0.3",
