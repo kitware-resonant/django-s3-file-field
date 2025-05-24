@@ -106,7 +106,7 @@ export default class S3FileFieldClient {
    * @param parts - The list of parts describing how to break up the file.
    * @param onProgress - A callback for upload progress.
    */
-  protected async uploadParts( // eslint-disable-line class-methods-use-this
+  protected async uploadParts(
     file: File,
     parts: PartInfo[],
     onProgress: S3FileFieldProgressCallback,
@@ -115,9 +115,7 @@ export default class S3FileFieldClient {
     let fileOffset = 0;
     for (const part of parts) {
       const chunk = file.slice(fileOffset, fileOffset + part.size);
-      // eslint-disable-next-line no-await-in-loop
       const response = await axios.put(part.upload_url, chunk, {
-        // eslint-disable-next-line @typescript-eslint/no-loop-func
         onUploadProgress: (e) => {
           onProgress({
             uploaded: fileOffset + e.loaded,

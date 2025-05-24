@@ -54,9 +54,7 @@ export default class S3FileInput {
   )}"><div></div><div></div><div></div><div></div>
     </div>
   </div>`;
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
     this.input.parentElement!.replaceChild(this.node, this.input);
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.clearButton = this.node.querySelector<HTMLButtonElement>(
       `.${cssClass('clear')}`,
     )!;
@@ -67,7 +65,6 @@ export default class S3FileInput {
     this.spinnerWrapper = this.node.querySelector<HTMLElement>(
       `.${cssClass('spinner-wrapper')}`,
     )!;
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
     this.input.onchange = async (evt): Promise<void> => {
       evt.preventDefault();
