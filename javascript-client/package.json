@@ -12,10 +12,7 @@
   "module": "./dist/client.js",
   "exports": "./dist/client.js",
   "types": "./dist/client.d.ts",
-  "files": [
-    "/src/",
-    "/dist/"
-  ],
+  "files": ["/src/", "/dist/"],
   "scripts": {
     "test:lint": "biome check",
     "test:type": "tsc --noEmit",

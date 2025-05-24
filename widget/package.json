@@ -36,8 +36,5 @@
   "alias": {
     "buffer": false
   },
-  "browserslist": [
-    "last 1 chrome version",
-    "last 1 firefox version"
-  ]
+  "browserslist": ["last 1 chrome version", "last 1 firefox version"]
 }

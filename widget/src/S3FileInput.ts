@@ -1,4 +1,7 @@
-import S3FileFieldClient, { type S3FileFieldResult, S3FileFieldResultState } from 'django-s3-file-field';
+import S3FileFieldClient, {
+  type S3FileFieldResult,
+  S3FileFieldResultState,
+} from 'django-s3-file-field';
 
 export const EVENT_UPLOAD_STARTED = 's3UploadStarted';
 export const EVENT_UPLOAD_COMPLETE = 's3UploadComplete';
@@ -49,22 +52,14 @@ export default class S3FileInput {
       ${i18n('x')}
     </button>
     <div class="${cssClass('spinner-wrapper')}">
-      <div class="${cssClass(
-    'spinner',
-  )}"><div></div><div></div><div></div><div></div>
+      <div class="${cssClass('spinner')}"><div></div><div></div><div></div><div></div>
     </div>
   </div>`;
     this.input.parentElement!.replaceChild(this.node, this.input);
-    this.clearButton = this.node.querySelector<HTMLButtonElement>(
-      `.${cssClass('clear')}`,
-    )!;
-    this.info = this.node.querySelector<HTMLElement>(
-      `.${cssClass('info')}`,
-    )!;
+    this.clearButton = this.node.querySelector<HTMLButtonElement>(`.${cssClass('clear')}`)!;
+    this.info = this.node.querySelector<HTMLElement>(`.${cssClass('info')}`)!;
     this.clearButton.insertAdjacentElement('beforebegin', this.input);
-    this.spinnerWrapper = this.node.querySelector<HTMLElement>(
-      `.${cssClass('spinner-wrapper')}`,
-    )!;
+    this.spinnerWrapper = this.node.querySelector<HTMLElement>(`.${cssClass('spinner-wrapper')}`)!;
 
     this.input.onchange = async (evt): Promise<void> => {
       evt.preventDefault();
