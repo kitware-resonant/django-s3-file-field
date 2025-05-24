@@ -1,6 +1,10 @@
 {
   "extends": "@tsconfig/recommended/tsconfig.json",
-  "include": [
-    "src/**/*"
-  ]
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "sourceMap": true
+  },
+  "include": ["src/**/*"]
 }

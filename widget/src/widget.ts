@@ -1,12 +1,10 @@
 import './style.scss';
-import S3FileInput from './S3FileInput';
+import S3FileInput from './S3FileInput.js';
 
 function attachToFileInputs(): void {
-  document.querySelectorAll<HTMLInputElement>('input[data-s3fileinput]')
-    .forEach((element) => {
-      // eslint-disable-next-line no-new
-      new S3FileInput(element);
-    });
+  for (const element of document.querySelectorAll<HTMLInputElement>('input[data-s3fileinput]')) {
+    new S3FileInput(element);
+  }
 }
 
 if (document.readyState !== 'loading') {

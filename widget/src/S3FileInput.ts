@@ -1,4 +1,7 @@
-import S3FileFieldClient, { S3FileFieldResult, S3FileFieldResultState } from 'django-s3-file-field';
+import S3FileFieldClient, {
+  type S3FileFieldResult,
+  S3FileFieldResultState,
+} from 'django-s3-file-field';
 
 export const EVENT_UPLOAD_STARTED = 's3UploadStarted';
 export const EVENT_UPLOAD_COMPLETE = 's3UploadComplete';
@@ -49,25 +52,17 @@ export default class S3FileInput {
       ${i18n('x')}
     </button>
     <div class="${cssClass('spinner-wrapper')}">
-      <div class="${cssClass(
-    'spinner',
-  )}"><div></div><div></div><div></div><div></div>
+      <div class="${cssClass('spinner')}"><div></div><div></div><div></div><div></div>
     </div>
   </div>`;
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    this.input.parentElement!.replaceChild(this.node, this.input);
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.clearButton = this.node.querySelector<HTMLButtonElement>(
-      `.${cssClass('clear')}`,
-    )!;
-    this.info = this.node.querySelector<HTMLElement>(
-      `.${cssClass('info')}`,
-    )!;
+    this.input.parentElement?.replaceChild(this.node, this.input);
+    // biome-ignore lint/style/noNonNullAssertion: the element is known to exist
+    this.clearButton = this.node.querySelector<HTMLButtonElement>(`.${cssClass('clear')}`)!;
+    // biome-ignore lint/style/noNonNullAssertion: the element is known to exist
+    this.info = this.node.querySelector<HTMLElement>(`.${cssClass('info')}`)!;
     this.clearButton.insertAdjacentElement('beforebegin', this.input);
-    this.spinnerWrapper = this.node.querySelector<HTMLElement>(
-      `.${cssClass('spinner-wrapper')}`,
-    )!;
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
+    // biome-ignore lint/style/noNonNullAssertion: the element is known to exist
+    this.spinnerWrapper = this.node.querySelector<HTMLElement>(`.${cssClass('spinner-wrapper')}`)!;
 
     this.input.onchange = async (evt): Promise<void> => {
       evt.preventDefault();

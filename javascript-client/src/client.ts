@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
 
 // Description of a part from initializeUpload()
 interface PartInfo {
@@ -28,9 +28,9 @@ interface FinalizationResponse {
 }
 
 export enum S3FileFieldResultState {
-  Aborted,
-  Successful,
-  Error,
+  Aborted = 0,
+  Successful = 1,
+  Error = 2,
 }
 // Return value from uploadFile()
 export interface S3FileFieldResult {
@@ -39,10 +39,10 @@ export interface S3FileFieldResult {
 }
 
 export enum S3FileFieldProgressState {
-  Initializing,
-  Sending,
-  Finalizing,
-  Done,
+  Initializing = 0,
+  Sending = 1,
+  Finalizing = 2,
+  Done = 3,
 }
 
 export interface S3FileFieldProgress {
@@ -55,7 +55,7 @@ export type S3FileFieldProgressCallback = (progress: S3FileFieldProgress) => voi
 
 export interface S3FileFieldClientOptions {
   readonly baseUrl: string;
-  readonly apiConfig?: AxiosRequestConfig
+  readonly apiConfig?: AxiosRequestConfig;
 }
 
 export default class S3FileFieldClient {
@@ -69,15 +69,11 @@ export default class S3FileFieldClient {
    * @param [options.apiConfig] - An axios configuration to use for Django API requests.
    *                              Can be extracted from an existing axios instance via `.defaults`.
    */
-  constructor(
-    {
-      baseUrl,
-      apiConfig = {},
-    }: S3FileFieldClientOptions,
-  ) {
+  constructor({ baseUrl, apiConfig = {} }: S3FileFieldClientOptions) {
     this.api = axios.create({
       ...apiConfig,
       // Add a trailing slash
+      // biome-ignore lint/performance/useTopLevelRegex: constructor is called infrequently
       baseURL: baseUrl.replace(/\/?$/, '/'),
     });
   }
@@ -106,7 +102,7 @@ export default class S3FileFieldClient {
    * @param parts - The list of parts describing how to break up the file.
    * @param onProgress - A callback for upload progress.
    */
-  protected async uploadParts( // eslint-disable-line class-methods-use-this
+  protected async uploadParts(
     file: File,
     parts: PartInfo[],
     onProgress: S3FileFieldProgressCallback,
@@ -115,9 +111,7 @@ export default class S3FileFieldClient {
     let fileOffset = 0;
     for (const part of parts) {
       const chunk = file.slice(fileOffset, fileOffset + part.size);
-      // eslint-disable-next-line no-await-in-loop
       const response = await axios.put(part.upload_url, chunk, {
-        // eslint-disable-next-line @typescript-eslint/no-loop-func
         onUploadProgress: (e) => {
           onProgress({
             uploaded: fileOffset + e.loaded,
@@ -201,7 +195,9 @@ export default class S3FileFieldClient {
   public async uploadFile(
     file: File,
     fieldId: string,
-    onProgress: S3FileFieldProgressCallback = () => { /* no-op */ },
+    onProgress: S3FileFieldProgressCallback = () => {
+      /* no-op */
+    },
   ): Promise<S3FileFieldResult> {
     onProgress({ state: S3FileFieldProgressState.Initializing });
     const multipartInfo = await this.initializeUpload(file, fieldId);

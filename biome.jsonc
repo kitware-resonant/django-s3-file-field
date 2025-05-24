@@ -1,0 +1,63 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "formatter": {
+    "useEditorconfig": true
+  },
+  "linter": {
+    "rules": {
+      "all": true,
+      "correctness": {
+        "useImportExtensions": {
+          "level": "warn",
+          "options": {
+            "suggestedExtensions": {
+              "ts": {
+                "module": "js",
+                "component": "jsx"
+              }
+            }
+          }
+        }
+      },
+      "performance": {
+        "noBarrelFile": "off",
+        "noReExportAll": "off"
+      },
+      "suspicious": {
+        // useAwait incorrectly flags cases when a promise is returned
+        // https://github.com/biomejs/biome/issues/1161
+        "useAwait": "off"
+      },
+      "style": {
+        "noDefaultExport": "off",
+        // noDoneCallback flags on Vite context
+        "noDoneCallback": "off",
+        "noParameterProperties": "off",
+        "useNamingConvention": "off"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single"
+    }
+  },
+  "overrides": [
+    {
+      "include": ["tests/**"],
+      "linter": {
+        "rules": {
+          "performance": {
+            // useTopLevelRegex is unreasonable for test cases
+            "useTopLevelRegex": "off"
+          }
+        }
+      }
+    }
+  ]
+}
