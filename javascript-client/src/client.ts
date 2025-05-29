@@ -27,17 +27,6 @@ interface FinalizationResponse {
   field_value: string;
 }
 
-export enum S3FileFieldResultState {
-  Aborted = 0,
-  Successful = 1,
-  Error = 2,
-}
-// Return value from uploadFile()
-export interface S3FileFieldResult {
-  value: string;
-  state: S3FileFieldResultState;
-}
-
 export enum S3FileFieldProgressState {
   Initializing = 0,
   Sending = 1,
@@ -198,18 +187,15 @@ export default class S3FileFieldClient {
     onProgress: S3FileFieldProgressCallback = () => {
       /* no-op */
     },
-  ): Promise<S3FileFieldResult> {
+  ): Promise<string> {
     onProgress({ state: S3FileFieldProgressState.Initializing });
     const multipartInfo = await this.initializeUpload(file, fieldId);
     onProgress({ state: S3FileFieldProgressState.Sending, uploaded: 0, total: file.size });
     const parts = await this.uploadParts(file, multipartInfo.parts, onProgress);
     onProgress({ state: S3FileFieldProgressState.Finalizing });
     await this.completeUpload(multipartInfo, parts);
-    const value = await this.finalize(multipartInfo);
+    const fieldValue = await this.finalize(multipartInfo);
     onProgress({ state: S3FileFieldProgressState.Done });
-    return {
-      value,
-      state: S3FileFieldResultState.Successful,
-    };
+    return fieldValue;
   }
 }
