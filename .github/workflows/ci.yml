@@ -36,7 +36,7 @@ jobs:
           MINIO_STORAGE_SECRET_KEY: minioSecretKey
           MINIO_STORAGE_MEDIA_BUCKET_NAME: s3ff-test
         run: |
-          tox
+          tox run-parallel
   test-javascript:
     runs-on: ubuntu-latest
     steps:
