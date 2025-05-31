@@ -7,6 +7,8 @@ services:
     environment:
       MINIO_ROOT_USER: minioAccessKey
       MINIO_ROOT_PASSWORD: minioSecretKey
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - 9000:9000
+      - 9001:9001
