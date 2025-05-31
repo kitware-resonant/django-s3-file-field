@@ -3,13 +3,4 @@
   extends: [
     'github>kitware-resonant/.github:renovate-library-core.json5',
   ],
-  packageRules: [
-    {
-      // This is currently broken, so evaluate upgrades separately
-      groupName: 'CI MinIO Docker',
-      matchPackageNames: [
-        '/bitnami/minio/',
-      ],
-    },
-  ],
 }
