@@ -13,10 +13,12 @@ jobs:
     services:
       minio:
         # This image does not require any command arguments (which GitHub Actions don't support)
-        image: "bitnami/minio:latest"
+        image: bitnami/minio:2025.4.22
         env:
           MINIO_ROOT_USER: minioAccessKey
           MINIO_ROOT_PASSWORD: minioSecretKey
+        options: >-
+          --health-cmd "mc ready local"
         ports:
           - 9000:9000
     steps:
