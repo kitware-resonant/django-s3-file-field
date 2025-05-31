@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from io import BytesIO
 from typing import TYPE_CHECKING, Callable, cast
 
@@ -26,7 +28,7 @@ if TYPE_CHECKING:
     import mypy_boto3_s3 as s3
 
 
-def s3_storage_factory() -> "S3Storage":
+def s3_storage_factory() -> S3Storage:
     storage = S3Storage(
         access_key=settings.MINIO_STORAGE_ACCESS_KEY,
         secret_key=settings.MINIO_STORAGE_SECRET_KEY,
@@ -67,7 +69,7 @@ def minio_storage_factory() -> MinioStorage:
 
 
 @pytest.fixture()
-def s3_storage() -> "S3Storage":
+def s3_storage() -> S3Storage:
     return s3_storage_factory()
 
 
