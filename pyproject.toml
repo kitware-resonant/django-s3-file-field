@@ -85,7 +85,6 @@ format = [
 ]
 type = [
   "mypy",
-  {include-group = "test"},
   "boto3-stubs[s3]",
   "django-stubs[compatible-mypy]",
   "djangorestframework-stubs",
@@ -177,7 +176,11 @@ files = [
   "tests",
   "python-client/s3_file_field_client",
 ]
+check_untyped_defs = true
 show_error_codes = true
+warn_redundant_casts = true
+warn_unused_configs = true
+warn_unused_ignores = true
 plugins = [
   "mypy_django_plugin.main",
   "mypy_drf_plugin.main",
@@ -193,7 +196,6 @@ namespace_packages = false
 
 [[tool.mypy.overrides]]
 module = [
-  "minio_storage.storage",
   "storages.backends.s3",
 ]
 ignore_missing_imports = true

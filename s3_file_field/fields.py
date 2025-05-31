@@ -55,11 +55,13 @@ class S3FileField(FileField):
             raise RuntimeError("contribute_to_class has not been called yet on this field.")
         return str(self)
 
-    def contribute_to_class(self, cls, name, **kwargs):
+    def contribute_to_class(
+        self, cls: type[models.Model], name: str, private_only: bool = False
+    ) -> None:
         # This is executed when the Field is formally added to its containing class.
         # As a side effect, self.name is set and self.__str__ becomes usable as a unique
         # identifier for the Field.
-        super().contribute_to_class(cls, name, **kwargs)
+        super().contribute_to_class(cls, name, private_only=private_only)
         if cls.__module__ != "__fake__":
             # Django's makemigrations iteratively creates fake model instances.
             # To avoid registration collisions, don't register these.
