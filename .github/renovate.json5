@@ -2,12 +2,5 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "local>kitware-resonant/.github:renovate-config"
-  ],
-  "packageRules": [
-    {
-      // This is currently broken, so evaluate upgrades separately
-      "groupName": "CI MinIO Docker",
-      "matchPackagePatterns": ["bitnami/minio"]
-    }
   ]
 }
