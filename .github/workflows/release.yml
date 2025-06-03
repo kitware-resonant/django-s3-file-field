@@ -3,36 +3,53 @@ on:
   release:
     types: [published]
 jobs:
-  publish-python:
+  publish:
     runs-on: ubuntu-latest
     environment: release
     permissions:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           # Tags are needed to compute the current version number
           fetch-depth: 0
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.x"
-      - name: Install Python build
-        run: |
-          pip install --upgrade pip
-          pip install build
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
       - name: Build the Python distribution
         run: |
-          python -m build
-      - name: Build the Python client distribution
-        # Place the output in the same directory, so it can all be uploaded together
-        run: |
-          python -m build --outdir ./dist ./python-client
+          uv build
       - name: Publish the Python distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        run: |
+          uv publish --trusted-publishing=always
 
-  publish-javascript:
+  publish-python-client:
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Tags are needed to compute the current version number
+          fetch-depth: 0
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          working-directory: python-client
+      - name: Build the Python distribution
+        run: |
+          uv build
+        working-directory: python-client
+      - name: Publish the Python distributions to PyPI
+        run: |
+          uv publish --trusted-publishing=always
+        working-directory: python-client
+
+  publish-javascript-client:
     runs-on: ubuntu-latest
     environment: release
     permissions:

@@ -13,13 +13,12 @@ Some settings used here are not appropriate for production use.
 
 * In the main terminal:
   ```bash
-  pip install -e ..[minio]
-  ./manage.py migrate
+  uv run --extra minio ./manage.py migrate
   ```
 
 * To allow usage of the admin page:
   ```bash
-  ./manage.py createsuperuser
+  uv run --extra minio ./manage.py createsuperuser
   ```
 
 # Run
@@ -27,7 +26,7 @@ Some settings used here are not appropriate for production use.
 
 * In the main terminal:
   ```bash
-  ./manage.py runserver
+  uv run --extra minio ./manage.py runserver
   ```
 
 * Load http://localhost:8000/ in a web browser
