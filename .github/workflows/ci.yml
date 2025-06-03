@@ -24,15 +24,15 @@ jobs:
         ports:
           - 9000:9000
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Tags are needed to compute the current version number
+          fetch-depth: 0
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install tox
-        run: |
-          pip install --upgrade pip
-          pip install tox
       - name: Run tests
         env:
           MINIO_STORAGE_ENDPOINT: "localhost:9000"
@@ -40,11 +40,12 @@ jobs:
           MINIO_STORAGE_SECRET_KEY: minioSecretKey
           MINIO_STORAGE_MEDIA_BUCKET_NAME: s3ff-test
         run: |
-          tox
+          uv run tox
   test-javascript:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
