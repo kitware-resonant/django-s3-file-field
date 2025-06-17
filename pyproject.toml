@@ -70,6 +70,7 @@ pytest = [
 [dependency-groups]
 dev = [
   "tox",
+  "tox-uv",
 ]
 lint = [
   "flake8",
@@ -137,6 +138,9 @@ build_dir = "s3_file_field/static/s3_file_field"
 
 [tool.hatch.version]
 source = "vcs"
+
+[tool.uv.workspace]
+members = ["python-client"]
 
 [tool.black]
 line-length = 100
