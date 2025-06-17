@@ -2,6 +2,12 @@ version = 1
 revision = 2
 requires-python = ">=3.10"
 
+[manifest]
+members = [
+    "django-s3-file-field",
+    "django-s3-file-field-client",
+]
+
 [[package]]
 name = "argon2-cffi"
 version = "23.1.0"
@@ -520,6 +526,16 @@ type = [
     { name = "types-factory-boy" },
     { name = "types-requests" },
 ]
+
+[[package]]
+name = "django-s3-file-field-client"
+source = { editable = "python-client" }
+dependencies = [
+    { name = "requests" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "requests" }]
 
 [[package]]
 name = "django-storages"
