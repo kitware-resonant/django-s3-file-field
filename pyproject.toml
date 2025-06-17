@@ -70,6 +70,7 @@ pytest = [
 [dependency-groups]
 dev = [
   "tox",
+  "tox-uv",
 ]
 lint = [
   "flake8",
