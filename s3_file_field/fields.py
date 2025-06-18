@@ -55,13 +55,11 @@ class S3FileField(FileField):
             raise RuntimeError("contribute_to_class has not been called yet on this field.")
         return str(self)
 
-    def contribute_to_class(
-        self, cls: type[models.Model], name: str, private_only: bool = False
-    ) -> None:
+    def contribute_to_class(self, cls, name, **kwargs):
         # This is executed when the Field is formally added to its containing class.
         # As a side effect, self.name is set and self.__str__ becomes usable as a unique
         # identifier for the Field.
-        super().contribute_to_class(cls, name, private_only=private_only)
+        super().contribute_to_class(cls, name, **kwargs)
         if cls.__module__ != "__fake__":
             # Django's makemigrations iteratively creates fake model instances.
             # To avoid registration collisions, don't register these.
@@ -76,7 +74,7 @@ class S3FileField(FileField):
         form_class: type[forms.Field] | None = None,
         choices_form_class: type[forms.ChoiceField] | None = None,
         **kwargs: Any,
-    ) -> forms.Field | None:
+    ) -> forms.Field:
         """
         Return a forms.Field instance for this model field.
 
@@ -100,8 +98,11 @@ class S3FileField(FileField):
         # However, we don't want the S3FileInput or S3FormFileField to emit a string value,
         # since that will break most of the default validation.
         if isinstance(data, S3PlaceholderFile):
-            data = data.name
-        super().save_form_data(instance, data)
+            # For S3PlaceholderFile, directly set the field value to avoid Django 5.1's
+            # new file validation that expects file objects to have proper attributes
+            setattr(instance, self.attname, data.name)
+        else:
+            super().save_form_data(instance, data)
 
     def check(self, **kwargs: Any) -> list[CheckMessage]:
         return [

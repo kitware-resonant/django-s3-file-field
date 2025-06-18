@@ -5,6 +5,7 @@ from django.core.files.base import ContentFile
 import pytest
 
 from test_app.models import Resource
+from s3_file_field.widgets import S3PlaceholderFile
 
 
 @pytest.mark.django_db()
@@ -62,3 +63,22 @@ def test_fields_clean_empty() -> None:
 
 def test_fields_check_success(resource: Resource) -> None:
     assert resource._meta.get_field("blob").check() == []
+
+
+def test_s3_placeholder_file_save_form_data() -> None:
+    resource = Resource()
+    blob_field = resource._meta.get_field("blob")
+    placeholder_file = S3PlaceholderFile(name="test-file.txt")
+    blob_field.save_form_data(resource, placeholder_file)
+    assert getattr(resource, blob_field.attname) == "test-file.txt"
+
+
+@pytest.mark.django_db()
+def test_s3_placeholder_file_save_form_data_with_save() -> None:
+    resource = Resource()
+    blob_field = resource._meta.get_field("blob")
+    placeholder_file = S3PlaceholderFile(name="test-file-save.txt")
+    blob_field.save_form_data(resource, placeholder_file)
+    resource.save()
+    resource.refresh_from_db()
+    assert resource.blob.name == "test-file-save.txt"
