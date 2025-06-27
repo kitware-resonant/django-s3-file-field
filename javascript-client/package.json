@@ -28,7 +28,7 @@
     "axios": "^1.9.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.0.0",
     "@tsconfig/recommended": "^1.0.8",
     "npm-run-all2": "^8.0.0",
     "rimraf": "^6.0.1",
