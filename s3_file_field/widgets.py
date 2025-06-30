@@ -71,13 +71,13 @@ class S3FileInput(ClearableFileInput):
         js = ["s3_file_field/widget.js"]
         css = {"all": ["s3_file_field/widget.css"]}
 
-    def get_context(self, *args, **kwargs) -> dict[str, Any]:
+    def get_context(self, name, value, attrs) -> dict[str, Any]:
         # The base URL cannot be determined at the time the widget is instantiated
         # (when S3FormFileField.widget_attrs is called).
         # Additionally, because this method is called on a deep copy of the widget each
         # time it's rendered, this assignment to an instance variable is not persisted.
-        self.attrs["data-s3fileinput"] = get_base_url()
-        return super().get_context(*args, **kwargs)
+        attrs["data-s3fileinput"] = get_base_url()
+        return super().get_context(name, value, attrs)
 
     def value_from_datadict(
         self, data: Mapping[str, Any], files: MultiValueDict[str, UploadedFile], name: str
@@ -114,6 +114,18 @@ class S3FileInput(ClearableFileInput):
             and (name not in files)
             and (self.clear_checkbox_name(name) not in data)
         )
+
+
+class S3ImageFileInput(S3FileInput):
+    """Widget to render the S3 File Input with an image field preview."""
+
+    template_name = "s3_file_field/widgets/image_input.html"
+
+    class Media(S3FileInput.Media):
+        js = ["s3_file_field/imagewidget.js"]
+        css = {
+            "all": ["s3_file_field/imagewidget.css"],
+        }
 
 
 class AdminS3FileInput(S3FileInput):

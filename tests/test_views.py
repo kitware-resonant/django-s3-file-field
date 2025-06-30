@@ -29,6 +29,7 @@ def test_prepare(api_client: APIClient) -> None:
             r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt"
         ),
         "upload_id": FUZZY_UPLOAD_ID,
+        "acl": "",
         "parts": [{"part_number": 1, "size": 10, "upload_url": FUZZY_URL}],
         "upload_signature": Fuzzy(r".*:.*"),
     }
@@ -57,6 +58,7 @@ def test_prepare_two_parts(api_client: APIClient) -> None:
             r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt"
         ),
         "upload_id": FUZZY_UPLOAD_ID,
+        "acl": "",
         "parts": [
             # 5 MB size
             {"part_number": 1, "size": mb(5), "upload_url": FUZZY_URL},
@@ -83,6 +85,7 @@ def test_prepare_three_parts(api_client: APIClient) -> None:
             r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt"
         ),
         "upload_id": FUZZY_UPLOAD_ID,
+        "acl": "",
         "parts": [
             {"part_number": 1, "size": mb(5), "upload_url": FUZZY_URL},
             {"part_number": 2, "size": mb(5), "upload_url": FUZZY_URL},

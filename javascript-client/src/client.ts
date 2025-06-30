@@ -7,10 +7,11 @@ interface PartInfo {
   upload_url: string;
 }
 // Description of the upload from initializeUpload()
-interface MultipartInfo {
+export interface MultipartInfo {
   upload_signature: string;
   object_key: string;
   upload_id: string;
+  acl: string;
   parts: PartInfo[];
 }
 // Description of a part which has been uploaded by uploadPart()
@@ -95,6 +96,7 @@ export default class S3FileFieldClient {
     file: File,
     parts: PartInfo[],
     onProgress: S3FileFieldProgressCallback,
+    acl?: string,
   ): Promise<UploadedPart[]> {
     const uploadedParts: UploadedPart[] = [];
     let fileOffset = 0;
@@ -108,6 +110,7 @@ export default class S3FileFieldClient {
             state: S3FileFieldProgressState.Sending,
           });
         },
+        ...(acl ? {headers: {"x-amz-acl": acl}}: {}),
       });
       const { etag } = response.headers;
       // ETag might be absent due to CORS misconfiguration, but dumb typings from Axios also make it
@@ -191,7 +194,7 @@ export default class S3FileFieldClient {
     onProgress({ state: S3FileFieldProgressState.Initializing });
     const multipartInfo = await this.initializeUpload(file, fieldId);
     onProgress({ state: S3FileFieldProgressState.Sending, uploaded: 0, total: file.size });
-    const parts = await this.uploadParts(file, multipartInfo.parts, onProgress);
+    const parts = await this.uploadParts(file, multipartInfo.parts, onProgress, multipartInfo.acl);
     onProgress({ state: S3FileFieldProgressState.Finalizing });
     await this.completeUpload(multipartInfo, parts);
     const fieldValue = await this.finalize(multipartInfo);

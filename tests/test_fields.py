@@ -4,7 +4,17 @@ from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 import pytest
 
+from s3_file_field.fields import S3ImageField
+
 from test_app.models import Resource
+
+
+def test_s3_image_field():
+    with pytest.raises(ValueError) as exc:
+        S3ImageField(acl=3)
+    assert "The 'acl' argument to S3ImageField must either be a string or a callable" in str(
+        exc.value
+    )
 
 
 @pytest.mark.django_db()
@@ -61,4 +71,4 @@ def test_fields_clean_empty() -> None:
 
 
 def test_fields_check_success(resource: Resource) -> None:
-    assert resource._meta.get_field("blob").check() == []
+    assert resource._meta.get_field("blob").check() == []  # type: ignore [misc]

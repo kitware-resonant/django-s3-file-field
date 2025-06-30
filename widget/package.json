@@ -31,6 +31,10 @@
     "default": {
       "source": "./src/widget.ts",
       "distDir": "../s3_file_field/static/s3_file_field/"
+    },
+    "imageinput": {
+      "source": "./src/imagewidget.ts",
+      "distDir": "../s3_file_field/static/s3_file_field/"
     }
   },
   "alias": {
