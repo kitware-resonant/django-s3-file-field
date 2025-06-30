@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 from botocore.exceptions import ClientError
 
@@ -27,7 +27,11 @@ class S3MultipartManager(MultipartManager):
         self,
         object_key: str,
         content_type: str,
+        acl: Optional[str] = None,
     ) -> str:
+        kwargs: dict[str, Any] = {}
+        if acl:
+            kwargs["ACL"] = acl
         resp = self._client.create_multipart_upload(
             Bucket=self._bucket_name,
             Key=object_key,
@@ -35,6 +39,7 @@ class S3MultipartManager(MultipartManager):
             # TODO: filename in Metadata
             # TODO: ensure ServerSideEncryption is set, even if not specified
             # TODO: use client._get_write_parameters?
+            **kwargs,
         )
         return resp["UploadId"]
 

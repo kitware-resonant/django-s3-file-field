@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+from django.conf import settings
 from django.contrib.admin.widgets import AdminFileWidget
+from django.core.files.storage import Storage
 from django.forms import FileField, Widget
+from django.forms.widgets import FileInput
+from django.utils.module_loading import import_string
 
-from .widgets import AdminS3FileInput, S3FileInput
+from .widgets import AdminS3FileInput, S3FileInput, S3ImageFileInput
 
 
 class S3FormFileField(FileField):
@@ -46,4 +50,47 @@ class S3FormFileField(FileField):
         )
         # 'data-s3fileinput' cannot be determined at this point, during app startup.
         # It will be added at render-time by "S3FileInput.get_context".
+        return attrs
+
+
+class StorageProtocol:
+    endpoint_url: str
+    bucket_name: str
+
+
+def default_get_image_domain(storage: StorageProtocol) -> str:
+    return getattr(
+        storage,
+        "custom_domain",
+        storage.endpoint_url.replace("https://", f"{storage.bucket_name}."),
+    )
+
+
+get_image_domain = import_string(
+    getattr(
+        settings,
+        "S3_FILE_FIELD_IMAGE_DOMAIN",
+        "s3_file_field.forms.default_get_image_domain",
+    )
+)
+
+
+class S3FormImageFileField(S3FormFileField):
+    """Form field used by render a model.S3ImageField."""
+
+    widget = S3ImageFileInput
+
+    def __init__(self, storage: Storage, *args, **kwargs):
+        self.storage = storage
+        super().__init__(*args, **kwargs)
+
+    def widget_attrs(self, widget):
+        attrs = super().widget_attrs(widget)
+        attrs.update(
+            {
+                "image_domain": get_image_domain(self.storage),
+            }
+        )
+        if isinstance(widget, FileInput) and "accept" not in widget.attrs:
+            attrs.setdefault("accept", "image/*")
         return attrs

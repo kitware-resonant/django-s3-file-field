@@ -40,6 +40,7 @@ class PartInitializationResponseSerializer(serializers.Serializer):
 class UploadInitializationResponseSerializer(serializers.Serializer):
     object_key = serializers.CharField(trim_whitespace=False)
     upload_id = serializers.CharField()
+    acl = serializers.CharField()
     parts = PartInitializationResponseSerializer(many=True, allow_empty=False)
     upload_signature = serializers.CharField(trim_whitespace=False)
 
@@ -98,6 +99,7 @@ def upload_initialize(request: Request) -> HttpResponseBase:
             object_key,
             upload_request["file_size"],
             upload_request["content_type"],
+            acl=getattr(field, "acl", None),
         )
     except UploadTooLargeError:
         return Response("Upload size is too large.", status=400)
@@ -114,12 +116,20 @@ def upload_initialize(request: Request) -> HttpResponseBase:
         }
     )
 
+    acl = ""
+    if acl_attr := getattr(field, "acl", ""):
+        if isinstance(acl_attr, str):
+            acl = acl_attr
+        elif callable(acl_attr):
+            acl = acl_attr(field, request)
+
     response_serializer = UploadInitializationResponseSerializer(
         {
             "object_key": initialization.object_key,
             "upload_id": initialization.upload_id,
             "parts": initialization.parts,
             "upload_signature": upload_signature,
+            "acl": acl,
         }
     )
     return Response(response_serializer.data)

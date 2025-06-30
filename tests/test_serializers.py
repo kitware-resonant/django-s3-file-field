@@ -70,6 +70,7 @@ def test_upload_initialization_response_serialization(
         {
             "object_key": initialization.object_key,
             "upload_id": initialization.upload_id,
+            "acl": "",
             "parts": initialization.parts,
             "upload_signature": "test-upload-signature",
         }
