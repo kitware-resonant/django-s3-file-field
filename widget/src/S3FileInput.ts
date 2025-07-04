@@ -2,6 +2,7 @@ import S3FileFieldClient, {} from 'django-s3-file-field';
 
 export const EVENT_UPLOAD_STARTED = 's3UploadStarted';
 export const EVENT_UPLOAD_COMPLETE = 's3UploadComplete';
+export const EVENT_UPLOAD_CLEARED = 's3UploadCleared';
 
 function cssClass(clazz: string): string {
   return `s3fileinput-${clazz}`;
@@ -14,7 +15,7 @@ function i18n(text: string): string {
 export default class S3FileInput {
   private readonly node: HTMLElement;
 
-  private readonly input: HTMLInputElement;
+  protected readonly input: HTMLInputElement;
 
   private readonly info: HTMLElement;
 
@@ -80,10 +81,15 @@ export default class S3FileInput {
       this.input.value = '';
       this.info.innerText = '';
       this.node.classList.remove(cssClass('set'), cssClass('error'));
+      this.input.dispatchEvent(
+        new CustomEvent(EVENT_UPLOAD_CLEARED, {
+          detail: evt,
+        }),
+      );
     };
   }
 
-  private async uploadFile(file: File): Promise<string> {
+  private async uploadFile(file: File, acl?: string): Promise<string> {
     const startedEvent = new CustomEvent(EVENT_UPLOAD_STARTED, {
       detail: file,
     });
@@ -102,7 +108,7 @@ export default class S3FileInput {
         withCredentials: false,
       },
     });
-    const fieldValue = client.uploadFile(file, this.fieldId);
+    const fieldValue = client.uploadFile(file, this.fieldId, undefined, acl);
 
     const completedEvent = new CustomEvent(EVENT_UPLOAD_COMPLETE, {
       detail: fieldValue,

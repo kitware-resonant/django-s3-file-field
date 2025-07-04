@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import io
-from typing import BinaryIO, ClassVar
+from typing import Any, BinaryIO, ClassVar, Optional
 
 import requests
 
@@ -49,9 +49,17 @@ class S3FileFieldClient:
         resp.raise_for_status()
         return resp.json()
 
-    def _upload_part(self, part_bytes: bytes, part_initialization: dict) -> dict:
+    def _upload_part(
+        self, part_bytes: bytes, part_initialization: dict, acl: Optional[str] = None
+    ) -> dict:
+        kwargs: Any = {}
+        if acl:
+            kwargs.setdefault("headers", {}).setdefault("X-Amz-Acl", acl)
         resp = requests.put(
-            part_initialization["upload_url"], data=part_bytes, timeout=self.request_timeout
+            part_initialization["upload_url"],
+            data=part_bytes,
+            timeout=self.request_timeout,
+            **kwargs,
         )
         resp.raise_for_status()
 
@@ -63,9 +71,13 @@ class S3FileFieldClient:
             "etag": etag,
         }
 
-    def _upload_parts(self, file: _File, part_initializations: list[dict]) -> list[dict]:
+    def _upload_parts(
+        self, file: _File, part_initializations: list[dict], acl: Optional[str] = None
+    ) -> list[dict]:
         return [
-            self._upload_part(file.stream.read(part_initialization["size"]), part_initialization)
+            self._upload_part(
+                file.stream.read(part_initialization["size"]), part_initialization, acl
+            )
             for part_initialization in part_initializations
         ]
 
@@ -105,6 +117,8 @@ class S3FileFieldClient:
     ) -> str:
         file = _File.from_stream(file_stream, file_name, file_content_type)
         multipart_info = self._initialize_upload(file, field_id)
-        upload_infos = self._upload_parts(file, multipart_info["parts"])
+        upload_infos = self._upload_parts(
+            file, multipart_info["parts"], multipart_info["acl"] if multipart_info["acl"] else None
+        )
         self._complete_upload(multipart_info, upload_infos)
         return self._finalize(multipart_info)

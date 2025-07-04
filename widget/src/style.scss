@@ -1,4 +1,4 @@
-$css_prefix: s3fileinput;
+@use "variables" as *;
 
 .#{$css_prefix}-inner {
   margin: 0;

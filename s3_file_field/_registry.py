@@ -8,9 +8,9 @@ from django.core.files.storage import Storage
 
 if TYPE_CHECKING:
     # Avoid circular imports
-    from .fields import S3FileField
+    from .fields import FileFieldProtocol
 
-    FieldsDictType = WeakValueDictionary[str, S3FileField]
+    FieldsDictType = WeakValueDictionary[str, FileFieldProtocol]
     StoragesDictType = WeakValueDictionary[int, Storage]
 
 
@@ -18,7 +18,7 @@ _fields: FieldsDictType = WeakValueDictionary()
 _storages: StoragesDictType = WeakValueDictionary()
 
 
-def register_field(field: S3FileField) -> None:
+def register_field(field: FileFieldProtocol) -> None:
     field_id = field.id
     if field_id in _fields and _fields[field_id] is not field:
         # This might be called multiple times, but it should always be consistent
@@ -36,12 +36,12 @@ def register_field(field: S3FileField) -> None:
     _storages[storage_label] = storage
 
 
-def get_field(field_id: str) -> S3FileField:
+def get_field(field_id: str) -> FileFieldProtocol:
     """Get an S3FileFields by its __str__."""
     return _fields[field_id]
 
 
-def iter_fields() -> Iterator[S3FileField]:
+def iter_fields() -> Iterator[FileFieldProtocol]:
     """Iterate over the S3FileFields in use."""
     return _fields.values()
 
