@@ -1,78 +1,71 @@
 @use "variables" as *;
 
  // https://stackoverflow.com/a/19068538
-.#{$css_image_prefix} {
-	border-style: dashed !important;
+.#{$css_image_prefix}:not(.#{$css_image_prefix}-set) {
+  .#{$css_image_prefix}-initial {
+    display: none;
+  }
+
+  .#{$css_image_prefix}-default {
+    display: block;
+  }
 }
 
+.#{$css_image_prefix}.#{$css_image_prefix}-set {
+  .#{$css_image_prefix}-initial {
+    display: block;
+  }
+
+  .#{$css_image_prefix}-default {
+    display: none;
+  }
+}
+/*
 .#{$css_image_prefix}:hover {
-	border-style: dashed;
-	border-width: 1px;
-	border-width: 1px !important;
+  border: 1px dashed;
 }
-
+*/
 .#{$css_image_prefix}-initial > img {
-	width: 100%;
+  width: 100%;
 }
 
 .#{$css_image_prefix}-default {
-	padding-bottom: 1rem;
+  padding-bottom: 1rem;
 }
 
-.#{$css_prefix}-inner input[type=file] {
-	display: block;
-}
-.#{$css_prefix}-inner input[type=file],
-.#{$css_prefix}-inner .#{$css_prefix}-info {
-	padding: 0.375rem 0.75rem;
-	font-size: 1rem;
-	font-weight: 400;
-	line-height: 1.5;
-	width: 100%;
-	appearance: none;
-}
+.#{$css_prefix}-wrapper input[type=file] {
+  display: block;
 
-.#{$css_prefix}-inner input[type=file]::file-selector-button {
-	margin-right: 0.5rem;
-	border: none;
-	padding: 0.375rem 0.75rem;
-  	margin: -0.375rem -0.75rem;
-	-webkit-margin-end: 0.75rem;
-	margin-inline-end: 0.75rem;
-	cursor: pointer;
-}
+  .#{$css_prefix}-info {
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    width: 100%;
+    appearance: none;
+  }
+  .#{$css_prefix}-spinner-wrapper {
+    border: rgb(222, 226, 230);
+    border-radius: 6px;
+    height: 100% !important;
+    width: 100% !important;
+  }
 
-.#{$css_prefix}-spinner-wrapper {
-	border: rgb(222, 226, 230);
-	border-radius: 6px;
-	height: 100% !important;
-	width: 100% !important;
-}
+  .#{$css_prefix}-spinner {
+    margin-left: calc(50% - 2em);
+    margin-right: calc(50% - 2em);
+    margin-top: 10%;
+    margin-bottom: 10%;
+  }
 
-.#{$css_prefix}-spinner {
-	margin-left: calc(50% - 2em);
-	margin-right: calc(50% - 2em);
-	margin-top: 10%;
-	margin-bottom: 10%;
-}
-
-.#{$css_prefix}-inner .#{$css_prefix}-info {
-	flex: 1 1 auto;
-	padding: 0.375rem 0.75rem;
-	width: 1%;
-	min-width: 0;
-	overflow: hidden;
-	position: relative;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.#{$css_prefix}-clear {
-	text-align: center;
-	text-decoration: none;
-	vertical-align: middle;
-	cursor: pointer;
-	-webkit-user-select: none;
-	-moz-user-select: none;
-	user-select: none;
+  .#{$css_prefix}-info {
+    flex: 1 1 auto;
+    padding: 0.375rem 0.75rem;
+    width: 1%;
+    min-width: 0;
+    overflow: hidden;
+    position: relative;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }

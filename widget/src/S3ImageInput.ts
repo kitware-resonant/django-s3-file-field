@@ -1,14 +1,6 @@
 import _, {MultipartInfo} from 'django-s3-file-field';
 import S3FileInput, {EVENT_UPLOAD_COMPLETE, EVENT_UPLOAD_CLEARED} from './S3FileInput.js';
 
-function imageCssClass(clazz: string): string {
-  if (clazz) {
-    return `s3imageinput-${clazz}`;
-  } else {
-    return "s3imageinput";
-  }
-}
-
 function parseUploadCompleteData (token: string): MultipartInfo {
   return JSON.parse(
     decodeURIComponent(
@@ -38,27 +30,25 @@ export default class s3ImageFileInput extends S3FileInput {
   constructor(input: HTMLInputElement) {
     super(input);
 
-    this.container = this.input.closest(`.${imageCssClass("")}`);
+    this.container = this.input.closest(`.${this.imageCssClass("")}`);
     this.draggedBackgroundClass = this.container.dataset['draggedBackgroundClass'];
-    this.defaultImage = this.container.querySelector(`.${imageCssClass("default")}`);
-    this.initialContainer = this.container.querySelector(`.${imageCssClass("initial")}`);
+    this.defaultImage = this.container.querySelector(`.${this.imageCssClass("default")}`);
+    this.initialContainer = this.container.querySelector(`.${this.imageCssClass("initial")}`);
     this.initialImage = this.initialContainer.querySelector("img");
-    this.clearCheckbox = this.container.querySelector(`.${imageCssClass("clear-checkbox")}`);
+    this.clearCheckbox = this.container.querySelector(`.${this.imageCssClass("clear-checkbox")}`);
 
     this.input.addEventListener(EVENT_UPLOAD_COMPLETE, (e: CustomEvent) => {
       e.detail.then((value) => {
         const domain = this.initialImage.dataset["s3image"],
           multipartInfoData: MultipartInfo = parseUploadCompleteData(value);
         this.initialImage.src = `https://${domain}/${multipartInfoData.object_key}`;
-        this.initialContainer.style.display = null;
-        this.defaultImage.style.display = "none";
+        this.container.classList.add(this.imageCssClass('set'));
         this.clearCheckbox.checked = false;
       });
     });
 
     this.input.addEventListener(EVENT_UPLOAD_CLEARED, (e) => {
-      this.initialContainer.style.display = "none";
-      this.defaultImage.style.removeProperty("display");
+      this.container.classList.remove(this.imageCssClass('set'));
       this.clearCheckbox.checked = true;
     });
 
@@ -90,5 +80,9 @@ export default class s3ImageFileInput extends S3FileInput {
       this.clearCheckbox.checked = false;
       this.input.dispatchEvent(new Event("change"));
     });
+  }
+
+  private imageCssClass(clazz: string): string {
+    return clazz ? `s3imageinput-${clazz}` : "s3imageinput";
   }
 }

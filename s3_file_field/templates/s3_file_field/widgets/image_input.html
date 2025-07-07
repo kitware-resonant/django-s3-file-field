@@ -1,28 +1,34 @@
+{% extends 's3_file_field/widgets/file_input.html' %}
+
+{% block s3_file_field %}
 {% block s3_image_field %}
-<label for="id_{{ widget.name }}" class="s3imageinput border border-1 mb-3 p-3 rounded-2 w-100">
-  {% block s3_image_field_initial %}
-  <div class="s3imageinput-initial mb-3" style="{% if not widget.is_initial %}display: none{% endif %}">
-    <img id="{{ widget.name }}-initial" class="position-relative rounded-circle" src="{{ widget.value.url }}" data-s3image="{{ widget.attrs.image_domain }}">
+<label for="id_{{ widget.name }}" class="s3imageinput {% if widget.is_initial %}s3imageinput-set{% endif %}">
+  {% block s3_file_field_initial %}
+  <div class="s3imageinput-initial">
+    <img id="{{ widget.name }}-initial" src="{{ widget.value.url }}" data-s3image="{{ widget.attrs.image_domain }}">
   </div>
-  {% endblock s3_image_field_initial %}
+  {% endblock s3_file_field_initial %}
 
   {% block s3_image_field_default %}
-  <div class="s3imageinput-default" style="{% if widget.is_initial %}display: none;{% endif %}">
-    <svg id="{{ widget.name }}-default" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-person-circle flex-shrink-1" viewBox="0 0 16 16">
+  <div class="s3imageinput-default">
+    <svg id="{{ widget.name }}-default" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
       <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
       <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
     </svg>
   </div>
   {% endblock s3_image_field_default %}
 
-  {% block s3_image_file_input %}
-  <input type="{{ widget.type }}" name="{{ widget.name }}" class="form-control"{% include "django/forms/widgets/attrs.html" %}>
-  {% endblock s3_image_file_input %}
+  {% block s3_file_field_wrapper %}
+    {{ block.super }}
+  {% endblock s3_file_field_wrapper %}
 
   {% block s3_image_clear %}
   {% if not widget.required or widget.is_initial %}
-  <input type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}" class="s3fileinput-clear-checkbox d-none"{% if widget.attrs.disabled %} disabled{% endif %}>
+  <input type="hidden" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}" class="s3imageinput-clear-checkbox"{% if widget.attrs.disabled %} disabled{% endif %}>
   {% endif %}
   {% endblock s3_image_clear %}
+
+  {% block s3_file_field_extra %}{% endblock s3_file_field_extra %}
 </label>
-{% endblock s3_image_field %}
+{%  endblock s3_image_field %}
+{% endblock s3_file_field %}

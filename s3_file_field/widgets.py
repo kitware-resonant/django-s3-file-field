@@ -131,6 +131,8 @@ class S3FileInputMixin:
 class S3FileInput(S3FileInputMixin, ClearableFileInput):
     """Widget to render the S3 File Input."""
 
+    template_name = "s3_file_field/widgets/file_input.html"
+
     class Media:
         js = ["s3_file_field/widget.js"]
         css = {"all": ["s3_file_field/widget.css"]}
