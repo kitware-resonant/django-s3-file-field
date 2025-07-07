@@ -7,16 +7,20 @@ from django.forms import FileField, Widget
 from django.forms.widgets import FileInput
 from django.utils.module_loading import import_string
 
-from .widgets import AdminS3FileInput, S3FileInput, S3ImageFileInput
+from .widgets import AdminS3FileInput, S3FileInput, S3FileInputMixin, S3ImageFileInput
 
 
 class S3FormFileField(FileField):
     """Form field used by render an model.S3FileField."""
 
-    widget = S3FileInput
+    widget: type[S3FileInputMixin] = S3FileInput
 
     def __init__(
-        self, *, model_field_id: str, widget: type[Widget] | Widget | None = None, **kwargs
+        self,
+        *,
+        model_field_id: str,
+        widget: type[Widget] | Widget | None = None,
+        **kwargs,
     ) -> None:
         self.model_field_id = model_field_id
 

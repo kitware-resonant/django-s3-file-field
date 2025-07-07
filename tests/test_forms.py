@@ -2,7 +2,26 @@ import pytest
 
 from s3_file_field.forms import S3FormFileField
 
-from test_app.forms import ResourceForm
+from test_app.forms import ImageResourceForm, ResourceForm
+
+
+def test_resource_form_media() -> None:
+    form = ResourceForm()
+    media_css = form.media.render_css()
+    assert list(media_css) == [
+        '<link href="s3_file_field/widget.css" media="all" rel="stylesheet">',
+    ]
+    assert form.media.render_js() == ['<script src="s3_file_field/widget.js"></script>']
+
+
+def test_image_resource_form_media() -> None:
+    form = ImageResourceForm()
+    media_css = form.media.render_css()
+    assert list(media_css) == [
+        '<link href="s3_file_field/widget.css" media="all" rel="stylesheet">',
+        '<link href="s3_file_field/imagewidget.css" media="all" rel="stylesheet">',
+    ]
+    assert form.media.render_js() == ['<script src="s3_file_field/imagewidget.js"></script>']
 
 
 def test_form_field_type() -> None:

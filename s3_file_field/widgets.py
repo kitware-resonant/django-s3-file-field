@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 import functools
 import posixpath
-from typing import TYPE_CHECKING, Any, Mapping, NoReturn
+from typing import TYPE_CHECKING, Any, Mapping, NoReturn, Protocol
 
 from django.core import signing
 from django.core.files import File
@@ -64,23 +64,35 @@ class S3PlaceholderFile(File):
         return cls(parsed_field["object_key"], parsed_field["file_size"])
 
 
-class S3FileInput(ClearableFileInput):
-    """Widget to render the S3 File Input."""
+class FileInputProtocol(Protocol):
+    is_required: bool
 
-    class Media:
-        js = ["s3_file_field/widget.js"]
-        css = {"all": ["s3_file_field/widget.css"]}
+    def clear_checkbox_name(self, name: str) -> str: ...  # noqa: E704
 
-    def get_context(self, name, value, attrs) -> dict[str, Any]:
+    def get_context(
+        self, name: str, value, attrs: dict[str, Any]
+    ) -> dict[str, Any]:  # noqa: BLK100
+        ...
+
+    def value_from_datadict(  # noqa: E704
+        self, data: Mapping[str, Any], files: MultiValueDict[str, UploadedFile], name: str
+    ) -> Any: ...
+
+
+class S3FileInputMixin:
+    def get_context(self: FileInputProtocol, name, value, attrs) -> dict[str, Any]:
         # The base URL cannot be determined at the time the widget is instantiated
         # (when S3FormFileField.widget_attrs is called).
         # Additionally, because this method is called on a deep copy of the widget each
         # time it's rendered, this assignment to an instance variable is not persisted.
         attrs["data-s3fileinput"] = get_base_url()
-        return super().get_context(name, value, attrs)
+        return super().get_context(name, value, attrs)  # type: ignore [safe-super]
 
     def value_from_datadict(
-        self, data: Mapping[str, Any], files: MultiValueDict[str, UploadedFile], name: str
+        self: FileInputProtocol,
+        data: Mapping[str, Any],
+        files: MultiValueDict[str, UploadedFile],
+        name: str,
     ) -> Any:
         if name in data:
             upload = data[name]
@@ -90,7 +102,7 @@ class S3FileInput(ClearableFileInput):
         elif name in files:
             # Files were uploaded, client JS library may not be functioning
             # So, fallback to direct upload
-            upload = super().value_from_datadict(data, files, name)
+            upload = super().value_from_datadict(data, files, name)  # type: ignore [safe-super]
         else:
             upload = None
 
@@ -107,7 +119,7 @@ class S3FileInput(ClearableFileInput):
         return upload
 
     def value_omitted_from_data(
-        self, data: Mapping[str, Any], files: Mapping[str, Any], name: str
+        self: FileInputProtocol, data: Mapping[str, Any], files: Mapping[str, Any], name: str
     ) -> bool:
         return (
             (name not in data)
@@ -116,7 +128,15 @@ class S3FileInput(ClearableFileInput):
         )
 
 
-class S3ImageFileInput(S3FileInput):
+class S3FileInput(S3FileInputMixin, ClearableFileInput):
+    """Widget to render the S3 File Input."""
+
+    class Media:
+        js = ["s3_file_field/widget.js"]
+        css = {"all": ["s3_file_field/widget.css"]}
+
+
+class S3ImageFileInput(S3FileInputMixin, ClearableFileInput):
     """Widget to render the S3 File Input with an image field preview."""
 
     template_name = "s3_file_field/widgets/image_input.html"
@@ -124,7 +144,10 @@ class S3ImageFileInput(S3FileInput):
     class Media(S3FileInput.Media):
         js = ["s3_file_field/imagewidget.js"]
         css = {
-            "all": ["s3_file_field/imagewidget.css"],
+            "all": [
+                "s3_file_field/widget.css",
+                "s3_file_field/imagewidget.css",
+            ],
         }
 
 
