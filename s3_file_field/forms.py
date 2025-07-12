@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from django.conf import settings
 from django.contrib.admin.widgets import AdminFileWidget
 from django.core.files.storage import Storage
@@ -44,7 +46,7 @@ class S3FormFileField(FileField):
 
         super().__init__(widget=widget, **kwargs)
 
-    def widget_attrs(self, widget: Widget) -> dict[str, str]:
+    def widget_attrs(self, widget: Widget) -> dict[str, Any]:
         attrs = super().widget_attrs(widget)
         attrs.update(
             {
@@ -57,24 +59,39 @@ class S3FormFileField(FileField):
         return attrs
 
 
-class StorageProtocol:
+class BaseStorageProtocol:
     endpoint_url: str
     bucket_name: str
 
 
-def default_get_image_domain(storage: StorageProtocol) -> str:
-    return getattr(
-        storage,
-        "custom_domain",
-        storage.endpoint_url.replace("https://", f"{storage.bucket_name}."),
-    )
+class MinioStorageProcotol(BaseStorageProtocol):
+    base_url: str
 
 
-get_image_domain = import_string(
+class S3StorageProtocol(BaseStorageProtocol):
+    url_protocol: str
+
+
+def default_get_storage_url(storage: MinioStorageProcotol | S3StorageProtocol) -> str:
+    # django-storages
+    if url_protocol := getattr(storage, "url_protocol", None):
+        # Use the custom domain if set, otherwise, tweak the endpoint_url to be a workable URL
+        if custom_domain := getattr(storage, "custom_domain", None):
+            return f"{url_protocol}//{custom_domain}"
+        else:
+            return storage.endpoint_url.replace(
+                "https://",
+                f"{url_protocol}//{storage.bucket_name}.",
+            )
+    else:
+        return storage.endpoint_url
+
+
+get_storage_url = import_string(
     getattr(
         settings,
-        "S3_FILE_FIELD_IMAGE_DOMAIN",
-        "s3_file_field.forms.default_get_image_domain",
+        "S3_FILE_FIELD_STORAGE_URL",
+        "s3_file_field.forms.default_get_storage_url",
     )
 )
 
@@ -92,7 +109,8 @@ class S3FormImageFileField(S3FormFileField):
         attrs = super().widget_attrs(widget)
         attrs.update(
             {
-                "image_domain": get_image_domain(self.storage),
+                "storage_url": get_storage_url(self.storage),
+                "data-s3imageinput": True,
             }
         )
         if isinstance(widget, FileInput) and "accept" not in widget.attrs:

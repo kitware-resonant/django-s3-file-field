@@ -25,9 +25,8 @@ export default class S3FileInput {
 
   private readonly fieldId: string;
 
-  constructor(input: HTMLInputElement, className: string = "s3fileinput") {
+  constructor(input: HTMLInputElement) {
     this.input = input;
-    this.className = className;
 
     const baseUrl = this.input.dataset?.s3fileinput;
     if (!baseUrl) {
@@ -77,10 +76,10 @@ export default class S3FileInput {
   }
 
   private cssClass(clazz: string): string {
-    return clazz ? `${this.className}-${clazz}` : this.className;
+    return clazz ? `s3fileinput-${clazz}` : "s3fileinput";
   }
 
-  private async uploadFile(file: File, acl?: string): Promise<string> {
+  private async uploadFile(file: File): Promise<string> {
     const startedEvent = new CustomEvent(EVENT_UPLOAD_STARTED, {
       detail: file,
     });

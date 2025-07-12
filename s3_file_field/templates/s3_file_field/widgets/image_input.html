@@ -5,7 +5,7 @@
 <label for="id_{{ widget.name }}" class="s3imageinput {% if widget.is_initial %}s3imageinput-set{% endif %}">
   {% block s3_file_field_initial %}
   <div class="s3imageinput-initial">
-    <img id="{{ widget.name }}-initial" src="{{ widget.value.url }}" data-s3image="{{ widget.attrs.image_domain }}">
+    <img id="{{ widget.name }}-initial" src="{{ widget.value.url }}" data-s3image="{{ widget.attrs.storage_url }}">
   </div>
   {% endblock s3_file_field_initial %}
 

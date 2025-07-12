@@ -33,15 +33,14 @@ export default class s3ImageFileInput extends S3FileInput {
     this.container = this.input.closest(`.${this.imageCssClass("")}`);
     this.draggedBackgroundClass = this.container.dataset['draggedBackgroundClass'];
     this.defaultImage = this.container.querySelector(`.${this.imageCssClass("default")}`);
-    this.initialContainer = this.container.querySelector(`.${this.imageCssClass("initial")}`);
-    this.initialImage = this.initialContainer.querySelector("img");
+    this.initialImage = this.container.querySelector(`.${this.imageCssClass("initial")} img`);
     this.clearCheckbox = this.container.querySelector(`.${this.imageCssClass("clear-checkbox")}`);
 
     this.input.addEventListener(EVENT_UPLOAD_COMPLETE, (e: CustomEvent) => {
       e.detail.then((value) => {
         const domain = this.initialImage.dataset["s3image"],
           multipartInfoData: MultipartInfo = parseUploadCompleteData(value);
-        this.initialImage.src = `https://${domain}/${multipartInfoData.object_key}`;
+        this.initialImage.src = `${(domain.startsWith("http") ? '' : 'https://')}${domain}/${multipartInfoData.object_key}`;
         this.container.classList.add(this.imageCssClass('set'));
         this.clearCheckbox.checked = false;
       });
