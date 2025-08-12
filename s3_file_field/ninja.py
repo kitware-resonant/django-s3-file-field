@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from pydantic import PlainValidator
+from pydantic import BeforeValidator
 
 from s3_file_field.fields import S3PlaceholderFile
 
@@ -12,5 +12,4 @@ def _convert_s3ff_value(value: str) -> str:
     return file_obj.name
 
 
-# This type should be used for S3FF values in Pydantic models.
-S3FileFieldValue = Annotated[str, PlainValidator(_convert_s3ff_value)]
+S3FileFieldValue = Annotated[str, BeforeValidator(_convert_s3ff_value)]
