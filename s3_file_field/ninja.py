@@ -2,7 +2,7 @@ from typing import Annotated
 
 from pydantic import BeforeValidator
 
-from s3_file_field.fields import S3PlaceholderFile
+from s3_file_field.widgets import S3PlaceholderFile
 
 
 def _convert_s3ff_value(value: str) -> str:
