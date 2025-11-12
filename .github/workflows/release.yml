@@ -52,6 +52,7 @@ jobs:
     environment: release
     permissions:
       contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,10 +64,7 @@ jobs:
           node-version: current
       - name: Publish Javascript client to npm
         working-directory: ./javascript-client
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           npm ci
           npm version --no-git-tag-version $(git describe --tags --match '*[0-9]*' --abbrev=0 | sed 's/^v//')
-          echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > ./.npmrc
-          npm publish
+          npm publish --provenance
