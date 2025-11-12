@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import timedelta
 import math
-from typing import TYPE_CHECKING, Any, ClassVar, Iterator
+from typing import TYPE_CHECKING, Any, ClassVar, Iterator, Optional
 
 from s3_file_field._sizes import gb, mb
 
@@ -74,6 +74,7 @@ class MultipartManager:
         object_key: str,
         file_size: int,
         content_type: str,
+        acl: Optional[str] = None,
     ) -> PresignedTransfer:
         if file_size > self.max_object_size:
             raise UploadTooLargeError("File is larger than the S3 maximum object size.")
@@ -81,6 +82,7 @@ class MultipartManager:
         upload_id = self._create_upload_id(
             object_key,
             content_type,
+            acl=acl,
         )
         parts = [
             PresignedPartTransfer(
@@ -162,6 +164,7 @@ class MultipartManager:
         self,
         object_key: str,
         content_type: str,
+        acl: Optional[str] = None,
     ) -> str:
         # Require content headers here
         raise NotImplementedError
