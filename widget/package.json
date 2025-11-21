@@ -18,7 +18,7 @@
     "django-s3-file-field": "file:../javascript-client"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.0.0",
     "@parcel/transformer-sass": "^2.15.1",
     "@tsconfig/recommended": "^1.0.8",
     "buffer": "^6.0.3",
