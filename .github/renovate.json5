@@ -1,7 +1,7 @@
 {
   $schema: 'https://docs.renovatebot.com/renovate-schema.json',
   extends: [
-    'github>kitware-resonant/.github:renovate-config',
+    'github>kitware-resonant/.github:renovate-library.json5',
   ],
   packageRules: [
     {
