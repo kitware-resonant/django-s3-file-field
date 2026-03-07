@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from test_app.rest import ResourceSerializer
+from test_app.drf import ResourceSerializer
 
 if TYPE_CHECKING:
     from django.core.files import File
