@@ -1,15 +1,91 @@
 from typing import cast
+from unittest.mock import Mock
 
 from django.core import signing
 from django.core.files.storage import default_storage
 from django.urls import reverse
 import pytest
 import requests
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APIRequestFactory
 
 from s3_file_field._sizes import mb
+from s3_file_field.views import (
+    get_can_user_upload,
+    is_site_user,
+    no_check,
+    request_passes_test,
+    upload_initialize,
+)
 
 from fuzzy import FUZZY_UPLOAD_ID, FUZZY_URL, Fuzzy
+
+
+def test_can_user_upload_is_no_check() -> None:
+    assert get_can_user_upload() == no_check
+
+
+def test_can_user_upload_is_is_site_user(settings) -> None:
+    settings.S3_FILE_FIELD_USER_PERMISSION = "s3_file_field.views.is_site_user"
+    assert get_can_user_upload() == is_site_user
+
+
+@pytest.mark.parametrize(
+    "view",
+    [
+        "upload-initialize",
+        "upload-complete",
+        "finalize",
+    ],
+)
+def test_no_check(request_factory: APIRequestFactory, view: str) -> None:
+    request = request_factory.post(
+        reverse(f"s3_file_field:{view}"),
+        {
+            "field_id": "test_app.Resource.blob",
+            "file_name": "test.txt",
+            "file_size": 10,
+            "content_type": "text/plain",
+        },
+        format="json",
+    )
+    assert no_check(request)
+
+
+def test_is_site_user_with_authenticated_user(settings, request_factory: APIRequestFactory) -> None:
+    settings.S3_FILE_FIELD_USER_PERMISSION = "s3_file_field.views.is_site_user"
+    request = request_factory.post(
+        reverse("s3_file_field:upload-initialize"),
+        {
+            "field_id": "test_app.Resource.blob",
+            "file_name": "test.txt",
+            "file_size": 10,
+            "content_type": "text/plain",
+        },
+        format="json",
+    )
+    request.user = Mock()
+    request.user.is_authenticated = True
+    assert is_site_user(request)
+
+
+def test_is_site_user_with_anonymous_user(settings, request_factory: APIRequestFactory) -> None:
+    settings.S3_FILE_FIELD_USER_PERMISSION = "s3_file_field.views.is_site_user"
+    settings.LOGIN_URL = "/login/"
+    request = request_factory.post(
+        reverse("s3_file_field:upload-initialize"),
+        {
+            "field_id": "test_app.Resource.blob",
+            "file_name": "test.txt",
+            "file_size": 10,
+            "content_type": "text/plain",
+        },
+        format="json",
+    )
+    request.user = Mock()
+    request.user.is_authenticated = False
+    resp = request_passes_test(is_site_user)(upload_initialize)(request)
+    assert resp.status_code == 302
+    assert resp.url.startswith("/login/")
 
 
 def test_prepare(api_client: APIClient) -> None:

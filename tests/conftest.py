@@ -4,7 +4,7 @@ from django.core.files.base import ContentFile
 import factory
 import pytest
 from pytest_mock import MockerFixture
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APIRequestFactory
 
 from s3_file_field._multipart import MultipartManager
 from s3_file_field._sizes import mb
@@ -25,6 +25,11 @@ pytest_plugins = ["s3_file_field.fixtures"]
 def _reduce_part_size(mocker: MockerFixture) -> None:
     """To speed up tests, reduce the part size to the minimum supported by S3 (5MB)."""
     mocker.patch.object(MultipartManager, "part_size", new=mb(5))
+
+
+@pytest.fixture()
+def request_factory() -> APIRequestFactory:
+    return APIRequestFactory()
 
 
 @pytest.fixture()
