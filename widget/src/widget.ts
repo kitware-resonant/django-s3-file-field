@@ -12,3 +12,5 @@ if (document.readyState !== 'loading') {
 } else {
   document.addEventListener('DOMContentLoaded', attachToFileInputs.bind(this));
 }
+
+window.S3FileInput = S3FileInput;
