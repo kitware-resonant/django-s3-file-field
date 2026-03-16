@@ -11,7 +11,7 @@ jobs:
       id-token: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           # Tags are needed to compute the current version number
           fetch-depth: 0
@@ -32,7 +32,7 @@ jobs:
       id-token: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           # Tags are needed to compute the current version number
           fetch-depth: 0
@@ -54,7 +54,7 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           # Tags are needed to compute the current version number
           fetch-depth: 0
