@@ -59,7 +59,7 @@ jobs:
           # Tags are needed to compute the current version number
           fetch-depth: 0
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: current
       - name: Publish Javascript client to npm
