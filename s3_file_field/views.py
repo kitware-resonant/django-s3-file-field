@@ -1,8 +1,15 @@
 from __future__ import annotations
 
+from functools import wraps
 from typing import TYPE_CHECKING, Any
+from urllib.parse import urlparse
 
+from django.conf import settings
+from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.core import signing
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import resolve_url
+from django.utils.module_loading import import_string
 from rest_framework import serializers
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import JSONParser
@@ -79,7 +86,61 @@ class FinalizationResponseSerializer(serializers.Serializer):
     field_value = serializers.CharField(trim_whitespace=False)
 
 
+def no_check(request: HttpRequest, *args, **kwargs) -> bool:
+    return True
+
+
+def is_site_user(request: HttpRequest, *args, **kwargs) -> bool:
+    return request.user.is_authenticated
+
+
+def get_can_user_upload():
+    return import_string(
+        getattr(
+            settings,
+            "S3_FILE_FIELD_USER_PERMISSION",
+            "s3_file_field.views.no_check",
+        )
+    )
+
+
+# Simplified version of django.contrib.auth.decorators.user_passes_test, except instead of passing
+# only request.user to the test_func, we pass the full request object, *args, and **kwargs
+def request_passes_test(test_func):
+    """
+    Check that a request passes the provided user-supplied test function.
+
+    Decorator for views that checks that the user passes the given test,
+    redirecting to the log-in page if necessary. The test should be a callable
+    that takes the user object and returns True if the user passes.
+    """
+
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapper_view(request: HttpRequest, *args, **kwargs) -> HttpResponse:
+            if test_func(request, *args, **kwargs):
+                return view_func(request, *args, **kwargs)
+            path = request.build_absolute_uri()
+            resolved_login_url = resolve_url(settings.LOGIN_URL)
+            # If the login url is the same scheme and net location then just
+            # use the path as the "next" url.
+            login_scheme, login_netloc = urlparse(resolved_login_url)[:2]
+            current_scheme, current_netloc = urlparse(path)[:2]
+            if (not login_scheme or login_scheme == current_scheme) and (
+                not login_netloc or login_netloc == current_netloc
+            ):
+                path = request.get_full_path()
+            from django.contrib.auth.views import redirect_to_login
+
+            return redirect_to_login(path, resolved_login_url, REDIRECT_FIELD_NAME)
+
+        return _wrapper_view
+
+    return decorator
+
+
 @api_view(["POST"])
+@request_passes_test(get_can_user_upload())
 @parser_classes([JSONParser])
 def upload_initialize(request: Request) -> HttpResponseBase:
     request_serializer = UploadInitializationRequestSerializer(data=request.data)
@@ -126,6 +187,7 @@ def upload_initialize(request: Request) -> HttpResponseBase:
 
 
 @api_view(["POST"])
+@request_passes_test(get_can_user_upload())
 @parser_classes([JSONParser])
 def upload_complete(request: Request) -> HttpResponseBase:
     request_serializer = UploadCompletionRequestSerializer(data=request.data)
@@ -160,6 +222,7 @@ def upload_complete(request: Request) -> HttpResponseBase:
 
 
 @api_view(["POST"])
+@request_passes_test(get_can_user_upload())
 @parser_classes([JSONParser])
 def finalize(request: Request) -> HttpResponseBase:
     request_serializer = FinalizationRequestSerializer(data=request.data)
