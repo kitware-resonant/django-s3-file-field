@@ -60,6 +60,9 @@ minio = [
   "django-minio-storage>=0.5",
   "minio>=7",
 ]
+ninja = [
+  "django-ninja",
+]
 pytest = [
   # The "fixtures.py" module (containing the "pytest" requirement) is only loaded
   # automatically via entry point by consumers who already have "pytest" installed, so
@@ -233,5 +236,6 @@ filterwarnings = [
   # Python 3.12 deprecrates "datetime.datetime.utcnow"
   'ignore:datetime\.datetime\.utcnow:DeprecationWarning:botocore',
   'ignore:datetime\.datetime\.utcnow:DeprecationWarning:minio',
+  'ignore::pydantic.warnings.PydanticDeprecatedSince20',
 ]
 DJANGO_SETTINGS_MODULE = "test_app.settings"
