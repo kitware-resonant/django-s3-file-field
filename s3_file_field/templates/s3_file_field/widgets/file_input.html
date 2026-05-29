@@ -1,0 +1,40 @@
+{% load i18n %}
+
+{% block s3_file_field %}
+{% block s3_file_field_initial %}
+{% if widget.is_initial %}
+  {{ widget.initial_text }}: <a href="{{ widget.value.url }}">{{ widget.value }}</a>{% if not widget.required %}
+    <input type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}"{% if widget.attrs.disabled %} disabled{% endif %}{% if widget.attrs.checked %} checked{% endif %}>
+    {% block s3_file_field_label %}
+    <label for="{{ widget.checkbox_id }}">{{ widget.clear_checkbox_label }}</label>{% endblock s3_file_field_label %}
+  {% endif %}
+
+  {% block s3_file_field_linebreak %}<br>{% endblock s3_file_field_linebreak %}
+  {{ widget.input_text }}:
+{% endif %}
+{% endblock s3_file_field_initial %}
+
+{% block s3_file_field_wrapper %}
+  <div class="s3fileinput-wrapper {% if widget.is_initial %}s3fileinput-set{% endif %}">
+    <div class="s3fileinput-info">{% if widget.is_initial %}{{ widget.value.name }}{% endif %}</div>
+    {% block s3_file_field_button %}
+      <input type="{{ widget.type }}" name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %}>
+      <button type="button" class="s3fileinput-clear" title="{% translate 'Clear (File was already uploaded though)' %}">
+        {% translate 'x' %}
+      </button>
+    {% endblock s3_file_field_button %}
+    {% block s3_file_field_spinner %}
+    <div class="s3fileinput-spinner-wrapper">
+      <div class="s3fileinput-spinner">
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+    </div>
+    {% endblock s3_file_field_spinner %}
+  </div>
+{% endblock s3_file_field_wrapper %}
+
+{% block s3_file_field_extra %}{% endblock s3_file_field_extra %}
+{% endblock s3_file_field %}

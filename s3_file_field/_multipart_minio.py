@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import minio
 
@@ -26,6 +26,7 @@ class MinioMultipartManager(MultipartManager):
         self,
         object_key: str,
         content_type: str,
+        acl: Optional[str] = None,
     ) -> str:
         return self._client._create_multipart_upload(
             bucket_name=self._bucket_name,

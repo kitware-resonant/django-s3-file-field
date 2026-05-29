@@ -2,10 +2,7 @@ import S3FileFieldClient, {} from 'django-s3-file-field';
 
 export const EVENT_UPLOAD_STARTED = 's3UploadStarted';
 export const EVENT_UPLOAD_COMPLETE = 's3UploadComplete';
-
-function cssClass(clazz: string): string {
-  return `s3fileinput-${clazz}`;
-}
+export const EVENT_UPLOAD_CLEARED = 's3UploadCleared';
 
 function i18n(text: string): string {
   return text;
@@ -14,7 +11,9 @@ function i18n(text: string): string {
 export default class S3FileInput {
   private readonly node: HTMLElement;
 
-  private readonly input: HTMLInputElement;
+  protected readonly input: HTMLInputElement;
+
+  protected className: string;
 
   private readonly info: HTMLElement;
 
@@ -41,25 +40,13 @@ export default class S3FileInput {
     }
     this.fieldId = fieldId;
 
-    this.node = input.ownerDocument.createElement('div');
-    this.node.classList.add(cssClass('wrapper'));
-    this.node.innerHTML = `<div class="${cssClass('inner')}">
-    <div class="${cssClass('info')}"></div>
-    <button type="button" class="${cssClass('clear')}" title="${i18n('Clear (file was already uploaded tho)')}">
-      ${i18n('x')}
-    </button>
-    <div class="${cssClass('spinner-wrapper')}">
-      <div class="${cssClass('spinner')}"><div></div><div></div><div></div><div></div>
-    </div>
-  </div>`;
-    this.input.parentElement?.replaceChild(this.node, this.input);
+    this.node = input.closest(`.${this.cssClass("wrapper")}`);
     // biome-ignore lint/style/noNonNullAssertion: the element is known to exist
-    this.clearButton = this.node.querySelector<HTMLButtonElement>(`.${cssClass('clear')}`)!;
+    this.clearButton = this.node.querySelector<HTMLButtonElement>(`.${this.cssClass('clear')}`)!;
     // biome-ignore lint/style/noNonNullAssertion: the element is known to exist
-    this.info = this.node.querySelector<HTMLElement>(`.${cssClass('info')}`)!;
-    this.clearButton.insertAdjacentElement('beforebegin', this.input);
+    this.info = this.node.querySelector<HTMLElement>(`.${this.cssClass('info')}`)!;
     // biome-ignore lint/style/noNonNullAssertion: the element is known to exist
-    this.spinnerWrapper = this.node.querySelector<HTMLElement>(`.${cssClass('spinner-wrapper')}`)!;
+    this.spinnerWrapper = this.node.querySelector<HTMLElement>(`.${this.cssClass('spinner-wrapper')}`)!;
 
     this.input.onchange = async (evt): Promise<void> => {
       evt.preventDefault();
@@ -69,7 +56,7 @@ export default class S3FileInput {
         // already processed but user resetted it -> convert bak
         this.input.type = 'file';
         this.info.innerText = '';
-        this.node.classList.remove(cssClass('set'));
+        this.node.classList.remove(this.cssClass('set'));
       }
     };
 
@@ -79,8 +66,17 @@ export default class S3FileInput {
       this.input.type = 'file';
       this.input.value = '';
       this.info.innerText = '';
-      this.node.classList.remove(cssClass('set'), cssClass('error'));
+      this.node.classList.remove(this.cssClass('set'), this.cssClass('error'));
+      this.input.dispatchEvent(
+        new CustomEvent(EVENT_UPLOAD_CLEARED, {
+          detail: evt,
+        }),
+      );
     };
+  }
+
+  private cssClass(clazz: string): string {
+    return clazz ? `s3fileinput-${clazz}` : "s3fileinput";
   }
 
   private async uploadFile(file: File): Promise<string> {
@@ -102,7 +98,7 @@ export default class S3FileInput {
         withCredentials: false,
       },
     });
-    const fieldValue = client.uploadFile(file, this.fieldId);
+    const fieldValue = client.uploadFile(file, this.fieldId, undefined);
 
     const completedEvent = new CustomEvent(EVENT_UPLOAD_COMPLETE, {
       detail: fieldValue,
@@ -122,7 +118,7 @@ export default class S3FileInput {
     this.spinnerWrapper.style.width = `${bb.width}px`;
     this.spinnerWrapper.style.height = `${bb.height}px`;
 
-    this.node.classList.add(cssClass('uploading'));
+    this.node.classList.add(this.cssClass('uploading'));
     this.input.setCustomValidity(i18n('Uploading files, wait till finished'));
     this.input.value = ''; // reset file selection
 
@@ -132,15 +128,15 @@ export default class S3FileInput {
     try {
       fieldValue = await this.uploadFile(file);
     } catch (error) {
-      this.node.classList.add(cssClass('set'), cssClass('error'));
+      this.node.classList.add(this.cssClass('set'), this.cssClass('error'));
       this.input.setCustomValidity('Error uploading file, see console for details.');
       this.input.type = 'hidden';
       this.info.innerText = 'Error uploading file, see console for details.';
       throw error;
     } finally {
-      this.node.classList.remove(cssClass('uploading'));
+      this.node.classList.remove(this.cssClass('uploading'));
     }
-    this.node.classList.add(cssClass('set'));
+    this.node.classList.add(this.cssClass('set'));
     this.input.setCustomValidity(''); // no error
     this.input.type = 'hidden';
     this.input.value = fieldValue;
