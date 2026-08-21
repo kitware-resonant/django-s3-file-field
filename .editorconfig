@@ -7,28 +7,31 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 charset = utf-8
 
-[*.toml]
-indent_size = 2
-
-[*.ini]
-indent_size = 4
-
-[*.py]
-indent_size = 4
-max_line_length = 100
-
-[*.{js,ts,vue}]
-indent_size = 2
-max_line_length = 100
-
-[*.json]
+[*.{css,pcss}]
 indent_size = 2
 
 [*.html]
 indent_size = 2
 
-[*.css]
+[*.ini]
+indent_size = 4
+
+[*.{js,ts,vue}]
+indent_size = 2
+max_line_length = 100
+
+[*.{json,jsonc,json5}]
 indent_size = 2
 
-[{*.yml,*.yaml}]
+[*.py]
+indent_size = 4
+max_line_length = 100
+
+[*.sh]
+indent_size = 2
+
+[*.toml]
+indent_size = 2
+
+[*.{yml,yaml}]
 indent_size = 2

@@ -8,7 +8,7 @@ description = "A Django library for uploading files directly to AWS S3 or MinIO 
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
-license-files = ["LICENSE"]
+license-files = ["LICENSE", "NOTICE"]
 maintainers = [{ name = "Kitware, Inc.", email = "kitware@kitware.com" }]
 keywords = [
   "django",
@@ -29,6 +29,7 @@ classifiers = [
   "Framework :: Django",
   "Intended Audience :: Developers",
   "Operating System :: OS Independent",
+  "Programming Language :: Python",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
@@ -73,16 +74,7 @@ dev = [
   "tox-uv",
 ]
 lint = [
-  "flake8",
-  "flake8-black",
-  "flake8-bugbear",
-  "flake8-docstrings",
-  "flake8-isort",
-  "pep8-naming",
-]
-format = [
-  "black",
-  "isort",
+  "ruff",
 ]
 type = [
   "mypy",
@@ -142,37 +134,93 @@ source = "vcs"
 [tool.uv.workspace]
 members = ["python-client"]
 
-[tool.black]
+[tool.ruff]
 line-length = 100
-target-version = ["py38"]
+src = [".", "tests", "python-client"]
 
-[tool.coverage.run]
-source_pkgs = [
-  "s3_file_field",
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+  # Incompatible with formatter
+  # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
+  "COM812", # missing-trailing-comma
+  "COM819", # prohibited-trailing-comma
+  "D206", # docstring-tab-indentation
+  "D300", # triple-single-quotes
+  "E111", # indentation-with-invalid-multiple
+  "E114", # indentation-with-invalid-multiple-comment
+  "E117", # over-indented
+  "ISC001", # single-line-implicit-string-concatenation
+  "ISC002", # multi-line-implicit-string-concatenation
+  "Q", # flake8-quotes
+  "W191", # tab-indentation
+
+  # Incompatible with Django
+  "A003", # builtin-attribute-shadowing
+  "ARG001", # unused-function-argument
+  "ARG002", # unused-method-argument
+  "RUF012", # mutable-class-default
+
+  # Overly burdensome
+  "ANN", # flake8-annotations
+  "CPY001", # missing-copyright-notice
+  "D1", # undocumented-*
+  "EM", # flake8-errmsg
+  "ERA001", # commented-out-code
+  "FIX", # flake8-fixme
+  "RET505", # superfluous-else-return
+  "RET506", # superfluous-else-raise
+  "RET507", # superfluous-else-continue
+  "RET508", # superfluous-else-break
+  "TD002", # missing-todo-author
+  "TD003", # missing-todo-link
+  "TRY003", # raise-vanilla-args
+
+  # Project-specific
 ]
 
-[tool.coverage.paths]
-source = [
-  "s3_file_field/",
-  ".tox/**/site-packages/s3_file_field/",
+[tool.ruff.lint.per-file-ignores]
+"dev/**" = [
+  "INP001", # implicit-namespace-package
+]
+"**/migrations/**" = [
+  "N806", # non-lowercase-variable-in-function
+  "RUF012", # mutable-class-default
+]
+"**/settings.py" = [
+  "S105", # hardcoded-password-string
+]
+"**/tests/**" = [
+  "DJ007", # django-all-with-model-form
+  "DJ008", # django-model-without-dunder-str
+  "INP001", # implicit-namespace-package
+  "PLR0913", # too-many-arguments
+  "PLR2004", # magic-value-comparison
+  "S", # flake8-bandit
+  "SLF001", # private-member-access
 ]
 
-[tool.django-stubs]
-django_settings_module = "test_app.settings"
+[tool.ruff.lint.flake8-boolean-trap]
+extend-allowed-calls = ["pydantic.Field", "django.db.models.Value"]
 
-[tool.isort]
-profile = "black"
-line_length = 100
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["ninja.Query"]
+
+[tool.ruff.lint.flake8-self]
+extend-ignore-names = ["_base_manager", "_default_manager",  "_meta"]
+
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-base-classes = ["pydantic.BaseModel"]
+runtime-evaluated-decorators = ["pydantic.validate_call"]
+
+[tool.ruff.lint.isort]
 # Sort by name, don't cluster "from" vs "import"
-force_sort_within_sections = true
-# Combines "as" imports on the same line
-combine_as_imports = true
+force-sort-within-sections = true
+# Deferred annotations allows TC* rules to move more imports into TYPE_CHECKING blocks
+required-imports = ["from __future__ import annotations"]
 
-# These test utilities are local, but are loaded as absolute imports
-known_local_folder = [
-  "fuzzy",
-  "test_app",
-]
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
 
 [tool.mypy]
 files = [
@@ -182,6 +230,7 @@ files = [
 ]
 check_untyped_defs = true
 show_error_codes = true
+strict = true
 warn_redundant_casts = true
 warn_unused_configs = true
 warn_unused_ignores = true
@@ -194,9 +243,6 @@ mypy_path = [
   # Use the same pythonpath for MyPy as for Pytest
   "tests",
 ]
-# Don't allow "tests/" to be accidently imported as a namespace package,
-# as that allows multiple possible import paths
-namespace_packages = false
 
 [[tool.mypy.overrides]]
 module = [
@@ -204,16 +250,18 @@ module = [
 ]
 ignore_missing_imports = true
 
+[tool.django-stubs]
+django_settings_module = "test_app.settings"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-# Allow test utilities to be imported without adding the root directory to the pythonpath,
+# Allow test utility modules to be imported without adding the root directory to the pythonpath,
 # which would cause the local "s3_file_field" module to shadow the install.
 pythonpath = ["tests"]
 # Configure pythonpath ourselves, not based on manage.py
 django_find_project = false
 addopts = [
-  # Test utilies are imported absolutely from the pythonpath,
-  # so use the Pytest-reccomended "importlib" mode
+  # Use the Pytest-recommended "importlib" mode
   "--import-mode=importlib",
   "--strict-config",
   "--strict-markers",
@@ -223,6 +271,8 @@ addopts = [
   # See the comment with "pytest_plugins" in "conftest.py" for full details.
   "-p", "no:s3_file_field",
   "--cov",
+  # Specifying as "--ds" will override any value in the environment
+  "--ds=test_app.settings",
 ]
 filterwarnings = [
   "error",
@@ -234,4 +284,14 @@ filterwarnings = [
   'ignore:datetime\.datetime\.utcnow:DeprecationWarning:botocore',
   'ignore:datetime\.datetime\.utcnow:DeprecationWarning:minio',
 ]
-DJANGO_SETTINGS_MODULE = "test_app.settings"
+
+[tool.coverage.run]
+source_pkgs = [
+  "s3_file_field",
+]
+
+[tool.coverage.paths]
+source = [
+  "s3_file_field/",
+  ".tox/**/site-packages/s3_file_field/",
+]

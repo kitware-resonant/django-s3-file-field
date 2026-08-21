@@ -1,0 +1,7 @@
+_commit: v9
+_src_path: https://github.com/kitware-resonant/resonant-meta-template
+django_project: false
+max_python_minor_version: 14
+min_python_minor_version: 12
+project_slug: django-s3-file-field
+python_package_name: s3_file_field

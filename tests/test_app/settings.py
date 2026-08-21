@@ -2,20 +2,51 @@ import os
 
 import django
 
-SECRET_KEY = "test_key"
+ROOT_URLCONF = "test_app.urls"
+SECRET_KEY = "insecure-secret"
+SITE_ID = 1
 
 INSTALLED_APPS = [
+    "test_app",
+    "s3_file_field",
+    "rest_framework",
     "django.contrib.auth",
     "django.contrib.contenttypes",
-    "rest_framework",
-    "s3_file_field",
-    "test_app",
+    "django.contrib.humanize",
+    "django.contrib.messages",
+    "django.contrib.sessions",
+    "django.contrib.sites",
+    "django.contrib.staticfiles",
 ]
 
-ROOT_URLCONF = "test_app.urls"
+MIDDLEWARE = [
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.contrib.sites.middleware.CurrentSiteMiddleware",
+]
 
-# Django will use a memory resident database
 DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3"}}
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+STATIC_URL = "static/"
+
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
+    },
+]
 
 if django.VERSION < (5, 0):
     USE_TZ = True
