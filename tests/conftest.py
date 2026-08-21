@@ -1,4 +1,6 @@
-from typing import Generator
+from __future__ import annotations
+
+from collections.abc import Generator
 
 from django.core.files.base import ContentFile
 import factory
@@ -8,7 +10,6 @@ from rest_framework.test import APIClient
 
 from s3_file_field._multipart import MultipartManager
 from s3_file_field._sizes import mb
-
 from test_app.models import Resource
 
 # Explicitly load s3_file_field fixtures, late in Pytest plugin load order.
@@ -27,7 +28,7 @@ def _reduce_part_size(mocker: MockerFixture) -> None:
     mocker.patch.object(MultipartManager, "part_size", new=mb(5))
 
 
-@pytest.fixture()
+@pytest.fixture
 def api_client() -> APIClient:
     return APIClient()
 
@@ -40,7 +41,7 @@ class ResourceFactory(factory.Factory):
     blob = factory.Sequence(lambda n: ContentFile(b"test content", name=f"test_key_{n}"))
 
 
-@pytest.fixture()
+@pytest.fixture
 def resource() -> Generator[Resource, None, None]:
     # Do not save by default
     resource = ResourceFactory.build()

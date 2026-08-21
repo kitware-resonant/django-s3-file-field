@@ -27,7 +27,7 @@ class S3FormFileField(FileField):
                 # widget is a type
                 if issubclass(widget, AdminFileWidget):
                     widget = AdminS3FileInput
-            else:
+            else:  # noqa: PLR5501
                 # widget is an instance
                 if isinstance(widget, AdminFileWidget):
                     # We can't easily re-instantiate the Widget, since we need its initial

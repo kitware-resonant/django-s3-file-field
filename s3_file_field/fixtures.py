@@ -1,7 +1,8 @@
 # This module shouldn't be imported explicitly, as it will be loaded by pytest via entry point.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Generator
+from collections.abc import Callable, Generator
+from typing import TYPE_CHECKING
 
 from django.core import signing
 from django.core.files.base import ContentFile
@@ -12,7 +13,7 @@ if TYPE_CHECKING:
     from django.core.files import File
 
 
-@pytest.fixture()
+@pytest.fixture
 def stored_file_object() -> Generator[File[bytes], None, None]:
     """Return a File object, already saved directly into the default Storage."""
     # Ensure the name is always randomized, even if the key doesn't exist already
@@ -25,7 +26,7 @@ def stored_file_object() -> Generator[File[bytes], None, None]:
     default_storage.delete(key)
 
 
-@pytest.fixture()
+@pytest.fixture
 def s3ff_field_value_factory() -> Callable[[File[bytes]], str]:
     """Return a function to produce a valid field_value from a File object."""
 
@@ -40,7 +41,7 @@ def s3ff_field_value_factory() -> Callable[[File[bytes]], str]:
     return s3ff_field_value_factory
 
 
-@pytest.fixture()
+@pytest.fixture
 def s3ff_field_value(
     s3ff_field_value_factory: Callable[[File[bytes]], str], stored_file_object: File[bytes]
 ) -> str:

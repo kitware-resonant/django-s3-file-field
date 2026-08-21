@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import pytest
 
 from s3_file_field.forms import S3FormFileField
-
 from test_app.forms import ResourceForm
 
 
@@ -41,7 +42,7 @@ def test_form_instance(s3ff_field_value: str) -> None:
         assert blob_stream.read() == b"test content"
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_form_instance_saved(s3ff_field_value: str) -> None:
     form = ResourceForm(data={"blob": s3ff_field_value})
 

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from io import BytesIO
-from typing import TYPE_CHECKING, Callable, cast
+from typing import TYPE_CHECKING, cast
 
 from botocore.exceptions import ClientError
 from django.conf import settings
@@ -36,7 +37,7 @@ def s3_storage_factory() -> S3Storage:
         bucket_name=settings.MINIO_STORAGE_MEDIA_BUCKET_NAME,
         # For testing, connect to a local Minio instance
         endpoint_url=(
-            f'{"https" if settings.MINIO_STORAGE_USE_HTTPS else "http"}:'
+            f"{'https' if settings.MINIO_STORAGE_USE_HTTPS else 'http'}:"
             f"//{settings.MINIO_STORAGE_ENDPOINT}"
         ),
     )
@@ -68,33 +69,33 @@ def minio_storage_factory() -> MinioStorage:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def s3_storage() -> S3Storage:
     return s3_storage_factory()
 
 
-@pytest.fixture()
+@pytest.fixture
 def minio_storage() -> MinioStorage:
     return minio_storage_factory()
 
 
 @pytest.fixture(params=[s3_storage_factory, minio_storage_factory], ids=["s3", "minio"])
 def storage(request: pytest.FixtureRequest) -> Storage:
-    storage_factory = cast(Callable[[], Storage], request.param)
+    storage_factory = cast("Callable[[], Storage]", request.param)
     return storage_factory()
 
 
-@pytest.fixture()
+@pytest.fixture
 def s3_multipart_manager(s3_storage: S3Storage) -> S3MultipartManager:
     return S3MultipartManager(s3_storage)
 
 
-@pytest.fixture()
+@pytest.fixture
 def minio_multipart_manager(minio_storage: MinioStorage) -> MinioMultipartManager:
     return MinioMultipartManager(minio_storage)
 
 
-@pytest.fixture()
+@pytest.fixture
 def multipart_manager(storage: Storage) -> MultipartManager:
     return MultipartManager.from_storage(storage)
 
@@ -158,7 +159,7 @@ def test_multipart_manager_generate_presigned_part_url(multipart_manager: Multip
     assert isinstance(upload_url, str)
 
 
-@pytest.mark.skip()
+@pytest.mark.skip
 def test_multipart_manager_generate_presigned_part_url_content_length(
     multipart_manager: MultipartManager,
 ) -> None:

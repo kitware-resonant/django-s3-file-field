@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import cast
 
 from django.core import signing
@@ -7,9 +9,8 @@ import pytest
 import requests
 from rest_framework.test import APIClient
 
-from s3_file_field._sizes import mb
-
 from fuzzy import FUZZY_UPLOAD_ID, FUZZY_URL, Fuzzy
+from s3_file_field._sizes import mb
 
 
 def test_prepare(api_client: APIClient) -> None:
@@ -139,7 +140,7 @@ def test_full_upload_flow(
         "complete_url": Fuzzy(r".*"),
         "body": Fuzzy(r".*"),
     }
-    completion_data = cast(dict, resp.data)
+    completion_data = cast("dict", resp.data)
 
     # Complete the upload
     complete_resp = requests.post(

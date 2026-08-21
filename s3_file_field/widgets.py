@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 import functools
 import posixpath
-from typing import TYPE_CHECKING, Any, Mapping, NoReturn
+from typing import TYPE_CHECKING, Any, NoReturn
 
 from django.core import signing
 from django.core.files import File

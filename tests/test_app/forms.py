@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from django.forms import ModelForm
 
 from .models import Resource

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from django.core import signing
 import pytest
 from rest_framework.exceptions import ValidationError
@@ -15,7 +17,7 @@ from s3_file_field.views import (
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def initialization() -> PresignedTransfer:
     return PresignedTransfer(
         object_key="test-object-key",

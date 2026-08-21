@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import timedelta
 import math
-from typing import TYPE_CHECKING, Any, ClassVar, Iterator
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from s3_file_field._sizes import gb, mb
 
@@ -191,13 +192,11 @@ class MultipartManager:
 
         # 5MB is the minimum part size allowed by S3
         min_part_size = mb(5)
-        if part_size < min_part_size:
-            part_size = min_part_size
+        part_size = max(part_size, min_part_size)
 
         # 5GB is the maximum part size allowed by S3
         max_part_size = gb(5)
-        if part_size > max_part_size:
-            part_size = max_part_size
+        part_size = min(part_size, max_part_size)
 
         remaining_file_size = file_size
         part_num = 1

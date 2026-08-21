@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from django.apps import AppConfig
 from rest_framework.serializers import ModelSerializer
 
