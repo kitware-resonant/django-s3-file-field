@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import functools
 import posixpath
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import TYPE_CHECKING, Any, NoReturn, override
 
 from django.core import signing
 from django.core.files import File
@@ -33,6 +33,7 @@ class S3PlaceholderFile(File):
         self.name = name
         self.size = size
 
+    @override
     def open(
         self,
         mode: str | None = None,
@@ -45,12 +46,15 @@ class S3PlaceholderFile(File):
     ) -> NoReturn:
         raise NotImplementedError
 
+    @override
     def close(self) -> NoReturn:
         raise NotImplementedError
 
+    @override
     def chunks(self, chunk_size: int | None = None) -> NoReturn:
         raise NotImplementedError
 
+    @override
     def multiple_chunks(self, chunk_size: int | None = None) -> bool:
         # Since it's in memory, we'll never have multiple chunks.
         return False
@@ -72,6 +76,7 @@ class S3FileInput(ClearableFileInput):
         js = ["s3_file_field/widget.js"]
         css = {"all": ["s3_file_field/widget.css"]}
 
+    @override
     def get_context(self, *args, **kwargs) -> dict[str, Any]:
         # The base URL cannot be determined at the time the widget is instantiated
         # (when S3FormFileField.widget_attrs is called).
@@ -80,6 +85,7 @@ class S3FileInput(ClearableFileInput):
         self.attrs["data-s3fileinput"] = get_base_url()
         return super().get_context(*args, **kwargs)
 
+    @override
     def value_from_datadict(
         self, data: Mapping[str, Any], files: MultiValueDict[str, UploadedFile], name: str
     ) -> Any:
@@ -107,6 +113,7 @@ class S3FileInput(ClearableFileInput):
             return False
         return upload
 
+    @override
     def value_omitted_from_data(
         self, data: Mapping[str, Any], files: Mapping[str, Any], name: str
     ) -> bool:

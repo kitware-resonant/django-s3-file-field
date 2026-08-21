@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import override
+
 from django.contrib.admin.widgets import AdminFileWidget
 from django.forms import FileField, Widget
 
@@ -36,6 +38,7 @@ class S3FormFileField(FileField):
 
         super().__init__(widget=widget, **kwargs)
 
+    @override
     def widget_attrs(self, widget: Widget) -> dict[str, str]:
         attrs = super().widget_attrs(widget)
         attrs.update(

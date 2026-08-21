@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 from uuid import uuid4
 
 from django.core import checks
@@ -39,6 +39,7 @@ class S3FileField(FileField):
         kwargs.setdefault("upload_to", self.uuid_prefix_filename)
         super().__init__(*args, **kwargs)
 
+    @override
     def deconstruct(self) -> tuple[str, str, Sequence[Any], dict[str, Any]]:
         name, path, args, kwargs = super().deconstruct()
         if kwargs.get("max_length") == 2000:
@@ -55,6 +56,7 @@ class S3FileField(FileField):
             raise RuntimeError("contribute_to_class has not been called yet on this field.")
         return str(self)
 
+    @override
     def contribute_to_class(
         self, cls: type[models.Model], name: str, private_only: bool = False
     ) -> None:
@@ -71,6 +73,7 @@ class S3FileField(FileField):
     def uuid_prefix_filename(instance: models.Model, filename: str) -> str:
         return f"{uuid4()}/{filename}"
 
+    @override
     def formfield(
         self,
         form_class: type[forms.Field] | None = None,
@@ -91,6 +94,7 @@ class S3FileField(FileField):
             form_class=form_class, choices_form_class=choices_form_class, **kwargs
         )
 
+    @override
     def save_form_data(self, instance: models.Model, data) -> None:
         """Coerce a form field value and assign it to a model instance's field."""
         # The FileField's FileDescriptor behavior provides that when a File object is
@@ -103,6 +107,7 @@ class S3FileField(FileField):
             data = data.name
         super().save_form_data(instance, data)
 
+    @override
     def check(self, **kwargs: Any) -> list[CheckMessage]:
         return [
             *super().check(**kwargs),

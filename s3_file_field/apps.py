@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import override
+
 from django.apps import AppConfig
 from rest_framework.serializers import ModelSerializer
 
@@ -11,6 +13,7 @@ class S3FileFieldConfig(AppConfig):
     name = "s3_file_field"
     verbose_name = "S3 File Field"
 
+    @override
     def ready(self) -> None:
         # import checks to register them
 

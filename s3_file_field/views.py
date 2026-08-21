@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 from django.core import signing
 from rest_framework import serializers
@@ -55,6 +55,7 @@ class UploadCompletionRequestSerializer(serializers.Serializer[TransferredParts]
     upload_id = serializers.CharField()
     parts = TransferredPartRequestSerializer(many=True, allow_empty=False)
 
+    @override
     def create(self, validated_data: dict[str, Any]) -> TransferredParts:
         parts = [
             TransferredPart(**part)
