@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
 import functools
 import posixpath
 from typing import TYPE_CHECKING, Any, NoReturn
@@ -12,6 +11,8 @@ from django.forms.widgets import FILE_INPUT_CONTRADICTION, CheckboxInput
 from django.urls import reverse
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
     from django.core.files.uploadedfile import UploadedFile
     from django.utils.datastructures import MultiValueDict
 

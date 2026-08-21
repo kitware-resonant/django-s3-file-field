@@ -1,16 +1,20 @@
 from __future__ import annotations
 
-from collections.abc import Generator
+from typing import TYPE_CHECKING
 
 from django.core.files.base import ContentFile
 import factory
 import pytest
-from pytest_mock import MockerFixture
 from rest_framework.test import APIClient
 
 from s3_file_field._multipart import MultipartManager
 from s3_file_field._sizes import mb
 from test_app.models import Resource
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from pytest_mock import MockerFixture
 
 # Explicitly load s3_file_field fixtures, late in Pytest plugin load order.
 # If this is auto-loaded via entry point, the import happens before coverage tracing is started by

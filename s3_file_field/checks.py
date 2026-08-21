@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -10,6 +9,8 @@ from ._multipart import MultipartManager
 from ._registry import iter_storages
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from django.apps import AppConfig
 
 logger = logging.getLogger(__name__)

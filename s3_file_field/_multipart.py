@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import timedelta
 import math
@@ -9,6 +8,8 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from s3_file_field._sizes import gb, mb
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from django.core.files.storage import Storage
 
 
@@ -125,22 +126,22 @@ class MultipartManager:
     @classmethod
     def from_storage(cls, storage: Storage) -> MultipartManager:
         try:
-            from storages.backends.s3 import S3Storage
+            from storages.backends.s3 import S3Storage  # noqa: PLC0415
         except ImportError:
             pass
         else:
             if isinstance(storage, S3Storage):
-                from ._multipart_s3 import S3MultipartManager
+                from ._multipart_s3 import S3MultipartManager  # noqa: PLC0415
 
                 return S3MultipartManager(storage)
 
         try:
-            from minio_storage.storage import MinioStorage
+            from minio_storage.storage import MinioStorage  # noqa: PLC0415
         except ImportError:
             pass
         else:
             if isinstance(storage, MinioStorage):
-                from ._multipart_minio import MinioMultipartManager
+                from ._multipart_minio import MinioMultipartManager  # noqa: PLC0415
 
                 return MinioMultipartManager(storage)
 

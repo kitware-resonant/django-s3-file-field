@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
 from typing import TYPE_CHECKING
 import warnings
 from weakref import WeakValueDictionary
 
-from django.core.files.storage import Storage
-
 if TYPE_CHECKING:
     # Avoid circular imports
+    from collections.abc import Iterator
+
+    from django.core.files.storage import Storage
+
     from .fields import S3FileField
 
     FieldsDictType = WeakValueDictionary[str, S3FileField]

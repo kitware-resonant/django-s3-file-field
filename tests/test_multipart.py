@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from io import BytesIO
 from typing import TYPE_CHECKING, cast
 
@@ -10,7 +9,6 @@ from django.core.files.storage import FileSystemStorage, Storage
 from minio import Minio
 from minio_storage.storage import MinioStorage
 import pytest
-from pytest_mock import MockerFixture
 import requests
 from storages.backends.s3 import S3Storage
 
@@ -26,7 +24,10 @@ from s3_file_field._sizes import gb, mb
 
 if TYPE_CHECKING:
     # mypy_boto3_s3 only provides types
+    from collections.abc import Callable
+
     import mypy_boto3_s3 as s3
+    from pytest_mock import MockerFixture
 
 
 def s3_storage_factory() -> S3Storage:
@@ -254,7 +255,7 @@ def test_multipart_manager_get_object_size_not_found(multipart_manager: Multipar
         "too_many_part",
     ],
 )
-def test_multipart_manager_iter_part_sizes(
+def test_multipart_manager_iter_part_sizes(  # noqa: PLR0917
     mocker: MockerFixture,
     file_size: int,
     requested_part_size: int,
@@ -264,7 +265,7 @@ def test_multipart_manager_iter_part_sizes(
 ) -> None:
     mocker.patch.object(MultipartManager, "part_size", new=requested_part_size)
 
-    part_nums, part_sizes = zip(*MultipartManager._iter_part_sizes(file_size))
+    part_nums, part_sizes = zip(*MultipartManager._iter_part_sizes(file_size), strict=True)
 
     # TODO: zip(*) returns a tuple, but semantically this should be a list
     assert part_nums == tuple(range(1, part_count + 1))

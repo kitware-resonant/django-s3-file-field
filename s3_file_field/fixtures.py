@@ -1,7 +1,6 @@
 # This module shouldn't be imported explicitly, as it will be loaded by pytest via entry point.
 from __future__ import annotations
 
-from collections.abc import Callable, Generator
 from typing import TYPE_CHECKING
 
 from django.core import signing
@@ -10,6 +9,8 @@ from django.core.files.storage import default_storage
 import pytest
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Generator
+
     from django.core.files import File
 
 

@@ -1,16 +1,18 @@
 from __future__ import annotations
 
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from django.core import signing
 from django.core.files.storage import default_storage
 from django.urls import reverse
 import pytest
 import requests
-from rest_framework.test import APIClient
 
 from fuzzy import FUZZY_UPLOAD_ID, FUZZY_URL, Fuzzy
 from s3_file_field._sizes import mb
+
+if TYPE_CHECKING:
+    from rest_framework.test import APIClient
 
 
 def test_prepare(api_client: APIClient) -> None:

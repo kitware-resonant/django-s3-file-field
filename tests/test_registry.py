@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Generator
 import inspect
 import sys
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from django.core.files.storage import default_storage
 from django.db import models
@@ -12,6 +11,9 @@ import pytest
 from s3_file_field import _registry
 from s3_file_field.fields import S3FileField
 from test_app.models import Resource
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 @pytest.fixture
@@ -42,7 +44,7 @@ def test_field_id(s3ff_field: S3FileField) -> None:
 def test_field_id_premature() -> None:
     s3ff_field = S3FileField()
     with pytest.raises(Exception, match=r"contribute_to_class"):
-        s3ff_field.id
+        _ = s3ff_field.id
 
 
 def test_registry_get_field(s3ff_field: S3FileField) -> None:

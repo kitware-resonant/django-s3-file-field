@@ -11,5 +11,8 @@ class Resource(models.Model):
     s3ff_mandatory_blob = S3FileField()
     s3ff_optional_blob = S3FileField(blank=True)
 
+    def __str__(self) -> str:
+        return f"Resource {self.pk}"
+
     def get_absolute_url(self):
         return reverse("resource-update", kwargs={"pk": self.pk})

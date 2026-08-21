@@ -13,7 +13,6 @@ class S3FileFieldConfig(AppConfig):
 
     def ready(self) -> None:
         # import checks to register them
-        from . import checks  # noqa: F401
 
         # Add an entry to the the base ModelSerializer, so S3FF will work out of the box.
         # Otherwise, downstream users would have to explicitly add this mapping (or a direct

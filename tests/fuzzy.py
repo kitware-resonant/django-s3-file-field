@@ -14,6 +14,9 @@ class Fuzzy:
     def __eq__(self, other: object) -> bool:
         return isinstance(other, str) and self.pattern.search(other) is not None
 
+    def __hash__(self) -> int:
+        return hash(self.pattern)
+
     def __str__(self) -> str:
         return self.pattern.pattern
 

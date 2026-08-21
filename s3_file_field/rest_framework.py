@@ -25,7 +25,6 @@ class S3FileSerializerField(FileSerializerField):
 
         # This checks validity of the file name and size
         super().to_internal_value(file_object)
-        assert file_object.name
 
         # fields.S3FileField.save_form_data is not called by DRF, so the same behavior must be
         # implemented here
