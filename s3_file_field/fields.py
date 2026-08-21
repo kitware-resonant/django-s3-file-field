@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, override
+from typing import TYPE_CHECKING, Any, Final, override
 from uuid import uuid4
 
 from django.core import checks
@@ -21,6 +21,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_DEFAULT_MAX_LENGTH: Final = 2000
+
 
 class S3FileField(FileField):
     """
@@ -35,14 +37,14 @@ class S3FileField(FileField):
     )
 
     def __init__(self, *args, **kwargs) -> None:
-        kwargs.setdefault("max_length", 2000)
+        kwargs.setdefault("max_length", _DEFAULT_MAX_LENGTH)
         kwargs.setdefault("upload_to", self.uuid_prefix_filename)
         super().__init__(*args, **kwargs)
 
     @override
     def deconstruct(self) -> tuple[str, str, Sequence[Any], dict[str, Any]]:
         name, path, args, kwargs = super().deconstruct()
-        if kwargs.get("max_length") == 2000:
+        if kwargs.get("max_length") == _DEFAULT_MAX_LENGTH:
             del kwargs["max_length"]
         if kwargs.get("upload_to") is self.uuid_prefix_filename:
             del kwargs["upload_to"]
