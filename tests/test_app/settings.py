@@ -6,7 +6,6 @@ import django
 
 ROOT_URLCONF = "test_app.urls"
 SECRET_KEY = "insecure-secret"
-SITE_ID = 1
 
 INSTALLED_APPS = [
     "test_app",
@@ -17,7 +16,6 @@ INSTALLED_APPS = [
     "django.contrib.humanize",
     "django.contrib.messages",
     "django.contrib.sessions",
-    "django.contrib.sites",
     "django.contrib.staticfiles",
 ]
 
@@ -27,7 +25,6 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
-    "django.contrib.sites.middleware.CurrentSiteMiddleware",
 ]
 
 DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3"}}
