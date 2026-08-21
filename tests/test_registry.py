@@ -23,7 +23,7 @@ def s3ff_field() -> S3FileField:
 
 
 @pytest.fixture
-def ephemeral_s3ff_field() -> Generator[S3FileField, None, None]:
+def ephemeral_s3ff_field() -> Generator[S3FileField]:
     # Declaring this will implicitly register the field
     class EphemeralResource(models.Model):
         class Meta:

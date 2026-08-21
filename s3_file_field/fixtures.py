@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture
-def stored_file_object() -> Generator[File[bytes], None, None]:
+def stored_file_object() -> Generator[File[bytes]]:
     """Return a File object, already saved directly into the default Storage."""
     # Ensure the name is always randomized, even if the key doesn't exist already
     key = default_storage.get_alternative_name("test_key", "")

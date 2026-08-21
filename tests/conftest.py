@@ -46,7 +46,7 @@ class ResourceFactory(factory.Factory):
 
 
 @pytest.fixture
-def resource() -> Generator[Resource, None, None]:
+def resource() -> Generator[Resource]:
     # Do not save by default
     resource = ResourceFactory.build()
     yield resource

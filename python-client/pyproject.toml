@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "django-s3-file-field-client"
 description = "A Python client library for django-s3-file-field."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 maintainers = [{ name = "Kitware, Inc.", email = "kitware@kitware.com" }]
@@ -28,8 +28,6 @@ classifiers = [
   "Intended Audience :: Developers",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python",
