@@ -313,6 +313,7 @@ s3 = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "django-stubs-ext" },
     { name = "tox" },
     { name = "tox-uv" },
 ]
@@ -320,6 +321,7 @@ lint = [
     { name = "ruff" },
 ]
 test = [
+    { name = "django-stubs-ext" },
     { name = "factory-boy" },
     { name = "pytest" },
     { name = "pytest-cov" },
@@ -350,11 +352,13 @@ provides-extras = ["minio", "pytest", "s3"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "django-stubs-ext" },
     { name = "tox" },
     { name = "tox-uv" },
 ]
 lint = [{ name = "ruff" }]
 test = [
+    { name = "django-stubs-ext" },
     { name = "factory-boy" },
     { name = "pytest" },
     { name = "pytest-cov" },

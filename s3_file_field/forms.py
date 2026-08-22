@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import override
+from typing import Any, override
 
 from django.contrib.admin.widgets import AdminFileWidget
 from django.forms import FileField, Widget
@@ -14,7 +14,7 @@ class S3FormFileField(FileField):
     widget = S3FileInput
 
     def __init__(
-        self, *, model_field_id: str, widget: type[Widget] | Widget | None = None, **kwargs
+        self, *, model_field_id: str, widget: type[Widget] | Widget | None = None, **kwargs: Any
     ) -> None:
         self.model_field_id = model_field_id
 

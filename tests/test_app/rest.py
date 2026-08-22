@@ -5,7 +5,7 @@ from rest_framework import serializers
 from .models import Resource
 
 
-class ResourceSerializer(serializers.ModelSerializer):
+class ResourceSerializer(serializers.ModelSerializer[Resource]):
     class Meta:
         model = Resource
         fields = "__all__"

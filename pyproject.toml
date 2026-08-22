@@ -68,6 +68,7 @@ pytest = [
 
 [dependency-groups]
 dev = [
+  "django-stubs-ext",
   "tox",
   "tox-uv",
 ]
@@ -83,6 +84,7 @@ type = [
   "types-factory-boy",
 ]
 test = [
+  "django-stubs-ext",
   "factory-boy",
   "pytest",
   "pytest-cov",

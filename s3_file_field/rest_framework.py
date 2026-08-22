@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import override
+from typing import Any, override
 
 from django.core.files import File
 from rest_framework.fields import FileField as FileSerializerField
@@ -14,7 +14,7 @@ class S3FileSerializerField(FileSerializerField):
     }
 
     @override
-    def to_internal_value(self, data: str | File) -> str:  # type: ignore[override]
+    def to_internal_value(self, data: str | File[Any]) -> str:  # type: ignore[override]
         if isinstance(data, File):
             # Although the parser may allow submission of an inline file, S3FF should refuse to
             # accept it. We should assume that the server doesn't want to act as a proxy, so

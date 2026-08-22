@@ -25,7 +25,7 @@ def get_base_url() -> str:
     return posixpath.commonpath([prepare_url, complete_url])
 
 
-class S3PlaceholderFile(File):
+class S3PlaceholderFile(File[Any]):
     name: str
     size: int
 
@@ -77,7 +77,7 @@ class S3FileInput(ClearableFileInput):
         css = {"all": ["s3_file_field/widget.css"]}
 
     @override
-    def get_context(self, *args, **kwargs) -> dict[str, Any]:
+    def get_context(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
         # The base URL cannot be determined at the time the widget is instantiated
         # (when S3FormFileField.widget_attrs is called).
         # Additionally, because this method is called on a deep copy of the widget each

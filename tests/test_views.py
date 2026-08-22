@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from django.core import signing
 from django.core.files.storage import default_storage
@@ -142,12 +142,10 @@ def test_full_upload_flow(
         "complete_url": Fuzzy(r".*"),
         "body": Fuzzy(r".*"),
     }
-    completion_data = cast("dict", resp.data)
-
     # Complete the upload
     complete_resp = requests.post(
-        completion_data["complete_url"],
-        data=completion_data["body"],
+        resp.data["complete_url"],
+        data=resp.data["body"],
         timeout=5,
     )
     complete_resp.raise_for_status()

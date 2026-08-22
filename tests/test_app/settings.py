@@ -3,6 +3,9 @@ from __future__ import annotations
 import os
 
 import django
+import django_stubs_ext
+
+django_stubs_ext.monkeypatch()
 
 ROOT_URLCONF = "test_app.urls"
 SECRET_KEY = "insecure-secret"

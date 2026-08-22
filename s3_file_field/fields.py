@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
     from django import forms
     from django.core.checks import CheckMessage
+    from django.core.files import File
     from django.db import models
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ class S3FileField(FileField):
         "UI and fallsback to uploaded to <randomuuid>/filename."
     )
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         kwargs.setdefault("max_length", _DEFAULT_MAX_LENGTH)
         kwargs.setdefault("upload_to", self.uuid_prefix_filename)
         super().__init__(*args, **kwargs)
@@ -97,7 +98,7 @@ class S3FileField(FileField):
         )
 
     @override
-    def save_form_data(self, instance: models.Model, data) -> None:
+    def save_form_data(self, instance: models.Model, data: File[Any] | str | bool | None) -> None:
         """Coerce a form field value and assign it to a model instance's field."""
         # The FileField's FileDescriptor behavior provides that when a File object is
         # assigned to the field, the content is considered uncommitted, and is saved.

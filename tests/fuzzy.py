@@ -6,8 +6,8 @@ import re
 class Fuzzy:
     pattern: re.Pattern[str]
 
-    def __init__(self, pattern: str | re.Pattern) -> None:
-        self.pattern: re.Pattern = (
+    def __init__(self, pattern: str | re.Pattern[str]) -> None:
+        self.pattern: re.Pattern[str] = (
             pattern if isinstance(pattern, re.Pattern) else re.compile(pattern)
         )
 

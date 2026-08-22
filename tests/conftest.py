@@ -37,7 +37,7 @@ def api_client() -> APIClient:
     return APIClient()
 
 
-class ResourceFactory(factory.Factory):
+class ResourceFactory(factory.Factory[Resource]):
     class Meta:
         model = Resource
 
