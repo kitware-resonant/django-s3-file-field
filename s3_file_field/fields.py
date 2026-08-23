@@ -73,7 +73,7 @@ class S3FileField(FileField):
             register_field(self)
 
     @staticmethod
-    def uuid_prefix_filename(instance: models.Model, filename: str) -> str:
+    def uuid_prefix_filename(_instance: models.Model, filename: str) -> str:
         return f"{uuid4()}/{filename}"
 
     @override
