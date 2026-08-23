@@ -278,9 +278,6 @@ filterwarnings = [
   "error",
   # pytest often causes unclosed socket warnings
   'ignore:unclosed <socket\.socket:ResourceWarning',
-  # Python 3.12 deprecrates "datetime.datetime.utcnow"
-  'ignore:datetime\.datetime\.utcnow:DeprecationWarning:botocore',
-  'ignore:datetime\.datetime\.utcnow:DeprecationWarning:minio',
 ]
 
 [tool.coverage.run]
