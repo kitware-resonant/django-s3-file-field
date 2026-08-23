@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 
-import django
 import django_stubs_ext
 
 django_stubs_ext.monkeypatch()
@@ -50,20 +49,15 @@ TEMPLATES = [
     },
 ]
 
-if django.VERSION < (5, 0):
-    USE_TZ = True
+STORAGES = {
+    "default": {
+        "BACKEND": "minio_storage.storage.MinioMediaStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 
-if django.VERSION < (4, 2):
-    DEFAULT_FILE_STORAGE = "minio_storage.storage.MinioMediaStorage"
-else:
-    STORAGES = {
-        "default": {
-            "BACKEND": "minio_storage.storage.MinioMediaStorage",
-        },
-        "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-        },
-    }
 # Use values compatible with Docker Compose as defaults, in case environment variables are not set
 MINIO_STORAGE_ENDPOINT = os.environ.get("MINIO_STORAGE_ENDPOINT", "localhost:9000")
 MINIO_STORAGE_USE_HTTPS = False

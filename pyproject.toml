@@ -21,11 +21,11 @@ keywords = [
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Environment :: Web Environment",
-  "Framework :: Django :: 4",
-  "Framework :: Django :: 4.2",
   "Framework :: Django :: 5",
-  "Framework :: Django :: 5.1",
   "Framework :: Django :: 5.2",
+  "Framework :: Django :: 6",
+  "Framework :: Django :: 6.0",
+  "Framework :: Django :: 6.1",
   "Framework :: Django",
   "Intended Audience :: Developers",
   "Operating System :: OS Independent",
@@ -36,7 +36,7 @@ classifiers = [
   "Programming Language :: Python",
 ]
 dependencies = [
-  "django>=4.2",
+  "django>=5.2",
   "djangorestframework",
 ]
 dynamic = ["version"]
@@ -278,8 +278,6 @@ filterwarnings = [
   "error",
   # pytest often causes unclosed socket warnings
   'ignore:unclosed <socket\.socket:ResourceWarning',
-  # Django 3.2 emites some deprecation warnings
-  "ignore::DeprecationWarning:django",
   # Python 3.12 deprecrates "datetime.datetime.utcnow"
   'ignore:datetime\.datetime\.utcnow:DeprecationWarning:botocore',
   'ignore:datetime\.datetime\.utcnow:DeprecationWarning:minio',

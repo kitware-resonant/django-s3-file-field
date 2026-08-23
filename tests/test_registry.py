@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import inspect
-import sys
 from typing import TYPE_CHECKING, cast
 
 from django.core.files.storage import default_storage
@@ -65,7 +64,6 @@ def test_registry_iter_storages() -> None:
     assert fields[0] is default_storage
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason="Bug bpo-35113")
 @pytest.mark.filterwarnings(
     "ignore:Model 'test_app\\.ephemeralresource' was already registered:RuntimeWarning"
 )
