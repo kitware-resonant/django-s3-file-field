@@ -1,15 +1,18 @@
 from __future__ import annotations
 
+import debug_toolbar.toolbar
 from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import RedirectView
 from rest_framework import routers
-from s3ff_example.core import rest, views
+from s3ff_dev import rest, views
 
 router = routers.DefaultRouter()
 router.register("resources", rest.ResourceViewSet, basename="api")
 
 urlpatterns = [
+    *debug_toolbar.toolbar.debug_toolbar_urls(),
+    path("__reload__/", include("django_browser_reload.urls")),
     path("admin/", admin.site.urls),
     path("api/s3ff/", include("s3_file_field.urls")),
     path("", RedirectView.as_view(pattern_name="resource-list")),

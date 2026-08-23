@@ -1,7 +1,6 @@
-# S3 File Field example
+# S3 File Field development
 
-This provides an example Django project, `s3ff_example`,
-for use in local development and debugging.
+This provides a turnkey Django project for use in local development and debugging.
 
 Some settings used here are not appropriate for production use.
 

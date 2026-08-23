@@ -10,8 +10,8 @@
 
 {# multipart/form-data is required to submit legacy files #}
 <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <input type="submit" value="Save">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <input type="submit" value="Save">
 </form>
 {% endblock %}

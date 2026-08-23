@@ -7,15 +7,15 @@
 
 <ul>
 {% for resource in object_list %}
-    <li>
-        <a href="{{ resource.get_absolute_url }}">
-            {{ resource.pk }}
-        </a>
-        <br>
-        <a href="{% url "resource-delete" pk=resource.pk %}">
-            [Delete]
-        </a>
-    </li>
+  <li>
+    <a href="{{ resource.get_absolute_url }}">
+      {{ resource.pk }}
+    </a>
+    <br>
+    <a href="{% url "resource-delete" pk=resource.pk %}">
+      [Delete]
+    </a>
+  </li>
 {% endfor %}
 </ul>
 

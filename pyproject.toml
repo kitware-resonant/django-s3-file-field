@@ -70,9 +70,16 @@ pytest = [
 
 [dependency-groups]
 dev = [
+  "django==6.1",
+  "django-browser-reload==1.21.0",
+  "django-debug-toolbar==7.1.0",
+  "django-extensions==4.1",
   "django-stubs-ext",
-  "tox",
-  "tox-uv",
+  "ipython==9.16.1",
+  "tox==4.60.0",
+  "tox-uv==1.36.0",
+  "watchdog==6.0.0",
+  "werkzeug==3.1.8",
 ]
 lint = [
   "ruff",
