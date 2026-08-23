@@ -55,9 +55,10 @@ s3 = [
   "boto3",
 ]
 minio = [
-  # This is the first version which supports minio>=7, so make dependency resolution easier
-  "django-minio-storage>=0.5",
-  "minio>=7",
+  # 0.5.9 pins "minio<7.2.19", which excludes the breaking API changes in minio 7.2.19
+  "django-minio-storage>=0.5.9",
+  # 7.2.18 is the first version to ship with inline type annotations
+  "minio>=7.2.18",
 ]
 pytest = [
   # The "fixtures.py" module (containing the "pytest" requirement) is only loaded
@@ -239,7 +240,6 @@ plugins = [
   "mypy_drf_plugin.main",
 ]
 mypy_path = [
-  "$MYPY_CONFIG_FILE_DIR/stubs",
   # Use the same pythonpath for MyPy as for Pytest
   "tests",
 ]
