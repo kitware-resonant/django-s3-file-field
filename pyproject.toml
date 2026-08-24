@@ -72,9 +72,9 @@ pytest = [
 dev = [
   "django==6.1",
   "django-browser-reload==1.21.0",
-  "django-debug-toolbar==7.1.0",
+  "django-debug-toolbar==7.1.1",
   "django-extensions==4.1",
-  "django-stubs-ext",
+  "django-stubs-ext==6.1.0",
   "ipython==9.16.1",
   "tox==4.60.0",
   "tox-uv==1.36.0",
@@ -82,24 +82,23 @@ dev = [
   "werkzeug==3.1.8",
 ]
 lint = [
-  "ruff",
+  "ruff==0.16.4",
 ]
 type = [
-  "mypy",
-  "boto3-stubs[s3]",
-  "django-stubs[compatible-mypy]",
-  "djangorestframework-stubs",
-  "types-requests",
-  "types-factory-boy",
+  "mypy==2.3.1",
+  "boto3-stubs[s3]==1.43.78",
+  "django-stubs[compatible-mypy]==6.1.0",
+  "djangorestframework-stubs==3.18.0",
+  "types-factory-boy==0.4.1",
 ]
 test = [
-  "django-stubs-ext",
-  "factory-boy",
-  "pytest",
-  "pytest-cov",
-  "pytest-django",
-  "pytest-mock",
-  "requests",
+  "django-stubs-ext==6.1.0",
+  "factory-boy==3.3.3",
+  "pytest==9.1.1",
+  "pytest-cov==7.1.0",
+  "pytest-django==4.14.0",
+  "pytest-mock==3.15.1",
+  "requests==2.34.2",
 ]
 
 [tool.hatch.build]

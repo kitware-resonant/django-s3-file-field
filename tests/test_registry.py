@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from django.core.files.storage import default_storage
 from django.db import models
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 @pytest.fixture
 def s3ff_field() -> S3FileField:
     """Return an attached S3FileField (not S3FieldFile) instance."""
-    return cast("S3FileField", Resource._meta.get_field("blob"))
+    return Resource._meta.get_field("blob")
 
 
 @pytest.fixture
@@ -30,7 +30,7 @@ def ephemeral_s3ff_field() -> Generator[S3FileField]:
 
         blob = S3FileField()
 
-    field = cast("S3FileField", EphemeralResource._meta.get_field("blob"))
+    field = EphemeralResource._meta.get_field("blob")
     yield field
     # The registry state is global to the process, so attempt to clean up
     del _registry._fields[field.id]
@@ -83,7 +83,7 @@ def test_registry_register_field_multiple(ephemeral_s3ff_field: S3FileField) -> 
     assert warning.filename == inspect.getsourcefile(EphemeralResource)
     assert warning.lineno == inspect.getsourcelines(EphemeralResource)[1]
 
-    duplicate_field = cast("S3FileField", EphemeralResource._meta.get_field("blob"))
+    duplicate_field = EphemeralResource._meta.get_field("blob")
     # Sanity check
     assert duplicate_field.id == ephemeral_s3ff_field.id
     assert duplicate_field is not ephemeral_s3ff_field

@@ -39,6 +39,7 @@ def test_fields_save_refresh(resource: Resource) -> None:
 def test_fields_save_uuid_prefix(resource: Resource) -> None:
     resource.save()
 
+    assert resource.blob.name is not None
     assert re.search(
         r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test_key_",
         resource.blob.name,

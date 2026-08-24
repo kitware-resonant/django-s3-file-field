@@ -61,12 +61,12 @@ class S3FileField(FileField):
 
     @override
     def contribute_to_class(
-        self, cls: type[models.Model], name: str, private_only: bool = False
+        self, cls: type[models.Model], name: str, private_only: bool = False, **kwargs: Any
     ) -> None:
         # This is executed when the Field is formally added to its containing class.
         # As a side effect, self.name is set and self.__str__ becomes usable as a unique
         # identifier for the Field.
-        super().contribute_to_class(cls, name, private_only=private_only)
+        super().contribute_to_class(cls, name, private_only=private_only, **kwargs)
         if cls.__module__ != "__fake__":
             # Django's makemigrations iteratively creates fake model instances.
             # To avoid registration collisions, don't register these.

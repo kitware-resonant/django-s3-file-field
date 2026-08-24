@@ -87,7 +87,7 @@ class S3FileInput(ClearableFileInput):
 
     @override
     def value_from_datadict(
-        self, data: Mapping[str, Any], files: MultiValueDict[str, UploadedFile], name: str
+        self, data: Mapping[str, Any], files: MultiValueDict[str, UploadedFile[Any]], name: str
     ) -> Any:
         if name in data:
             upload = data[name]
