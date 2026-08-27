@@ -86,7 +86,7 @@ lint = [
 ]
 type = [
   "mypy==2.3.1",
-  "boto3-stubs[s3]==1.43.78",
+  "boto3-stubs[s3]==1.43.79",
   "django-stubs[compatible-mypy]==6.1.0",
   "djangorestframework-stubs==3.18.0",
   "types-factory-boy==0.4.1",
