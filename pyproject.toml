@@ -233,6 +233,7 @@ convention = "pep257"
 [tool.mypy]
 files = [
   "s3_file_field",
+  "dev",
   "tests",
   "python-client/s3_file_field_client",
 ]
@@ -253,6 +254,7 @@ mypy_path = [
 
 [[tool.mypy.overrides]]
 module = [
+  "debug_toolbar.*",
   "storages.backends.s3",
 ]
 ignore_missing_imports = true

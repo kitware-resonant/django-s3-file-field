@@ -6,5 +6,5 @@ from .models import Resource
 
 
 @admin.register(Resource)
-class ResourceAdmin(admin.ModelAdmin):
+class ResourceAdmin(admin.ModelAdmin[Resource]):
     pass
