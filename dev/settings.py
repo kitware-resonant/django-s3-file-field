@@ -3,37 +3,51 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-SECRET_KEY = "example-secret"
+import django_stubs_ext
+
+django_stubs_ext.monkeypatch()
+
+BASE_DIR = Path(__file__).resolve(strict=True).parent
+
+ROOT_URLCONF = "urls"
+SECRET_KEY = "insecure-secret"
+SITE_ID = 1
 
 DEBUG = True
-
-ALLOWED_HOSTS: list[str] = []
+INTERNAL_IPS = ["127.0.0.1"]
 
 INSTALLED_APPS = [
+    "s3ff_dev",
+    "s3_file_field",
+    "debug_toolbar",
+    "django_browser_reload",
+    "django_extensions",
+    "rest_framework",
+    "rest_framework.authtoken",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
-    "django.contrib.sessions",
+    "django.contrib.humanize",
     "django.contrib.messages",
+    "django.contrib.sessions",
     "django.contrib.staticfiles",
-    "rest_framework",
-    "rest_framework.authtoken",
-    "s3_file_field",
-    "s3ff_example.core",
 ]
 
 MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django_browser_reload.middleware.BrowserReloadMiddleware",
 ]
 
-BASE_DIR = Path(__file__).resolve().parent.parent
 DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+TIME_ZONE = "UTC"
+
+STATIC_URL = "static/"
 
 TEMPLATES = [
     {
@@ -45,15 +59,10 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-            ]
+            ],
         },
-    }
+    },
 ]
-
-STATIC_URL = "/static/"
-
-ROOT_URLCONF = "s3ff_example.urls"
-WSGI_APPLICATION = "s3ff_example.wsgi.application"
 
 STORAGES = {
     "staticfiles": {
@@ -77,7 +86,7 @@ else:
     MINIO_STORAGE_USE_HTTPS = False
     MINIO_STORAGE_ACCESS_KEY = "minioAccessKey"
     MINIO_STORAGE_SECRET_KEY = "minioSecretKey"
-    MINIO_STORAGE_MEDIA_BUCKET_NAME = "s3ff-example"
+    MINIO_STORAGE_MEDIA_BUCKET_NAME = "s3ff-dev"
     MINIO_STORAGE_AUTO_CREATE_MEDIA_BUCKET = True
     MINIO_STORAGE_AUTO_CREATE_MEDIA_POLICY = "READ_WRITE"
     MINIO_STORAGE_MEDIA_USE_PRESIGNED = True

@@ -14,10 +14,10 @@ facilitating deployment to environments like
 
 ### Scope
 The principal API of django-s3-file-field is the `S3FileField`, which is a subclass of
-[Django's `FileField`](https://docs.djangoproject.com/en/4.2/ref/models/fields/#filefield).
+[Django's `FileField`](https://docs.djangoproject.com/en/6.1/ref/models/fields/#filefield).
 django-s3-file-field does not affect any operations other than uploading from external HTTP
 clients; for all other file operations (downloading, uploading from the Python API, etc.), refer to
-[Django's file management documentation](https://docs.djangoproject.com/en/4.2/topics/files/).
+[Django's file management documentation](https://docs.djangoproject.com/en/6.1/topics/files/).
 
 django-s3-file-field supports both the creation and modification (by overwrite) of
 `S3FileField`-containing `Model` instances.
@@ -48,7 +48,7 @@ Enable django-s3-file-field as an installed Django app:
 # settings.py
 INSTALLED_APPS = [
     ...,
-    's3_file_field',
+    "s3_file_field",
 ]
 ```
 
@@ -60,7 +60,7 @@ from django.urls import include, path
 
 urlpatterns = [
     ...,
-    path('api/s3-upload/', include('s3_file_field.urls')),
+    path("api/s3-upload/", include("s3_file_field.urls")),
 ]
 ```
 
@@ -70,26 +70,28 @@ For all usage, define an `S3FileField` on a Django `Model`, instead of a `FileFi
 from django.db import models
 from s3_file_field import S3FileField
 
+
 class Resource(models.Model):
     blob = S3FileField()
 ```
 
 ### Django Forms
 When defining a
-[Django `ModelForm`](https://docs.djangoproject.com/en/4.2/topics/forms/modelforms/),
+[Django `ModelForm`](https://docs.djangoproject.com/en/6.1/topics/forms/modelforms/),
 the appropriate Form `Field` will be automatically used:
 ```python
 from django.forms import ModelForm
 from .models import Resource
 
+
 class ResourceForm(ModelForm):
     class Meta:
         model = Resource
-        fields = ['blob']
+        fields = ["blob"]
 ```
 
 Forms using django-s3-file-field include additional
-[assets](https://docs.djangoproject.com/en/4.2/topics/forms/media/), which it's essential to render
+[assets](https://docs.djangoproject.com/en/6.1/topics/forms/media/), which it's essential to render
 along with the Form. Typically, this can be done in any Form-containing Template as:
 ```
 <head>
@@ -106,10 +108,11 @@ the appropriate Serializer `Field` will be automatically used:
 from rest_framework import serializers
 from .models import Resource
 
+
 class ResourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Resource
-        fields = ['blob']
+        fields = ["blob"]
 ```
 
 Clients interacting with these RESTful APIs will need to use a corresponding django-s3-file-field
@@ -127,8 +130,9 @@ Django Rest Framework `ModelSerializer` subclasses:
 ```python
 from .forms import ResourceForm
 
+
 def test_resource_form(s3ff_field_value: str) -> None:
-    form = ResourceForm(data={'blob': s3ff_field_value})
+    form = ResourceForm(data={"blob": s3ff_field_value})
     assert form.is_valid()
 ```
 
@@ -139,10 +143,11 @@ more control over the uploaded file:
 from django.core.files.storage import default_storage
 from rest_framework.test import APIClient
 
+
 def test_resource_create(s3ff_field_value_factory):
     client = APIClient()
-    stored_file = default_storage.open('some_existing_file.txt')
+    stored_file = default_storage.open("some_existing_file.txt")
     s3ff_field_value = s3ff_field_value_factory(stored_file)
-    resp = client.post('/resource', data={'blob': s3ff_field_value})
+    resp = client.post("/resource", data={"blob": s3ff_field_value})
     assert resp.status_code == 201
 ```

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from django.db import models
 
 from s3_file_field.fields import S3FileField

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final, override
 from uuid import uuid4
 
 from django.core import checks
@@ -17,9 +17,12 @@ if TYPE_CHECKING:
 
     from django import forms
     from django.core.checks import CheckMessage
+    from django.core.files import File
     from django.db import models
 
 logger = logging.getLogger(__name__)
+
+_DEFAULT_MAX_LENGTH: Final = 2000
 
 
 class S3FileField(FileField):
@@ -34,14 +37,15 @@ class S3FileField(FileField):
         "UI and fallsback to uploaded to <randomuuid>/filename."
     )
 
-    def __init__(self, *args, **kwargs) -> None:
-        kwargs.setdefault("max_length", 2000)
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        kwargs.setdefault("max_length", _DEFAULT_MAX_LENGTH)
         kwargs.setdefault("upload_to", self.uuid_prefix_filename)
         super().__init__(*args, **kwargs)
 
+    @override
     def deconstruct(self) -> tuple[str, str, Sequence[Any], dict[str, Any]]:
         name, path, args, kwargs = super().deconstruct()
-        if kwargs.get("max_length") == 2000:
+        if kwargs.get("max_length") == _DEFAULT_MAX_LENGTH:
             del kwargs["max_length"]
         if kwargs.get("upload_to") is self.uuid_prefix_filename:
             del kwargs["upload_to"]
@@ -55,22 +59,24 @@ class S3FileField(FileField):
             raise RuntimeError("contribute_to_class has not been called yet on this field.")
         return str(self)
 
+    @override
     def contribute_to_class(
-        self, cls: type[models.Model], name: str, private_only: bool = False
+        self, cls: type[models.Model], name: str, private_only: bool = False, **kwargs: Any
     ) -> None:
         # This is executed when the Field is formally added to its containing class.
         # As a side effect, self.name is set and self.__str__ becomes usable as a unique
         # identifier for the Field.
-        super().contribute_to_class(cls, name, private_only=private_only)
+        super().contribute_to_class(cls, name, private_only=private_only, **kwargs)
         if cls.__module__ != "__fake__":
             # Django's makemigrations iteratively creates fake model instances.
             # To avoid registration collisions, don't register these.
             register_field(self)
 
     @staticmethod
-    def uuid_prefix_filename(instance: models.Model, filename: str) -> str:
+    def uuid_prefix_filename(_instance: models.Model, filename: str) -> str:
         return f"{uuid4()}/{filename}"
 
+    @override
     def formfield(
         self,
         form_class: type[forms.Field] | None = None,
@@ -91,7 +97,8 @@ class S3FileField(FileField):
             form_class=form_class, choices_form_class=choices_form_class, **kwargs
         )
 
-    def save_form_data(self, instance: models.Model, data) -> None:
+    @override
+    def save_form_data(self, instance: models.Model, data: File[Any] | str | bool | None) -> None:
         """Coerce a form field value and assign it to a model instance's field."""
         # The FileField's FileDescriptor behavior provides that when a File object is
         # assigned to the field, the content is considered uncommitted, and is saved.
@@ -103,6 +110,7 @@ class S3FileField(FileField):
             data = data.name
         super().save_form_data(instance, data)
 
+    @override
     def check(self, **kwargs: Any) -> list[CheckMessage]:
         return [
             *super().check(**kwargs),

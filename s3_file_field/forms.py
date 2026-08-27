@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any, override
+
 from django.contrib.admin.widgets import AdminFileWidget
 from django.forms import FileField, Widget
 
@@ -12,7 +14,7 @@ class S3FormFileField(FileField):
     widget = S3FileInput
 
     def __init__(
-        self, *, model_field_id: str, widget: type[Widget] | Widget | None = None, **kwargs
+        self, *, model_field_id: str, widget: type[Widget] | Widget | None = None, **kwargs: Any
     ) -> None:
         self.model_field_id = model_field_id
 
@@ -27,7 +29,7 @@ class S3FormFileField(FileField):
                 # widget is a type
                 if issubclass(widget, AdminFileWidget):
                     widget = AdminS3FileInput
-            else:
+            else:  # noqa: PLR5501
                 # widget is an instance
                 if isinstance(widget, AdminFileWidget):
                     # We can't easily re-instantiate the Widget, since we need its initial
@@ -36,6 +38,7 @@ class S3FormFileField(FileField):
 
         super().__init__(widget=widget, **kwargs)
 
+    @override
     def widget_attrs(self, widget: Widget) -> dict[str, str]:
         attrs = super().widget_attrs(widget)
         attrs.update(

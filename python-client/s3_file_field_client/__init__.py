@@ -2,9 +2,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import io
-from typing import BinaryIO, ClassVar
+from typing import TYPE_CHECKING, BinaryIO, ClassVar
 
 import requests
+
+if TYPE_CHECKING:
+    from ._types import (
+        Finalization,
+        MultipartInitialization,
+        PartInitialization,
+        TransferredPart,
+        UploadCompletion,
+    )
 
 
 @dataclass
@@ -35,7 +44,7 @@ class S3FileFieldClient:
         self.base_url = base_url.rstrip("/")
         self.api_session = requests.Session() if api_session is None else api_session
 
-    def _initialize_upload(self, file: _File, field_id: str) -> dict:
+    def _initialize_upload(self, file: _File, field_id: str) -> MultipartInitialization:
         resp = self.api_session.post(
             f"{self.base_url}/upload-initialize/",
             json={
@@ -47,9 +56,12 @@ class S3FileFieldClient:
             timeout=self.request_timeout,
         )
         resp.raise_for_status()
-        return resp.json()
+        multipart_info: MultipartInitialization = resp.json()
+        return multipart_info
 
-    def _upload_part(self, part_bytes: bytes, part_initialization: dict) -> dict:
+    def _upload_part(
+        self, part_bytes: bytes, part_initialization: PartInitialization
+    ) -> TransferredPart:
         resp = requests.put(
             part_initialization["upload_url"], data=part_bytes, timeout=self.request_timeout
         )
@@ -63,24 +75,30 @@ class S3FileFieldClient:
             "etag": etag,
         }
 
-    def _upload_parts(self, file: _File, part_initializations: list[dict]) -> list[dict]:
+    def _upload_parts(
+        self, file: _File, part_initializations: list[PartInitialization]
+    ) -> list[TransferredPart]:
         return [
             self._upload_part(file.stream.read(part_initialization["size"]), part_initialization)
             for part_initialization in part_initializations
         ]
 
-    def _complete_upload(self, multipart_info: dict, upload_infos: list[dict]) -> None:
+    def _complete_upload(
+        self, multipart_info: MultipartInitialization, upload_infos: list[TransferredPart]
+    ) -> None:
         resp = self.api_session.post(
             f"{self.base_url}/upload-complete/",
             json={
                 "upload_id": multipart_info["upload_id"],
-                "parts": upload_infos,
+                # Mypy doesn't yet implement PEP 728 Mapping assignability for closed TypedDicts
+                # (python/mypy#18176); once it does, this ignore will be flagged as unused
+                "parts": upload_infos,  # type: ignore[dict-item]
                 "upload_signature": multipart_info["upload_signature"],
             },
             timeout=self.request_timeout,
         )
         resp.raise_for_status()
-        completion_data = resp.json()
+        completion_data: UploadCompletion = resp.json()
 
         complete_resp = requests.post(
             completion_data["complete_url"],
@@ -89,7 +107,7 @@ class S3FileFieldClient:
         )
         complete_resp.raise_for_status()
 
-    def _finalize(self, multipart_info: dict) -> str:
+    def _finalize(self, multipart_info: MultipartInitialization) -> str:
         resp = self.api_session.post(
             f"{self.base_url}/finalize/",
             json={
@@ -98,7 +116,8 @@ class S3FileFieldClient:
             timeout=self.request_timeout,
         )
         resp.raise_for_status()
-        return resp.json()["field_value"]
+        finalization: Finalization = resp.json()
+        return finalization["field_value"]
 
     def upload_file(
         self, *, file_stream: BinaryIO, file_name: str, file_content_type: str, field_id: str

@@ -1,15 +1,20 @@
-from typing import Generator
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from django.core.files.base import ContentFile
 import factory
 import pytest
-from pytest_mock import MockerFixture
 from rest_framework.test import APIClient
 
 from s3_file_field._multipart import MultipartManager
 from s3_file_field._sizes import mb
-
 from test_app.models import Resource
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from pytest_mock import MockerFixture
 
 # Explicitly load s3_file_field fixtures, late in Pytest plugin load order.
 # If this is auto-loaded via entry point, the import happens before coverage tracing is started by
@@ -27,12 +32,12 @@ def _reduce_part_size(mocker: MockerFixture) -> None:
     mocker.patch.object(MultipartManager, "part_size", new=mb(5))
 
 
-@pytest.fixture()
+@pytest.fixture
 def api_client() -> APIClient:
     return APIClient()
 
 
-class ResourceFactory(factory.Factory):
+class ResourceFactory(factory.Factory[Resource]):
     class Meta:
         model = Resource
 
@@ -40,8 +45,8 @@ class ResourceFactory(factory.Factory):
     blob = factory.Sequence(lambda n: ContentFile(b"test content", name=f"test_key_{n}"))
 
 
-@pytest.fixture()
-def resource() -> Generator[Resource, None, None]:
+@pytest.fixture
+def resource() -> Generator[Resource]:
     # Do not save by default
     resource = ResourceFactory.build()
     yield resource

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 import minio
 
@@ -22,12 +22,13 @@ class MinioMultipartManager(MultipartManager):
         # for pre-signing URLs when it exists
         self._signing_client: minio.Minio = getattr(storage, "base_url_client", storage.client)
 
+    @override
     def _create_upload_id(
         self,
         object_key: str,
         content_type: str,
     ) -> str:
-        return self._client._create_multipart_upload(
+        return self._client._create_multipart_upload(  # noqa: SLF001
             bucket_name=self._bucket_name,
             object_name=object_key,
             headers={
@@ -36,13 +37,15 @@ class MinioMultipartManager(MultipartManager):
             # TODO: filename in headers
         )
 
+    @override
     def _abort_upload_id(self, object_key: str, upload_id: str) -> None:
-        self._client._abort_multipart_upload(
+        self._client._abort_multipart_upload(  # noqa: SLF001
             bucket_name=self._bucket_name,
             object_name=object_key,
             upload_id=upload_id,
         )
 
+    @override
     def _generate_presigned_part_url(
         self, object_key: str, upload_id: str, part_number: int, part_size: int
     ) -> str:
@@ -60,6 +63,7 @@ class MinioMultipartManager(MultipartManager):
             },
         )
 
+    @override
     def _generate_presigned_complete_url(self, transferred_parts: TransferredParts) -> str:
         return self._signing_client.get_presigned_url(
             method="POST",
@@ -71,6 +75,7 @@ class MinioMultipartManager(MultipartManager):
             },
         )
 
+    @override
     def get_object_size(self, object_key: str) -> int:
         try:
             stats = self._client.stat_object(bucket_name=self._bucket_name, object_name=object_key)

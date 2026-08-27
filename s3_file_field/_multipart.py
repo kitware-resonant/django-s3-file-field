@@ -3,11 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import timedelta
 import math
-from typing import TYPE_CHECKING, Any, ClassVar, Iterator
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from s3_file_field._sizes import gb, mb
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from django.core.files.storage import Storage
 
 
@@ -124,22 +126,22 @@ class MultipartManager:
     @classmethod
     def from_storage(cls, storage: Storage) -> MultipartManager:
         try:
-            from storages.backends.s3 import S3Storage
+            from storages.backends.s3 import S3Storage  # noqa: PLC0415
         except ImportError:
             pass
         else:
             if isinstance(storage, S3Storage):
-                from ._multipart_s3 import S3MultipartManager
+                from ._multipart_s3 import S3MultipartManager  # noqa: PLC0415
 
                 return S3MultipartManager(storage)
 
         try:
-            from minio_storage.storage import MinioStorage
+            from minio_storage.storage import MinioStorage  # noqa: PLC0415
         except ImportError:
             pass
         else:
             if isinstance(storage, MinioStorage):
-                from ._multipart_minio import MinioMultipartManager
+                from ._multipart_minio import MinioMultipartManager  # noqa: PLC0415
 
                 return MinioMultipartManager(storage)
 
@@ -191,13 +193,11 @@ class MultipartManager:
 
         # 5MB is the minimum part size allowed by S3
         min_part_size = mb(5)
-        if part_size < min_part_size:
-            part_size = min_part_size
+        part_size = max(part_size, min_part_size)
 
         # 5GB is the maximum part size allowed by S3
         max_part_size = gb(5)
-        if part_size > max_part_size:
-            part_size = max_part_size
+        part_size = min(part_size, max_part_size)
 
         remaining_file_size = file_size
         part_num = 1

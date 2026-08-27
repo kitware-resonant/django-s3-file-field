@@ -1,15 +1,18 @@
-from typing import cast
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from django.core import signing
 from django.core.files.storage import default_storage
 from django.urls import reverse
 import pytest
 import requests
-from rest_framework.test import APIClient
-
-from s3_file_field._sizes import mb
 
 from fuzzy import FUZZY_UPLOAD_ID, FUZZY_URL, Fuzzy
+from s3_file_field._sizes import mb
+
+if TYPE_CHECKING:
+    from rest_framework.test import APIClient
 
 
 def test_prepare(api_client: APIClient) -> None:
@@ -139,12 +142,10 @@ def test_full_upload_flow(
         "complete_url": Fuzzy(r".*"),
         "body": Fuzzy(r".*"),
     }
-    completion_data = cast(dict, resp.data)
-
     # Complete the upload
     complete_resp = requests.post(
-        completion_data["complete_url"],
-        data=completion_data["body"],
+        resp.data["complete_url"],
+        data=resp.data["body"],
         timeout=5,
     )
     complete_resp.raise_for_status()

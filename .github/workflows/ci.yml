@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.12", "3.13", "3.14"]
     services:
       minio:
         # This image does not require any command arguments (which GitHub Actions don't support)
@@ -25,12 +25,12 @@ jobs:
           - 9000:9000
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           # Tags are needed to compute the current version number
           fetch-depth: 0
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ matrix.python-version }}
       - name: Run tests
@@ -40,12 +40,12 @@ jobs:
           MINIO_STORAGE_SECRET_KEY: minioSecretKey
           MINIO_STORAGE_MEDIA_BUCKET_NAME: s3ff-test
         run: |
-          uv run tox
+          uv run --locked tox
   test-javascript:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 import functools
 import posixpath
-from typing import TYPE_CHECKING, Any, Mapping, NoReturn
+from typing import TYPE_CHECKING, Any, NoReturn, override
 
 from django.core import signing
 from django.core.files import File
@@ -12,6 +11,8 @@ from django.forms.widgets import FILE_INPUT_CONTRADICTION, CheckboxInput
 from django.urls import reverse
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
     from django.core.files.uploadedfile import UploadedFile
     from django.utils.datastructures import MultiValueDict
 
@@ -24,7 +25,7 @@ def get_base_url() -> str:
     return posixpath.commonpath([prepare_url, complete_url])
 
 
-class S3PlaceholderFile(File):
+class S3PlaceholderFile(File[Any]):
     name: str
     size: int
 
@@ -32,6 +33,7 @@ class S3PlaceholderFile(File):
         self.name = name
         self.size = size
 
+    @override
     def open(
         self,
         mode: str | None = None,
@@ -44,12 +46,15 @@ class S3PlaceholderFile(File):
     ) -> NoReturn:
         raise NotImplementedError
 
+    @override
     def close(self) -> NoReturn:
         raise NotImplementedError
 
+    @override
     def chunks(self, chunk_size: int | None = None) -> NoReturn:
         raise NotImplementedError
 
+    @override
     def multiple_chunks(self, chunk_size: int | None = None) -> bool:
         # Since it's in memory, we'll never have multiple chunks.
         return False
@@ -71,7 +76,8 @@ class S3FileInput(ClearableFileInput):
         js = ["s3_file_field/widget.js"]
         css = {"all": ["s3_file_field/widget.css"]}
 
-    def get_context(self, *args, **kwargs) -> dict[str, Any]:
+    @override
+    def get_context(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
         # The base URL cannot be determined at the time the widget is instantiated
         # (when S3FormFileField.widget_attrs is called).
         # Additionally, because this method is called on a deep copy of the widget each
@@ -79,8 +85,9 @@ class S3FileInput(ClearableFileInput):
         self.attrs["data-s3fileinput"] = get_base_url()
         return super().get_context(*args, **kwargs)
 
+    @override
     def value_from_datadict(
-        self, data: Mapping[str, Any], files: MultiValueDict[str, UploadedFile], name: str
+        self, data: Mapping[str, Any], files: MultiValueDict[str, UploadedFile[Any]], name: str
     ) -> Any:
         if name in data:
             upload = data[name]
@@ -106,6 +113,7 @@ class S3FileInput(ClearableFileInput):
             return False
         return upload
 
+    @override
     def value_omitted_from_data(
         self, data: Mapping[str, Any], files: Mapping[str, Any], name: str
     ) -> bool:

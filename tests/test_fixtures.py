@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 from django.core.files.storage import default_storage
 
 from s3_file_field.widgets import S3PlaceholderFile
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from django.core.files import File
 
 

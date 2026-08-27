@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 
 from django.core.exceptions import ValidationError
@@ -7,7 +9,7 @@ import pytest
 from test_app.models import Resource
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_fields_save(resource: Resource) -> None:
     resource.save()
 
@@ -24,7 +26,7 @@ def test_fields_save_field() -> None:
     resource.blob.delete(save=False)
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_fields_save_refresh(resource: Resource) -> None:
     resource.save()
     resource.refresh_from_db()
@@ -33,10 +35,11 @@ def test_fields_save_refresh(resource: Resource) -> None:
         assert blob_stream.read() == b"test content"
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_fields_save_uuid_prefix(resource: Resource) -> None:
     resource.save()
 
+    assert resource.blob.name is not None
     assert re.search(
         r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test_key_",
         resource.blob.name,
@@ -47,7 +50,7 @@ def test_fields_clean(resource: Resource) -> None:
     resource.full_clean()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_fields_clean_refresh(resource: Resource) -> None:
     resource.save()
     resource.refresh_from_db()

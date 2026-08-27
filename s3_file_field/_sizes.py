@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 def kb(bytes_size: int) -> int:
     return bytes_size * 2**10
 

@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import inspect
-import sys
-from typing import Generator, cast
+from typing import TYPE_CHECKING
 
 from django.core.files.storage import default_storage
 from django.db import models
@@ -8,18 +9,20 @@ import pytest
 
 from s3_file_field import _registry
 from s3_file_field.fields import S3FileField
-
 from test_app.models import Resource
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
-@pytest.fixture()
+
+@pytest.fixture
 def s3ff_field() -> S3FileField:
     """Return an attached S3FileField (not S3FieldFile) instance."""
-    return cast(S3FileField, Resource._meta.get_field("blob"))
+    return Resource._meta.get_field("blob")
 
 
-@pytest.fixture()
-def ephemeral_s3ff_field() -> Generator[S3FileField, None, None]:
+@pytest.fixture
+def ephemeral_s3ff_field() -> Generator[S3FileField]:
     # Declaring this will implicitly register the field
     class EphemeralResource(models.Model):
         class Meta:
@@ -27,7 +30,7 @@ def ephemeral_s3ff_field() -> Generator[S3FileField, None, None]:
 
         blob = S3FileField()
 
-    field = cast(S3FileField, EphemeralResource._meta.get_field("blob"))
+    field = EphemeralResource._meta.get_field("blob")
     yield field
     # The registry state is global to the process, so attempt to clean up
     del _registry._fields[field.id]
@@ -40,7 +43,7 @@ def test_field_id(s3ff_field: S3FileField) -> None:
 def test_field_id_premature() -> None:
     s3ff_field = S3FileField()
     with pytest.raises(Exception, match=r"contribute_to_class"):
-        s3ff_field.id
+        _ = s3ff_field.id
 
 
 def test_registry_get_field(s3ff_field: S3FileField) -> None:
@@ -61,7 +64,6 @@ def test_registry_iter_storages() -> None:
     assert fields[0] is default_storage
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason="Bug bpo-35113")
 @pytest.mark.filterwarnings(
     "ignore:Model 'test_app\\.ephemeralresource' was already registered:RuntimeWarning"
 )
@@ -81,7 +83,7 @@ def test_registry_register_field_multiple(ephemeral_s3ff_field: S3FileField) -> 
     assert warning.filename == inspect.getsourcefile(EphemeralResource)
     assert warning.lineno == inspect.getsourcelines(EphemeralResource)[1]
 
-    duplicate_field = cast(S3FileField, EphemeralResource._meta.get_field("blob"))
+    duplicate_field = EphemeralResource._meta.get_field("blob")
     # Sanity check
     assert duplicate_field.id == ephemeral_s3ff_field.id
     assert duplicate_field is not ephemeral_s3ff_field

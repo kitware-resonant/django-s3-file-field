@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from s3_file_field import checks
 
 

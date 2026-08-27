@@ -50,7 +50,7 @@ def test_serializer_validated_data(stored_file_object: File[bytes], s3ff_field_v
     assert serializer.validated_data["blob"] == stored_file_object.name
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_serializer_save_create(stored_file_object: File[bytes], s3ff_field_value: str) -> None:
     serializer = ResourceSerializer(data={"blob": s3ff_field_value})
 
@@ -60,7 +60,7 @@ def test_serializer_save_create(stored_file_object: File[bytes], s3ff_field_valu
     assert resource.blob.name == stored_file_object.name
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_serializer_save_update(
     resource: Resource, stored_file_object: File[bytes], s3ff_field_value: str
 ) -> None:

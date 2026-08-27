@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, override
 
 from django.core import signing
 from rest_framework import serializers
@@ -9,14 +10,30 @@ from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 
 from . import _multipart, _registry
-from ._multipart import ObjectNotFoundError, TransferredPart, TransferredParts, UploadTooLargeError
+from ._multipart import (
+    ObjectNotFoundError,
+    PresignedPartTransfer,
+    PresignedTransfer,
+    PresignedUploadCompletion,
+    TransferredPart,
+    TransferredParts,
+    UploadTooLargeError,
+)
 
 if TYPE_CHECKING:
     from django.http.response import HttpResponseBase
     from rest_framework.request import Request
 
 
-class UploadInitializationRequestSerializer(serializers.Serializer):
+@dataclass
+class UploadInitializationRequest:
+    field_id: str
+    file_name: str
+    file_size: int
+    content_type: str
+
+
+class UploadInitializationRequestSerializer(serializers.Serializer[UploadInitializationRequest]):
     field_id = serializers.CharField()
     file_name = serializers.CharField(trim_whitespace=False)
     file_size = serializers.IntegerField(min_value=1)
@@ -30,14 +47,23 @@ class UploadInitializationRequestSerializer(serializers.Serializer):
             raise serializers.ValidationError(f'Invalid field ID: "{field_id}".') from None
         return field_id
 
+    @override
+    def create(self, validated_data: dict[str, Any]) -> UploadInitializationRequest:
+        return UploadInitializationRequest(**validated_data)
 
-class PartInitializationResponseSerializer(serializers.Serializer):
+
+class PartInitializationResponseSerializer(serializers.Serializer[PresignedPartTransfer]):
     part_number = serializers.IntegerField(min_value=1)
     size = serializers.IntegerField(min_value=1)
     upload_url = serializers.URLField()
 
 
-class UploadInitializationResponseSerializer(serializers.Serializer):
+@dataclass
+class UploadInitializationResponse(PresignedTransfer):
+    upload_signature: str
+
+
+class UploadInitializationResponseSerializer(serializers.Serializer[UploadInitializationResponse]):
     object_key = serializers.CharField(trim_whitespace=False)
     upload_id = serializers.CharField()
     parts = PartInitializationResponseSerializer(many=True, allow_empty=False)
@@ -55,6 +81,7 @@ class UploadCompletionRequestSerializer(serializers.Serializer[TransferredParts]
     upload_id = serializers.CharField()
     parts = TransferredPartRequestSerializer(many=True, allow_empty=False)
 
+    @override
     def create(self, validated_data: dict[str, Any]) -> TransferredParts:
         parts = [
             TransferredPart(**part)
@@ -66,16 +93,30 @@ class UploadCompletionRequestSerializer(serializers.Serializer[TransferredParts]
         return TransferredParts(parts=parts, object_key=object_key, upload_id=upload_id)
 
 
-class UploadCompletionResponseSerializer(serializers.Serializer):
+class UploadCompletionResponseSerializer(serializers.Serializer[PresignedUploadCompletion]):
     complete_url = serializers.URLField()
     body = serializers.CharField(trim_whitespace=False)
 
 
-class FinalizationRequestSerializer(serializers.Serializer):
+@dataclass
+class FinalizationRequest:
+    upload_signature: str
+
+
+class FinalizationRequestSerializer(serializers.Serializer[FinalizationRequest]):
     upload_signature = serializers.CharField(trim_whitespace=False)
 
+    @override
+    def create(self, validated_data: dict[str, Any]) -> FinalizationRequest:
+        return FinalizationRequest(**validated_data)
 
-class FinalizationResponseSerializer(serializers.Serializer):
+
+@dataclass
+class FinalizationResponse:
+    field_value: str
+
+
+class FinalizationResponseSerializer(serializers.Serializer[FinalizationResponse]):
     field_value = serializers.CharField(trim_whitespace=False)
 
 
@@ -84,10 +125,10 @@ class FinalizationResponseSerializer(serializers.Serializer):
 def upload_initialize(request: Request) -> HttpResponseBase:
     request_serializer = UploadInitializationRequestSerializer(data=request.data)
     request_serializer.is_valid(raise_exception=True)
-    upload_request: dict = request_serializer.validated_data
-    field = _registry.get_field(upload_request["field_id"])
+    upload_request: UploadInitializationRequest = request_serializer.save()
+    field = _registry.get_field(upload_request.field_id)
 
-    file_name = upload_request["file_name"]
+    file_name = upload_request.file_name
     # TODO: The first argument to generate_filename() is an instance of the model.
     # We do not and will never have an instance of the model during field upload.
     # Maybe we need a different generate method/upload_to with a different signature?
@@ -96,8 +137,8 @@ def upload_initialize(request: Request) -> HttpResponseBase:
     try:
         initialization = _multipart.MultipartManager.from_storage(field.storage).initialize_upload(
             object_key,
-            upload_request["file_size"],
-            upload_request["content_type"],
+            upload_request.file_size,
+            upload_request.content_type,
         )
     except UploadTooLargeError:
         return Response("Upload size is too large.", status=400)
@@ -109,18 +150,18 @@ def upload_initialize(request: Request) -> HttpResponseBase:
     # We sign the field_id and object_key to create a "session token" for this upload
     upload_signature = signing.dumps(
         {
-            "field_id": upload_request["field_id"],
+            "field_id": upload_request.field_id,
             "object_key": object_key,
         }
     )
 
     response_serializer = UploadInitializationResponseSerializer(
-        {
-            "object_key": initialization.object_key,
-            "upload_id": initialization.upload_id,
-            "parts": initialization.parts,
-            "upload_signature": upload_signature,
-        }
+        UploadInitializationResponse(
+            object_key=initialization.object_key,
+            upload_id=initialization.upload_id,
+            parts=initialization.parts,
+            upload_signature=upload_signature,
+        )
     )
     return Response(response_serializer.data)
 
@@ -150,12 +191,7 @@ def upload_complete(request: Request) -> HttpResponseBase:
     #     sender=multipart_upload_finalize, name=name, object_key=object_key
     # )
 
-    response_serializer = UploadCompletionResponseSerializer(
-        {
-            "complete_url": completed_upload.complete_url,
-            "body": completed_upload.body,
-        }
-    )
+    response_serializer = UploadCompletionResponseSerializer(completed_upload)
     return Response(response_serializer.data)
 
 
@@ -164,8 +200,9 @@ def upload_complete(request: Request) -> HttpResponseBase:
 def finalize(request: Request) -> HttpResponseBase:
     request_serializer = FinalizationRequestSerializer(data=request.data)
     request_serializer.is_valid(raise_exception=True)
+    finalization_request: FinalizationRequest = request_serializer.save()
 
-    upload_signature = signing.loads(request_serializer.validated_data["upload_signature"])
+    upload_signature = signing.loads(finalization_request.upload_signature)
     field_id = upload_signature["field_id"]
     object_key = upload_signature["object_key"]
 
@@ -186,8 +223,6 @@ def finalize(request: Request) -> HttpResponseBase:
     )
 
     response_serializer = FinalizationResponseSerializer(
-        {
-            "field_value": field_value,
-        }
+        FinalizationResponse(field_value=field_value)
     )
     return Response(response_serializer.data)

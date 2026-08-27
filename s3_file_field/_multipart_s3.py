@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 from botocore.exceptions import ClientError
 
@@ -23,6 +23,7 @@ class S3MultipartManager(MultipartManager):
         self._client: s3.Client = resource.meta.client
         self._bucket_name: str = storage.bucket_name
 
+    @override
     def _create_upload_id(
         self,
         object_key: str,
@@ -38,6 +39,7 @@ class S3MultipartManager(MultipartManager):
         )
         return resp["UploadId"]
 
+    @override
     def _abort_upload_id(self, object_key: str, upload_id: str) -> None:
         self._client.abort_multipart_upload(
             Bucket=self._bucket_name,
@@ -45,6 +47,7 @@ class S3MultipartManager(MultipartManager):
             UploadId=upload_id,
         )
 
+    @override
     def _generate_presigned_part_url(
         self, object_key: str, upload_id: str, part_number: int, part_size: int
     ) -> str:
@@ -60,6 +63,7 @@ class S3MultipartManager(MultipartManager):
             ExpiresIn=int(self._url_expiration.total_seconds()),
         )
 
+    @override
     def _generate_presigned_complete_url(self, transferred_parts: TransferredParts) -> str:
         return self._client.generate_presigned_url(
             ClientMethod="complete_multipart_upload",
@@ -71,6 +75,7 @@ class S3MultipartManager(MultipartManager):
             ExpiresIn=int(self._url_expiration.total_seconds()),
         )
 
+    @override
     def get_object_size(self, object_key: str) -> int:
         try:
             stats = self._client.head_object(
