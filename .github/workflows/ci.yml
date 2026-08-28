@@ -21,6 +21,9 @@ jobs:
           MINIO_ROOT_PASSWORD: minioSecretKey
         options: >-
           --health-cmd "mc ready local"
+          --health-timeout 1s
+          --health-start-period 30s
+          --health-start-interval 2s
         ports:
           - 9000:9000
     steps:
