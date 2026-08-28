@@ -114,7 +114,8 @@ export default class S3FileInput {
 
   private async uploadFiles(): Promise<void> {
     const files = Array.from(this.input.files || []);
-    if (files.length === 0) {
+    const file = files[0];
+    if (file === undefined) {
       return;
     }
 
@@ -125,8 +126,6 @@ export default class S3FileInput {
     this.node.classList.add(cssClass('uploading'));
     this.input.setCustomValidity(i18n('Uploading files, wait till finished'));
     this.input.value = ''; // reset file selection
-
-    const file = files[0];
 
     let fieldValue: string;
     try {

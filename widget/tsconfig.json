@@ -1,10 +1,23 @@
 {
-  "extends": "@tsconfig/recommended/tsconfig.json",
   "compilerOptions": {
-    "target": "ES2020",
+    // Strictness
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
+
+    // Module system
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "sourceMap": true
+    "verbatimModuleSyntax": true,
+
+    // Output
+    "target": "ES2024",
+    "lib": ["ES2024", "DOM"],
+    "noEmit": true,
+
+    // Other
+    "skipLibCheck": true
   },
   "include": ["src/**/*"]
 }
