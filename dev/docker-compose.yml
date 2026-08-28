@@ -9,6 +9,10 @@ services:
       MINIO_ROOT_PASSWORD: minioSecretKey
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
+      # "mc ready" doesn't terminate on failure, so time it out
+      timeout: 1s
+      start_period: 30s
+      start_interval: 2s
     ports:
       - 9000:9000
       - 9001:9001
