@@ -2,29 +2,39 @@ import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
 
 // Description of a part from initializeUpload()
 interface PartInfo {
+  // biome-ignore-start lint/style/useNamingConvention: API interface names
   part_number: number;
   size: number;
   upload_url: string;
+  // biome-ignore-end lint/style/useNamingConvention: API interface names
 }
 // Description of the upload from initializeUpload()
 interface MultipartInfo {
+  // biome-ignore-start lint/style/useNamingConvention: API interface names
   upload_signature: string;
   object_key: string;
   upload_id: string;
   parts: PartInfo[];
+  // biome-ignore-end lint/style/useNamingConvention: API interface names
 }
 // Description of a part which has been uploaded by uploadPart()
 interface UploadedPart {
+  // biome-ignore-start lint/style/useNamingConvention: API interface names
   part_number: number;
   size: number;
   etag: string;
+  // biome-ignore-end lint/style/useNamingConvention: API interface names
 }
 interface CompletionResponse {
+  // biome-ignore-start lint/style/useNamingConvention: API interface names
   complete_url: string;
   body: string;
+  // biome-ignore-end lint/style/useNamingConvention: API interface names
 }
 interface FinalizationResponse {
+  // biome-ignore-start lint/style/useNamingConvention: API interface names
   field_value: string;
+  // biome-ignore-end lint/style/useNamingConvention: API interface names
 }
 
 export enum S3FileFieldProgressState {
@@ -75,11 +85,13 @@ export default class S3FileFieldClient {
    */
   protected async initializeUpload(file: File, fieldId: string): Promise<MultipartInfo> {
     const response = await this.api.post<MultipartInfo>('upload-initialize/', {
+      // biome-ignore-start lint/style/useNamingConvention: API interface names
       field_id: fieldId,
       file_name: file.name,
       file_size: file.size,
       // An unknown type is ''
       content_type: file.type || 'application/octet-stream',
+      // biome-ignore-end lint/style/useNamingConvention: API interface names
     });
     return response.data;
   }
@@ -100,6 +112,7 @@ export default class S3FileFieldClient {
     let fileOffset = 0;
     for (const part of parts) {
       const chunk = file.slice(fileOffset, fileOffset + part.size);
+      // biome-ignore lint/performance/noAwaitInLoops: parts are uploaded serially by design
       const response = await axios.put(part.upload_url, chunk, {
         onUploadProgress: (e) => {
           onProgress({
@@ -116,9 +129,11 @@ export default class S3FileFieldClient {
         throw new Error('ETag header missing from response.');
       }
       uploadedParts.push({
+        // biome-ignore-start lint/style/useNamingConvention: API interface names
         part_number: part.part_number,
         size: part.size,
         etag,
+        // biome-ignore-end lint/style/useNamingConvention: API interface names
       });
       fileOffset += part.size;
     }
@@ -138,9 +153,11 @@ export default class S3FileFieldClient {
     parts: UploadedPart[],
   ): Promise<void> {
     const response = await this.api.post<CompletionResponse>('upload-complete/', {
+      // biome-ignore-start lint/style/useNamingConvention: API interface names
       upload_signature: multipartInfo.upload_signature,
       upload_id: multipartInfo.upload_id,
       parts,
+      // biome-ignore-end lint/style/useNamingConvention: API interface names
     });
     const { complete_url: completeUrl, body } = response.data;
 
@@ -169,7 +186,9 @@ export default class S3FileFieldClient {
    */
   protected async finalize(multipartInfo: MultipartInfo): Promise<string> {
     const response = await this.api.post<FinalizationResponse>('finalize/', {
+      // biome-ignore-start lint/style/useNamingConvention: API interface names
       upload_signature: multipartInfo.upload_signature,
+      // biome-ignore-end lint/style/useNamingConvention: API interface names
     });
     return response.data.field_value;
   }

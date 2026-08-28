@@ -5,21 +5,26 @@
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
-    "test:lint": "biome check",
-    "test:type": "tsc --noEmit",
-    "test": "npm-run-all test:*",
-    "format": "biome check --write",
-    "watch": "parcel watch --watch-dir ..",
+    "build": "npm-run-all build:clean build:compile",
     "build:clean": "rimraf ../s3_file_field/static/s3_file_field",
     "build:compile": "parcel build --no-source-maps --no-cache",
-    "build": "npm-run-all build:clean build:compile"
+    "format": "biome check --write --error-on-warnings",
+    "test": "npm-run-all test:*",
+    "test:lint": "biome ci --error-on-warnings",
+    "test:type": "tsc --noEmit",
+    "watch": "parcel watch --watch-dir .."
   },
+  "browserslist": [
+    "last 1 chrome version",
+    "last 1 firefox version"
+  ],
   "dependencies": {
     "django-s3-file-field": "file:../javascript-client"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.4.1",
     "@parcel/transformer-sass": "^2.15.1",
+    "@resonant/biome-config": "^0.4.0",
     "@tsconfig/recommended": "^1.0.8",
     "buffer": "^6.0.3",
     "npm-run-all2": "^9.0.0",
@@ -27,14 +32,13 @@
     "rimraf": "^6.0.1",
     "typescript": "^5.8.3"
   },
+  "alias": {
+    "buffer": false
+  },
   "targets": {
     "default": {
       "source": "./src/widget.ts",
       "distDir": "../s3_file_field/static/s3_file_field/"
     }
-  },
-  "alias": {
-    "buffer": false
-  },
-  "browserslist": ["last 1 chrome version", "last 1 firefox version"]
+  }
 }

@@ -3,35 +3,40 @@
   "version": "0.0.0",
   "description": "A Javascript client library for django-s3-file-field.",
   "repository": "github:kitware-resonant/django-s3-file-field",
-  "author": "Kitware, Inc. <kitware@kitware.com>",
   "license": "Apache-2.0",
+  "author": "Kitware, Inc. <kitware@kitware.com>",
   "type": "module",
-  "engines": {
-    "node": ">=16"
-  },
-  "module": "./dist/client.js",
   "exports": "./dist/client.js",
+  "module": "./dist/client.js",
   "types": "./dist/client.d.ts",
-  "files": ["/src/", "/dist/"],
+  "files": [
+    "NOTICE",
+    "/src/",
+    "/dist/"
+  ],
   "scripts": {
-    "test:lint": "biome check",
-    "test:type": "tsc --noEmit",
-    "test": "npm-run-all test:*",
-    "format": "biome check --write",
-    "watch": "tsc --watch",
+    "build": "npm-run-all build:clean build:compile",
     "build:clean": "rimraf ./dist",
     "build:compile": "tsc",
-    "build": "npm-run-all build:clean build:compile",
-    "prepack": "npm-run-all build"
+    "format": "biome check --write --error-on-warnings",
+    "prepack": "npm-run-all build",
+    "test": "npm-run-all test:*",
+    "test:lint": "biome ci --error-on-warnings",
+    "test:type": "tsc --noEmit",
+    "watch": "tsc --watch"
   },
   "dependencies": {
     "axios": "^1.9.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.4.1",
+    "@resonant/biome-config": "^0.4.0",
     "@tsconfig/recommended": "^1.0.8",
     "npm-run-all2": "^9.0.0",
     "rimraf": "^6.0.1",
     "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=16"
   }
 }
