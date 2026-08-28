@@ -23,17 +23,22 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.1",
-    "@parcel/transformer-sass": "^2.15.1",
+    "@parcel/transformer-sass": "^2.16.4",
     "@resonant/biome-config": "^0.4.0",
-    "@tsconfig/recommended": "^1.0.8",
     "buffer": "^6.0.3",
     "npm-run-all2": "^9.0.0",
-    "parcel": "^2.15.1",
+    "parcel": "^2.16.4",
     "rimraf": "^6.0.1",
-    "typescript": "^5.8.3"
+    "typescript": "^7.0.2"
   },
   "alias": {
     "buffer": false
+  },
+  "allowScripts": {
+    "@parcel/watcher": false,
+    "@swc/core": false,
+    "lmdb": false,
+    "msgpackr-extract": false
   },
   "targets": {
     "default": {
