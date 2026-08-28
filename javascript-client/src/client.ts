@@ -172,7 +172,7 @@ export default class S3FileFieldClient {
         // Unsetting default headers via "transformRequest" is awkward (since the headers aren't
         // flattened), so this is actually; the most straightforward way; the null value is passed
         // through to XMLHttpRequest, then ignored.
-        'Content-Type': null as unknown as string,
+        'Content-Type': null,
       },
     });
   }

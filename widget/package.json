@@ -22,13 +22,13 @@
     "django-s3-file-field": "file:../javascript-client"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.1",
+    "@biomejs/biome": "^2.5.11",
     "@parcel/transformer-sass": "^2.16.4",
     "@resonant/biome-config": "^0.4.0",
     "buffer": "^6.0.3",
-    "npm-run-all2": "^9.0.0",
+    "npm-run-all2": "^9.0.3",
     "parcel": "^2.16.4",
-    "rimraf": "^6.0.1",
+    "rimraf": "^6.1.3",
     "typescript": "^7.0.2"
   },
   "alias": {
