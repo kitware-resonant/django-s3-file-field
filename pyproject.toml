@@ -82,13 +82,13 @@ dev = [
   "werkzeug==3.1.8",
 ]
 lint = [
-  "ruff==0.16.4",
+  "ruff==0.16.5",
 ]
 type = [
   "mypy==2.3.1",
-  "boto3-stubs[s3]==1.43.79",
+  "boto3-stubs[s3]==1.43.82",
   "django-stubs[compatible-mypy]==6.1.0",
-  "djangorestframework-stubs==3.18.0",
+  "djangorestframework-stubs==3.18.1",
   "types-factory-boy==0.4.1",
 ]
 test = [
