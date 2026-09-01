@@ -13,35 +13,35 @@ if TYPE_CHECKING:
     from django.core.files.storage import Storage
 
 
-@dataclass
+@dataclass(frozen=True)
 class PresignedPartTransfer:
     part_number: int
     size: int
     upload_url: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class PresignedTransfer:
     object_key: str
     upload_id: str
     parts: list[PresignedPartTransfer]
 
 
-@dataclass
+@dataclass(frozen=True)
 class TransferredPart:
     part_number: int
     size: int
     etag: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class TransferredParts:
     object_key: str
     upload_id: str
     parts: list[TransferredPart]
 
 
-@dataclass
+@dataclass(frozen=True)
 class PresignedUploadCompletion:
     complete_url: str
     body: str
