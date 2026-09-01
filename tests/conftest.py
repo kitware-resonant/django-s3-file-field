@@ -10,7 +10,7 @@ from rest_framework.test import APIClient
 
 from s3_file_field._multipart import MultipartManager
 from s3_file_field._pydantic_utils import SignedModel
-from s3_file_field._schemas import UploadSignatureModel
+from s3_file_field._schemas import UploadToken
 from s3_file_field._sizes import mb
 from test_app.models import Resource
 
@@ -67,15 +67,15 @@ class SignedModelFactory[T: SignedModel](factory.Factory[T]):
         return model_class.model_construct(*args, **kwargs)
 
 
-class UploadSignatureFactory(SignedModelFactory[UploadSignatureModel]):
+class UploadTokenFactory(SignedModelFactory[UploadToken]):
     class Meta:
-        model = UploadSignatureModel
+        model = UploadToken
 
-    field_id = factory.LazyFunction(lambda: Resource._meta.get_field("blob"))
-    upload_id: factory.Faker[UploadSignatureModel, str] = factory.Faker("uuid4")
+    field = factory.LazyFunction(lambda: Resource._meta.get_field("blob"))
+    upload_id: factory.Faker[UploadToken, str] = factory.Faker("uuid4")
     object_key = factory.Sequence(lambda n: f"{uuid4()}/test-{n}.jpg")
 
 
 @pytest.fixture
-def upload_signature() -> UploadSignatureModel:
-    return UploadSignatureFactory.build()
+def upload_token() -> UploadToken:
+    return UploadTokenFactory.build()

@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 from s3_file_field._schemas import (
-    UploadCompletionRequestModel,
-    UploadFinalizationRequestModel,
-    UploadInitializationRequestModel,
-    UploadSignatureModel,
+    CompletionRequest,
+    FinalizationRequest,
+    InitiationRequest,
+    UploadToken,
 )
 
 
-def test_upload_initialization_request_deserialization() -> None:
-    UploadInitializationRequestModel.model_validate(
+def test_initiation_request_deserialization() -> None:
+    InitiationRequest.model_validate(
         {
-            "field_id": "test_app.Resource.blob",
+            "field": "test_app.Resource.blob",
             "file_name": "test-name.jpg",
             "file_size": 15,
             "content_type": "image/jpeg",
@@ -19,10 +19,10 @@ def test_upload_initialization_request_deserialization() -> None:
     )
 
 
-def test_upload_completion_request_deserialization(upload_signature: UploadSignatureModel) -> None:
-    completion_request = UploadCompletionRequestModel.model_validate(
+def test_completion_request_deserialization(upload_token: UploadToken) -> None:
+    completion_request = CompletionRequest.model_validate(
         {
-            "upload_signature": upload_signature,
+            "upload_token": upload_token,
             "parts": [
                 {"part_number": 2, "etag": '"9a0364b9e99bb480dd25e1f0284c8555"'},
                 {"part_number": 1, "etag": "79b16a42b3e022500b1d0723a4f6cbf3-2"},
@@ -33,11 +33,9 @@ def test_upload_completion_request_deserialization(upload_signature: UploadSigna
     assert completion_request.parts[1].part_number == 2
 
 
-def test_upload_finalization_request_deserialization(
-    upload_signature: UploadSignatureModel,
-) -> None:
-    UploadFinalizationRequestModel.model_validate(
+def test_finalization_request_deserialization(upload_token: UploadToken) -> None:
+    FinalizationRequest.model_validate(
         {
-            "upload_signature": upload_signature,
+            "upload_token": upload_token,
         }
     )

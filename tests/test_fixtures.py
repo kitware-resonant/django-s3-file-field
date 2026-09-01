@@ -24,7 +24,7 @@ def test_fixtures_s3ff_field_value_factory(
     """Test the s3ff_field_value_factory Pytest fixture."""
     field_value = s3ff_field_value_factory(stored_file_object)
 
-    placeholder_file = S3PlaceholderFile.from_field(field_value)
+    placeholder_file = S3PlaceholderFile.from_field_value(field_value)
     assert placeholder_file is not None
     assert placeholder_file.name == stored_file_object.name
     assert placeholder_file.size == stored_file_object.size
@@ -32,4 +32,4 @@ def test_fixtures_s3ff_field_value_factory(
 
 def test_fixtures_s3ff_field_value(s3ff_field_value: str) -> None:
     """Test the s3ff_field_value Pytest fixture."""
-    assert S3PlaceholderFile.from_field(s3ff_field_value) is not None
+    assert S3PlaceholderFile.from_field_value(s3ff_field_value) is not None

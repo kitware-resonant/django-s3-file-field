@@ -7,7 +7,7 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 import pytest
 
-from ._schemas import FieldValueModel
+from ._schemas import FieldValue
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
@@ -33,7 +33,7 @@ def s3ff_field_value_factory() -> Callable[[File[bytes]], str]:
     """Return a function to produce a valid field_value from a File object."""
 
     def s3ff_field_value_factory(file_object: File[bytes]) -> str:
-        field_value = FieldValueModel.model_construct(
+        field_value = FieldValue.model_construct(
             object_key=file_object.name,
             file_size=file_object.size,
         ).model_dump()

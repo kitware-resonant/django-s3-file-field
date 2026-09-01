@@ -22,7 +22,7 @@ class S3FileSerializerField(FileSerializerField):
             self.fail("invalid")
 
         # Check the signature and load an S3PlaceholderFile
-        file_object = S3PlaceholderFile.from_field(data)
+        file_object = S3PlaceholderFile.from_field_value(data)
         if file_object is None:
             self.fail("invalid")
 

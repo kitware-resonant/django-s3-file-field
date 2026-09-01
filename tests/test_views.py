@@ -25,11 +25,11 @@ if TYPE_CHECKING:
     ],
     ids=["10B", "10MB", "12MB"],
 )
-def test_prepare(api_client: APIClient, file_size: int, num_parts: int) -> None:
+def test_initiate(api_client: APIClient, file_size: int, num_parts: int) -> None:
     resp = api_client.post(
-        reverse("s3_file_field:upload-initialize"),
+        reverse("s3_file_field:initiate"),
         {
-            "field_id": "test_app.Resource.blob",
+            "field": "test_app.Resource.blob",
             "file_name": "test.txt",
             "file_size": file_size,
             "content_type": "text/plain",
@@ -39,19 +39,19 @@ def test_prepare(api_client: APIClient, file_size: int, num_parts: int) -> None:
     assert resp.status_code == 200
     resp_json = resp.json()
     assert resp_json == {
-        "upload_signature": Fuzzy(r"\A.+\Z"),
+        "upload_token": Fuzzy(r"\A.+\Z"),
         "parts": [
-            {"part_number": part_num, "size": FUZZY_POSITIVE_INT, "upload_url": FUZZY_URL}
+            {"part_number": part_num, "size": FUZZY_POSITIVE_INT, "url": FUZZY_URL}
             for part_num in range(1, num_parts + 1)
         ],
     }
 
 
-def test_prepare_content_type_invalid(api_client: APIClient) -> None:
+def test_initiate_content_type_invalid(api_client: APIClient) -> None:
     resp = api_client.post(
-        reverse("s3_file_field:upload-initialize"),
+        reverse("s3_file_field:initiate"),
         {
-            "field_id": "test_app.Resource.blob",
+            "field": "test_app.Resource.blob",
             "file_name": "test.txt",
             "file_size": 10,
             "content_type": "not a mime type",
@@ -68,13 +68,13 @@ def test_full_upload_flow(
     file_size: int,
     mocker: MockerFixture,
 ) -> None:
-    initialize_upload_spy = mocker.spy(MultipartManager, "initialize_upload")
+    initiate_upload_spy = mocker.spy(MultipartManager, "initiate_upload")
 
-    # Initialize the multipart upload
+    # Initiate the multipart upload
     resp = api_client.post(
-        reverse("s3_file_field:upload-initialize"),
+        reverse("s3_file_field:initiate"),
         {
-            "field_id": "test_app.Resource.blob",
+            "field": "test_app.Resource.blob",
             "file_name": "test.txt",
             "file_size": file_size,
             "content_type": "text/plain",
@@ -82,46 +82,44 @@ def test_full_upload_flow(
         format="json",
     )
     assert resp.status_code == 200
-    initialization = resp.json()
-    assert isinstance(initialization, dict)
-    upload_signature = initialization["upload_signature"]
+    initiation = resp.json()
+    assert isinstance(initiation, dict)
+    upload_token = initiation["upload_token"]
     # The response does not contain the object_key; capture it from the server internals
-    object_key: str = initialize_upload_spy.spy_return.object_key
+    object_key: str = initiate_upload_spy.spy_return.object_key
 
     # Perform the upload
-    part_completions = []
-    for part in initialization["parts"]:
-        part_resp = requests.put(part["upload_url"], data=b"a" * part["size"], timeout=5)
+    completed_parts = []
+    for part in initiation["parts"]:
+        part_resp = requests.put(part["url"], data=b"a" * part["size"], timeout=5)
         part_resp.raise_for_status()
 
-        part_completions.append(
+        completed_parts.append(
             {
                 "part_number": part["part_number"],
                 "etag": part_resp.headers["ETag"],
             }
         )
 
-    initialization["field_id"] = "test_app.Resource.blob"
-
     # Presign the complete request
     resp = api_client.post(
-        reverse("s3_file_field:upload-complete"),
+        reverse("s3_file_field:complete"),
         {
-            "upload_signature": upload_signature,
-            "parts": part_completions,
+            "upload_token": upload_token,
+            "parts": completed_parts,
         },
         format="json",
     )
     assert resp.status_code == 200
-    completion_json = resp.json()
-    assert completion_json == {
-        "complete_url": Fuzzy(r".*"),
+    completion = resp.json()
+    assert completion == {
+        "url": Fuzzy(r".*"),
         "body": Fuzzy(r".*"),
     }
     # Complete the upload
     complete_resp = requests.post(
-        completion_json["complete_url"],
-        data=completion_json["body"],
+        completion["url"],
+        data=completion["body"],
         timeout=5,
     )
     complete_resp.raise_for_status()
@@ -133,7 +131,7 @@ def test_full_upload_flow(
     resp = api_client.post(
         reverse("s3_file_field:finalize"),
         {
-            "upload_signature": upload_signature,
+            "upload_token": upload_token,
         },
         format="json",
     )

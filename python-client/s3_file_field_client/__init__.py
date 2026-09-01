@@ -8,11 +8,11 @@ import requests
 
 if TYPE_CHECKING:
     from ._types import (
-        Finalization,
-        MultipartInitialization,
-        PartInitialization,
-        TransferredPart,
-        UploadCompletion,
+        CompletedPart,
+        CompletionResponse,
+        FinalizationResponse,
+        InitiationResponse,
+        PresignedPart,
     )
 
 
@@ -44,11 +44,11 @@ class S3FileFieldClient:
         self.base_url = base_url.rstrip("/")
         self.api_session = requests.Session() if api_session is None else api_session
 
-    def _initialize_upload(self, file: _File, field_id: str) -> MultipartInitialization:
+    def _initiate_upload(self, file: _File, field_id: str) -> InitiationResponse:
         resp = self.api_session.post(
-            f"{self.base_url}/upload-initialize/",
+            f"{self.base_url}/initiate/",
             json={
-                "field_id": field_id,
+                "field": field_id,
                 "file_name": file.name,
                 "file_size": file.size,
                 "content_type": file.content_type,
@@ -56,72 +56,68 @@ class S3FileFieldClient:
             timeout=self.request_timeout,
         )
         resp.raise_for_status()
-        multipart_info: MultipartInitialization = resp.json()
-        return multipart_info
+        initiation: InitiationResponse = resp.json()
+        return initiation
 
-    def _upload_part(
-        self, part_bytes: bytes, part_initialization: PartInitialization
-    ) -> TransferredPart:
-        resp = requests.put(
-            part_initialization["upload_url"], data=part_bytes, timeout=self.request_timeout
-        )
+    def _upload_part(self, part_bytes: bytes, presigned_part: PresignedPart) -> CompletedPart:
+        resp = requests.put(presigned_part["url"], data=part_bytes, timeout=self.request_timeout)
         resp.raise_for_status()
 
         etag = resp.headers["ETag"]
 
         return {
-            "part_number": part_initialization["part_number"],
+            "part_number": presigned_part["part_number"],
             "etag": etag,
         }
 
     def _upload_parts(
-        self, file: _File, part_initializations: list[PartInitialization]
-    ) -> list[TransferredPart]:
+        self, file: _File, presigned_parts: list[PresignedPart]
+    ) -> list[CompletedPart]:
         return [
-            self._upload_part(file.stream.read(part_initialization["size"]), part_initialization)
-            for part_initialization in part_initializations
+            self._upload_part(file.stream.read(presigned_part["size"]), presigned_part)
+            for presigned_part in presigned_parts
         ]
 
     def _complete_upload(
-        self, multipart_info: MultipartInitialization, upload_infos: list[TransferredPart]
+        self, initiation: InitiationResponse, completed_parts: list[CompletedPart]
     ) -> None:
         resp = self.api_session.post(
-            f"{self.base_url}/upload-complete/",
+            f"{self.base_url}/complete/",
             json={
-                "upload_signature": multipart_info["upload_signature"],
+                "upload_token": initiation["upload_token"],
                 # Mypy doesn't yet implement PEP 728 Mapping assignability for closed TypedDicts
                 # (python/mypy#18176); once it does, this ignore will be flagged as unused
-                "parts": upload_infos,  # type: ignore[dict-item]
+                "parts": completed_parts,  # type: ignore[dict-item]
             },
             timeout=self.request_timeout,
         )
         resp.raise_for_status()
-        completion_data: UploadCompletion = resp.json()
+        completion: CompletionResponse = resp.json()
 
         complete_resp = requests.post(
-            completion_data["complete_url"],
-            data=completion_data["body"],
+            completion["url"],
+            data=completion["body"],
             timeout=self.request_timeout,
         )
         complete_resp.raise_for_status()
 
-    def _finalize(self, multipart_info: MultipartInitialization) -> str:
+    def _finalize(self, upload_token: str) -> str:
         resp = self.api_session.post(
             f"{self.base_url}/finalize/",
             json={
-                "upload_signature": multipart_info["upload_signature"],
+                "upload_token": upload_token,
             },
             timeout=self.request_timeout,
         )
         resp.raise_for_status()
-        finalization: Finalization = resp.json()
+        finalization: FinalizationResponse = resp.json()
         return finalization["field_value"]
 
     def upload_file(
         self, *, file_stream: BinaryIO, file_name: str, file_content_type: str, field_id: str
     ) -> str:
         file = _File.from_stream(file_stream, file_name, file_content_type)
-        multipart_info = self._initialize_upload(file, field_id)
-        upload_infos = self._upload_parts(file, multipart_info["parts"])
-        self._complete_upload(multipart_info, upload_infos)
-        return self._finalize(multipart_info)
+        initiation = self._initiate_upload(file, field_id)
+        completed_parts = self._upload_parts(file, initiation["parts"])
+        self._complete_upload(initiation, completed_parts)
+        return self._finalize(initiation["upload_token"])

@@ -95,7 +95,7 @@ def _serialize_s3_file_field_ref(value: S3FileField) -> str:
     return value.id
 
 
-S3FileFieldId = Annotated[
+S3FileFieldRef = Annotated[
     S3FileField,
     PlainValidator(_validate_s3_file_field_ref, json_schema_input_type=str),
     PlainSerializer(_serialize_s3_file_field_ref),

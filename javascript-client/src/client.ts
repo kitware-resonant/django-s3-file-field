@@ -1,44 +1,21 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
 
-// Description of a part from initializeUpload()
-interface PartInfo {
-  // biome-ignore-start lint/style/useNamingConvention: API interface names
-  part_number: number;
-  size: number;
-  upload_url: string;
-  // biome-ignore-end lint/style/useNamingConvention: API interface names
-}
-// Description of the upload from initializeUpload()
-interface MultipartInfo {
-  // biome-ignore-start lint/style/useNamingConvention: API interface names
-  upload_signature: string;
-  parts: PartInfo[];
-  // biome-ignore-end lint/style/useNamingConvention: API interface names
-}
-// Description of a part which has been uploaded by uploadPart()
-interface UploadedPart {
-  // biome-ignore-start lint/style/useNamingConvention: API interface names
-  part_number: number;
-  etag: string;
-  // biome-ignore-end lint/style/useNamingConvention: API interface names
-}
-interface CompletionResponse {
-  // biome-ignore-start lint/style/useNamingConvention: API interface names
-  complete_url: string;
-  body: string;
-  // biome-ignore-end lint/style/useNamingConvention: API interface names
-}
-interface FinalizationResponse {
-  // biome-ignore-start lint/style/useNamingConvention: API interface names
-  field_value: string;
-  // biome-ignore-end lint/style/useNamingConvention: API interface names
-}
+import type {
+  CompletedPart,
+  CompletionResponse,
+  FinalizationResponse,
+  InitiationResponse,
+  PresignedPart,
+} from './types.js';
+
+export type * from './types.js';
 
 export enum S3FileFieldProgressState {
-  Initializing = 0,
-  Sending = 1,
-  Finalizing = 2,
-  Done = 3,
+  Initiating = 0,
+  Uploading = 1,
+  Completing = 2,
+  Finalizing = 3,
+  Done = 4,
 }
 
 export interface S3FileFieldProgress {
@@ -75,15 +52,15 @@ export default class S3FileFieldClient {
   }
 
   /**
-   * Initializes an upload.
+   * Initiates an upload.
    *
    * @param file - The file to upload.
    * @param fieldId - The Django field identifier.
    */
-  protected async initializeUpload(file: File, fieldId: string): Promise<MultipartInfo> {
-    const response = await this.api.post<MultipartInfo>('upload-initialize/', {
+  protected async initiateUpload(file: File, fieldId: string): Promise<InitiationResponse> {
+    const response = await this.api.post<InitiationResponse>('initiate/', {
       // biome-ignore-start lint/style/useNamingConvention: API interface names
-      field_id: fieldId,
+      field: fieldId,
       file_name: file.name,
       file_size: file.size,
       // An unknown type is ''
@@ -102,20 +79,20 @@ export default class S3FileFieldClient {
    */
   protected async uploadParts(
     file: File,
-    parts: PartInfo[],
+    parts: PresignedPart[],
     onProgress: S3FileFieldProgressCallback,
-  ): Promise<UploadedPart[]> {
-    const uploadedParts: UploadedPart[] = [];
+  ): Promise<CompletedPart[]> {
+    const completedParts: CompletedPart[] = [];
     let fileOffset = 0;
     for (const part of parts) {
       const chunk = file.slice(fileOffset, fileOffset + part.size);
       // biome-ignore lint/performance/noAwaitInLoops: parts are uploaded serially by design
-      const response = await axios.put(part.upload_url, chunk, {
+      const response = await axios.put(part.url, chunk, {
         onUploadProgress: (e) => {
           onProgress({
             uploaded: fileOffset + e.loaded,
             total: file.size,
-            state: S3FileFieldProgressState.Sending,
+            state: S3FileFieldProgressState.Uploading,
           });
         },
       });
@@ -125,7 +102,7 @@ export default class S3FileFieldClient {
       if (typeof etag !== 'string') {
         throw new Error('ETag header missing from response.');
       }
-      uploadedParts.push({
+      completedParts.push({
         // biome-ignore-start lint/style/useNamingConvention: API interface names
         part_number: part.part_number,
         etag,
@@ -133,7 +110,7 @@ export default class S3FileFieldClient {
       });
       fileOffset += part.size;
     }
-    return uploadedParts;
+    return completedParts;
   }
 
   /**
@@ -141,23 +118,23 @@ export default class S3FileFieldClient {
    *
    * The object will exist in the object store after completion.
    *
-   * @param multipartInfo - The information describing the multipart upload.
+   * @param initiation - The initiation response describing the upload.
    * @param parts - The parts that were uploaded.
    */
   protected async completeUpload(
-    multipartInfo: MultipartInfo,
-    parts: UploadedPart[],
+    initiation: InitiationResponse,
+    parts: CompletedPart[],
   ): Promise<void> {
-    const response = await this.api.post<CompletionResponse>('upload-complete/', {
+    const response = await this.api.post<CompletionResponse>('complete/', {
       // biome-ignore-start lint/style/useNamingConvention: API interface names
-      upload_signature: multipartInfo.upload_signature,
+      upload_token: initiation.upload_token,
       parts,
       // biome-ignore-end lint/style/useNamingConvention: API interface names
     });
-    const { complete_url: completeUrl, body } = response.data;
+    const { url, body } = response.data;
 
     // Send the CompleteMultipartUpload operation to S3
-    await axios.post(completeUrl, body, {
+    await axios.post(url, body, {
       headers: {
         // By default, Axios sets "Content-Type: application/x-www-form-urlencoded" on POST
         // requests. This causes AWS's API to interpret the request body as additional parameters
@@ -177,12 +154,12 @@ export default class S3FileFieldClient {
    *
    * This will only succeed if the object is already present in the object store.
    *
-   * @param multipartInfo - Signed information returned from /upload-complete/.
+   * @param uploadToken - The signed token identifying the upload.
    */
-  protected async finalize(multipartInfo: MultipartInfo): Promise<string> {
+  protected async finalize(uploadToken: string): Promise<string> {
     const response = await this.api.post<FinalizationResponse>('finalize/', {
       // biome-ignore-start lint/style/useNamingConvention: API interface names
-      upload_signature: multipartInfo.upload_signature,
+      upload_token: uploadToken,
       // biome-ignore-end lint/style/useNamingConvention: API interface names
     });
     return response.data.field_value;
@@ -202,13 +179,14 @@ export default class S3FileFieldClient {
       /* no-op */
     },
   ): Promise<string> {
-    onProgress({ state: S3FileFieldProgressState.Initializing });
-    const multipartInfo = await this.initializeUpload(file, fieldId);
-    onProgress({ state: S3FileFieldProgressState.Sending, uploaded: 0, total: file.size });
-    const parts = await this.uploadParts(file, multipartInfo.parts, onProgress);
+    onProgress({ state: S3FileFieldProgressState.Initiating });
+    const initiation = await this.initiateUpload(file, fieldId);
+    onProgress({ state: S3FileFieldProgressState.Uploading, uploaded: 0, total: file.size });
+    const completedParts = await this.uploadParts(file, initiation.parts, onProgress);
+    onProgress({ state: S3FileFieldProgressState.Completing });
+    await this.completeUpload(initiation, completedParts);
     onProgress({ state: S3FileFieldProgressState.Finalizing });
-    await this.completeUpload(multipartInfo, parts);
-    const fieldValue = await this.finalize(multipartInfo);
+    const fieldValue = await this.finalize(initiation.upload_token);
     onProgress({ state: S3FileFieldProgressState.Done });
     return fieldValue;
   }

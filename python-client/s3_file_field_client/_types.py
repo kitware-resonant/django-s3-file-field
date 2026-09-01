@@ -8,26 +8,26 @@ else:
     from typing_extensions import TypedDict
 
 
-class PartInitialization(TypedDict, closed=True):
+class PresignedPart(TypedDict, closed=True):
     part_number: int
     size: int
-    upload_url: str
+    url: str
 
 
-class MultipartInitialization(TypedDict, closed=True):
-    upload_signature: str
-    parts: list[PartInitialization]
+class InitiationResponse(TypedDict, closed=True):
+    upload_token: str
+    parts: list[PresignedPart]
 
 
-class TransferredPart(TypedDict, closed=True):
+class CompletedPart(TypedDict, closed=True):
     part_number: int
     etag: str
 
 
-class UploadCompletion(TypedDict, closed=True):
-    complete_url: str
+class CompletionResponse(TypedDict, closed=True):
+    url: str
     body: str
 
 
-class Finalization(TypedDict, closed=True):
+class FinalizationResponse(TypedDict, closed=True):
     field_value: str

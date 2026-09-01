@@ -9,7 +9,7 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 import pytest
 
 from conftest import SignedModelFactory
-from s3_file_field._pydantic_utils import MimeType, S3FileFieldId, SignedModel
+from s3_file_field._pydantic_utils import MimeType, S3FileFieldRef, SignedModel
 from test_app.models import Resource
 
 if TYPE_CHECKING:
@@ -79,26 +79,26 @@ def test_signed_model_nested() -> None:
     assert ExampleEnvelopeModel.model_validate(dumped) == envelope
 
 
-S3_FILE_FIELD_ID_ADAPTER: TypeAdapter[S3FileField] = TypeAdapter(S3FileFieldId)
+S3_FILE_FIELD_REF_ADAPTER: TypeAdapter[S3FileField] = TypeAdapter(S3FileFieldRef)
 
 
-def test_s3_file_field_id_round_trip() -> None:
+def test_s3_file_field_ref_round_trip() -> None:
     field = Resource._meta.get_field("blob")
 
-    field_id = S3_FILE_FIELD_ID_ADAPTER.dump_python(field)
+    field_id = S3_FILE_FIELD_REF_ADAPTER.dump_python(field)
     assert field_id == "test_app.Resource.blob"
 
-    assert S3_FILE_FIELD_ID_ADAPTER.validate_python(field_id) is field
+    assert S3_FILE_FIELD_REF_ADAPTER.validate_python(field_id) is field
 
 
-def test_s3_file_field_id_unknown() -> None:
+def test_s3_file_field_ref_unknown() -> None:
     with pytest.raises(ValidationError, match=r"unknown S3FileField instance"):
-        S3_FILE_FIELD_ID_ADAPTER.validate_python("bad.id")
+        S3_FILE_FIELD_REF_ADAPTER.validate_python("bad.id")
 
 
-def test_s3_file_field_id_type_invalid() -> None:
+def test_s3_file_field_ref_type_invalid() -> None:
     with pytest.raises(ValidationError, match=r"expected string"):
-        S3_FILE_FIELD_ID_ADAPTER.validate_python(42)
+        S3_FILE_FIELD_REF_ADAPTER.validate_python(42)
 
 
 MIME_TYPE_ADAPTER: TypeAdapter[str] = TypeAdapter(MimeType)

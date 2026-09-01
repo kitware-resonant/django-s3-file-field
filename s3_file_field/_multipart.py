@@ -14,35 +14,28 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
-class PresignedPartTransfer:
+class PresignedPart:
     part_number: int
     size: int
-    upload_url: str
+    url: str
 
 
 @dataclass(frozen=True)
-class PresignedTransfer:
-    object_key: str
+class PresignedUpload:
     upload_id: str
-    parts: list[PresignedPartTransfer]
+    object_key: str
+    parts: list[PresignedPart]
 
 
 @dataclass(frozen=True)
-class TransferredPart:
+class CompletedPart:
     part_number: int
     etag: str
 
 
 @dataclass(frozen=True)
-class TransferredParts:
-    object_key: str
-    upload_id: str
-    parts: list[TransferredPart]
-
-
-@dataclass(frozen=True)
-class PresignedUploadCompletion:
-    complete_url: str
+class PresignedCompletion:
+    url: str
     body: str
 
 
@@ -70,12 +63,12 @@ class MultipartManager:
     part_size: ClassVar[int] = mb(64)
     max_object_size: ClassVar[int]
 
-    def initialize_upload(
+    def initiate_upload(
         self,
         object_key: str,
         file_size: int,
         content_type: str,
-    ) -> PresignedTransfer:
+    ) -> PresignedUpload:
         if file_size > self.max_object_size:
             raise UploadTooLargeError("File is larger than the S3 maximum object size.")
 
@@ -84,23 +77,25 @@ class MultipartManager:
             content_type,
         )
         parts = [
-            PresignedPartTransfer(
+            PresignedPart(
                 part_number=part_number,
                 size=part_size,
-                upload_url=self._generate_presigned_part_url(
-                    object_key, upload_id, part_number, part_size
+                url=self._generate_presigned_part_url(
+                    upload_id, object_key, part_number, part_size
                 ),
             )
             for part_number, part_size in self._iter_part_sizes(file_size)
         ]
-        return PresignedTransfer(object_key=object_key, upload_id=upload_id, parts=parts)
+        return PresignedUpload(upload_id=upload_id, object_key=object_key, parts=parts)
 
-    def complete_upload(self, transferred_parts: TransferredParts) -> PresignedUploadCompletion:
-        complete_url = self._generate_presigned_complete_url(transferred_parts)
-        body = self._generate_presigned_complete_body(transferred_parts)
-        return PresignedUploadCompletion(complete_url=complete_url, body=body)
+    def complete_upload(
+        self, upload_id: str, object_key: str, parts: list[CompletedPart]
+    ) -> PresignedCompletion:
+        url = self._generate_presigned_complete_url(upload_id, object_key)
+        body = self._generate_presigned_complete_body(parts)
+        return PresignedCompletion(url=url, body=body)
 
-    def _generate_presigned_complete_body(self, transferred_parts: TransferredParts) -> str:
+    def _generate_presigned_complete_body(self, parts: list[CompletedPart]) -> str:
         """
         Generate the body of a presigned completion request.
 
@@ -108,7 +103,7 @@ class MultipartManager:
         """
         body = '<?xml version="1.0" encoding="UTF-8"?>'
         body += '<CompleteMultipartUpload xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
-        for part in transferred_parts.parts:
+        for part in parts:
             body += "<Part>"
             body += f"<PartNumber>{part.part_number}</PartNumber>"
             body += f"<ETag>{part.etag}</ETag>"
@@ -120,7 +115,7 @@ class MultipartManager:
         object_key = ".s3-file-field-test-file"
         # TODO: is it possible to use a shorter timeout?
         upload_id = self._create_upload_id(object_key, "application/octet-stream")
-        self._abort_upload_id(object_key, upload_id)
+        self._abort_upload_id(upload_id, object_key)
 
     @classmethod
     def from_storage(cls, storage: Storage) -> MultipartManager:
@@ -167,15 +162,15 @@ class MultipartManager:
         # Require content headers here
         raise NotImplementedError
 
-    def _abort_upload_id(self, object_key: str, upload_id: str) -> None:
+    def _abort_upload_id(self, upload_id: str, object_key: str) -> None:
         raise NotImplementedError
 
     def _generate_presigned_part_url(
-        self, object_key: str, upload_id: str, part_number: int, part_size: int
+        self, upload_id: str, object_key: str, part_number: int, part_size: int
     ) -> str:
         raise NotImplementedError
 
-    def _generate_presigned_complete_url(self, transferred_parts: TransferredParts) -> str:
+    def _generate_presigned_complete_url(self, upload_id: str, object_key: str) -> str:
         raise NotImplementedError
 
     def get_object_size(self, object_key: str) -> int:

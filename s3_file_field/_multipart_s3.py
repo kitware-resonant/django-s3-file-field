@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     import mypy_boto3_s3 as s3
     from storages.backends.s3 import S3Storage
 
-from ._multipart import MultipartManager, ObjectNotFoundError, TransferredParts
+from ._multipart import MultipartManager, ObjectNotFoundError
 
 
 class S3MultipartManager(MultipartManager):
@@ -40,7 +40,7 @@ class S3MultipartManager(MultipartManager):
         return resp["UploadId"]
 
     @override
-    def _abort_upload_id(self, object_key: str, upload_id: str) -> None:
+    def _abort_upload_id(self, upload_id: str, object_key: str) -> None:
         self._client.abort_multipart_upload(
             Bucket=self._bucket_name,
             Key=object_key,
@@ -49,7 +49,7 @@ class S3MultipartManager(MultipartManager):
 
     @override
     def _generate_presigned_part_url(
-        self, object_key: str, upload_id: str, part_number: int, part_size: int
+        self, upload_id: str, object_key: str, part_number: int, part_size: int
     ) -> str:
         return self._client.generate_presigned_url(
             ClientMethod="upload_part",
@@ -64,13 +64,13 @@ class S3MultipartManager(MultipartManager):
         )
 
     @override
-    def _generate_presigned_complete_url(self, transferred_parts: TransferredParts) -> str:
+    def _generate_presigned_complete_url(self, upload_id: str, object_key: str) -> str:
         return self._client.generate_presigned_url(
             ClientMethod="complete_multipart_upload",
             Params={
                 "Bucket": self._bucket_name,
-                "Key": transferred_parts.object_key,
-                "UploadId": transferred_parts.upload_id,
+                "Key": object_key,
+                "UploadId": upload_id,
             },
             ExpiresIn=int(self._url_expiration.total_seconds()),
         )
