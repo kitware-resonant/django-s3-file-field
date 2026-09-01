@@ -9,8 +9,6 @@ from django.db.models.fields.files import FileField
 
 from ._multipart import MultipartManager
 from ._registry import register_field
-from .forms import S3FormFileField
-from .widgets import S3PlaceholderFile
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -88,6 +86,8 @@ class S3FileField(FileField):
 
         This is an instance of "form_class", with a widget of "widget".
         """
+        from .forms import S3FormFileField  # noqa: PLC0415
+
         if MultipartManager.supported_storage(self.storage):
             # Use S3FormFileField as a default, instead of forms.FileField from the superclass
             form_class = S3FormFileField if form_class is None else form_class
@@ -100,6 +100,8 @@ class S3FileField(FileField):
     @override
     def save_form_data(self, instance: models.Model, data: File[Any] | str | bool | None) -> None:
         """Coerce a form field value and assign it to a model instance's field."""
+        from .widgets import S3PlaceholderFile  # noqa: PLC0415
+
         # The FileField's FileDescriptor behavior provides that when a File object is
         # assigned to the field, the content is considered uncommitted, and is saved.
         # If a string is assigned to the field, it is considered to be the value in the

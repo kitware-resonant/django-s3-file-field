@@ -30,7 +30,6 @@ class PresignedTransfer:
 @dataclass(frozen=True)
 class TransferredPart:
     part_number: int
-    size: int
     etag: str
 
 

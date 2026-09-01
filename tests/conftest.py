@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+from uuid import uuid4
 
 from django.core.files.base import ContentFile
 import factory
@@ -8,6 +9,8 @@ import pytest
 from rest_framework.test import APIClient
 
 from s3_file_field._multipart import MultipartManager
+from s3_file_field._pydantic_utils import SignedModel
+from s3_file_field._schemas import UploadSignatureModel
 from s3_file_field._sizes import mb
 from test_app.models import Resource
 
@@ -51,3 +54,28 @@ def resource() -> Generator[Resource]:
     resource = ResourceFactory.build()
     yield resource
     resource.blob.delete(save=False)
+
+
+class SignedModelFactory[T: SignedModel](factory.Factory[T]):
+    class Meta:
+        abstract = True
+
+    @classmethod
+    def _build(cls, model_class: type[T], *args: Any, **kwargs: Any) -> T:
+        # SignedModel field values cannot be passed directly to __init__, as its wrap
+        # validator would attempt to unsign them; use model_construct, as the library does.
+        return model_class.model_construct(*args, **kwargs)
+
+
+class UploadSignatureFactory(SignedModelFactory[UploadSignatureModel]):
+    class Meta:
+        model = UploadSignatureModel
+
+    field_id = factory.LazyFunction(lambda: Resource._meta.get_field("blob"))
+    upload_id: factory.Faker[UploadSignatureModel, str] = factory.Faker("uuid4")
+    object_key = factory.Sequence(lambda n: f"{uuid4()}/test-{n}.jpg")
+
+
+@pytest.fixture
+def upload_signature() -> UploadSignatureModel:
+    return UploadSignatureFactory.build()

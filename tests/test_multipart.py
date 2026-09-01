@@ -134,7 +134,7 @@ def test_multipart_manager_complete_upload(
         resp = requests.put(part.upload_url, data=b"a" * part.size, timeout=5)
         resp.raise_for_status()
         transferred_parts.parts.append(
-            TransferredPart(part_number=part.part_number, size=part.size, etag=resp.headers["ETag"])
+            TransferredPart(part_number=part.part_number, etag=resp.headers["ETag"])
         )
 
     completed_upload = multipart_manager.complete_upload(transferred_parts)
@@ -190,8 +190,8 @@ def test_multipart_manager_generate_presigned_complete_body(
             object_key="new-object",
             upload_id="fake-upload-id",
             parts=[
-                TransferredPart(part_number=1, size=1, etag="fake-etag-1"),
-                TransferredPart(part_number=2, size=2, etag="fake-etag-2"),
+                TransferredPart(part_number=1, etag="fake-etag-1"),
+                TransferredPart(part_number=2, etag="fake-etag-2"),
             ],
         )
     )

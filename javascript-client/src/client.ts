@@ -19,7 +19,6 @@ interface MultipartInfo {
 interface UploadedPart {
   // biome-ignore-start lint/style/useNamingConvention: API interface names
   part_number: number;
-  size: number;
   etag: string;
   // biome-ignore-end lint/style/useNamingConvention: API interface names
 }
@@ -129,7 +128,6 @@ export default class S3FileFieldClient {
       uploadedParts.push({
         // biome-ignore-start lint/style/useNamingConvention: API interface names
         part_number: part.part_number,
-        size: part.size,
         etag,
         // biome-ignore-end lint/style/useNamingConvention: API interface names
       });

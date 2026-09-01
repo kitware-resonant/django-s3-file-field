@@ -4,11 +4,13 @@ import functools
 import posixpath
 from typing import TYPE_CHECKING, Any, NoReturn, override
 
-from django.core import signing
 from django.core.files import File
 from django.forms import ClearableFileInput
 from django.forms.widgets import FILE_INPUT_CONTRADICTION, CheckboxInput
 from django.urls import reverse
+from pydantic import ValidationError
+
+from ._schemas import FieldValueModel
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
@@ -62,11 +64,11 @@ class S3PlaceholderFile(File[Any]):
     @classmethod
     def from_field(cls, field_value: str) -> S3PlaceholderFile | None:
         try:
-            parsed_field = signing.loads(field_value)
-        except signing.BadSignature:
+            parsed_field = FieldValueModel.model_validate(field_value)
+        except ValidationError:
             return None
         # Since the field is signed, we know the content is structurally valid
-        return cls(parsed_field["object_key"], parsed_field["file_size"])
+        return cls(parsed_field.object_key, parsed_field.file_size)
 
 
 class S3FileInput(ClearableFileInput):

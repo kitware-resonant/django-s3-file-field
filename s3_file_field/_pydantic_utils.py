@@ -47,7 +47,7 @@ class PydanticEncoder(json.JSONEncoder):
             return super().default(o)
 
 
-class SignedModel(BaseModel):
+class SignedModel(BaseModel, frozen=True, extra="forbid"):
     """
     A base class for Pydantic models which serialize to a cryptographically signed string.
 
@@ -114,3 +114,14 @@ MimeType = Annotated[
         pattern=r"^[A-Za-z0-9._+-]+/[A-Za-z0-9._+-]+(?:;[ -~]*)?$",
     ),
 ]
+
+
+# A URL which is passed through without normalization; HttpUrl would be unsafe for
+# presigned URLs, whose signed query string must round-trip byte-exact.
+VerbatimUrl = Annotated[str, StringConstraints(pattern=r"^https?://[!-~]+$")]
+
+
+# An S3-style ETag: a 32-character hex MD5, possibly with a "-<part count>" suffix for
+# multipart uploads, possibly surrounded by literal double quotes (as HTTP serializes
+# it).
+ETag = Annotated[str, StringConstraints(pattern=r'^"?[0-9a-fA-F]{32}(?:-[0-9]+)?"?$')]

@@ -89,13 +89,17 @@ def test_full_upload_flow(
     object_key: str = initialize_upload_spy.spy_return.object_key
 
     # Perform the upload
+    part_completions = []
     for part in initialization["parts"]:
         part_resp = requests.put(part["upload_url"], data=b"a" * part["size"], timeout=5)
         part_resp.raise_for_status()
 
-        # Modify the part to transform it from an initialization to a finalization
-        del part["upload_url"]
-        part["etag"] = part_resp.headers["ETag"]
+        part_completions.append(
+            {
+                "part_number": part["part_number"],
+                "etag": part_resp.headers["ETag"],
+            }
+        )
 
     initialization["field_id"] = "test_app.Resource.blob"
 
@@ -104,19 +108,20 @@ def test_full_upload_flow(
         reverse("s3_file_field:upload-complete"),
         {
             "upload_signature": upload_signature,
-            "parts": initialization["parts"],
+            "parts": part_completions,
         },
         format="json",
     )
     assert resp.status_code == 200
-    assert resp.data == {
+    completion_json = resp.json()
+    assert completion_json == {
         "complete_url": Fuzzy(r".*"),
         "body": Fuzzy(r".*"),
     }
     # Complete the upload
     complete_resp = requests.post(
-        resp.data["complete_url"],
-        data=resp.data["body"],
+        completion_json["complete_url"],
+        data=completion_json["body"],
         timeout=5,
     )
     complete_resp.raise_for_status()
@@ -133,7 +138,7 @@ def test_full_upload_flow(
         format="json",
     )
     assert resp.status_code == 200
-    assert resp.data == {
+    assert resp.json() == {
         "field_value": Fuzzy(r"\A.+\Z"),
     }
 

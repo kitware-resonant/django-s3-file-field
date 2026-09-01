@@ -71,7 +71,6 @@ class S3FileFieldClient:
 
         return {
             "part_number": part_initialization["part_number"],
-            "size": part_initialization["size"],
             "etag": etag,
         }
 

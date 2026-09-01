@@ -1,12 +1,13 @@
 # This module shouldn't be imported explicitly, as it will be loaded by pytest via entry point.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
-from django.core import signing
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 import pytest
+
+from ._schemas import FieldValueModel
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
@@ -32,12 +33,12 @@ def s3ff_field_value_factory() -> Callable[[File[bytes]], str]:
     """Return a function to produce a valid field_value from a File object."""
 
     def s3ff_field_value_factory(file_object: File[bytes]) -> str:
-        return signing.dumps(
-            {
-                "object_key": file_object.name,
-                "file_size": file_object.size,
-            }
-        )
+        field_value = FieldValueModel.model_construct(
+            object_key=file_object.name,
+            file_size=file_object.size,
+        ).model_dump()
+        # SignedModel serializes itself to a str, but type stubs cannot express this
+        return cast("str", field_value)
 
     return s3ff_field_value_factory
 

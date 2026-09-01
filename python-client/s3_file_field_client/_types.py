@@ -21,7 +21,6 @@ class MultipartInitialization(TypedDict, closed=True):
 
 class TransferredPart(TypedDict, closed=True):
     part_number: int
-    size: int
     etag: str
 
 

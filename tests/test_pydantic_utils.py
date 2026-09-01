@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, cast
 
 from django.core.signing import TimestampSigner
-import factory
 from freezegun import freeze_time
 from pydantic import BaseModel, TypeAdapter, ValidationError
 import pytest
 
+from conftest import SignedModelFactory
 from s3_file_field._pydantic_utils import MimeType, S3FileFieldId, SignedModel
 from test_app.models import Resource
 
@@ -18,29 +18,21 @@ if TYPE_CHECKING:
     from s3_file_field.fields import S3FileField
 
 
-class ExampleSignedModel(SignedModel):
+class ExampleSignedModel(SignedModel, frozen=True, extra="forbid"):
     name: str
     when: datetime
 
 
-class ExampleEnvelopeModel(BaseModel):
+class ExampleEnvelopeModel(BaseModel, frozen=True, extra="forbid"):
     signature: ExampleSignedModel
 
 
-class ExampleSignedModelFactory(factory.Factory[ExampleSignedModel]):
+class ExampleSignedModelFactory(SignedModelFactory[ExampleSignedModel]):
     class Meta:
         model = ExampleSignedModel
 
     name = "test-name"
     when = datetime(2020, 1, 2, 3, 4, 5, tzinfo=UTC)
-
-    @classmethod
-    def _build(
-        cls, model_class: type[ExampleSignedModel], *args: Any, **kwargs: Any
-    ) -> ExampleSignedModel:
-        # SignedModel field values cannot be passed directly to __init__, as its wrap
-        # validator would attempt to unsign them; use model_construct, as the library does.
-        return model_class.model_construct(*args, **kwargs)
 
 
 def test_signed_model_round_trip() -> None:

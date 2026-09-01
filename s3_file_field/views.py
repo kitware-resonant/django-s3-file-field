@@ -1,85 +1,33 @@
 from __future__ import annotations
 
-import dataclasses
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, override
+from typing import TYPE_CHECKING
 
-from django.core import signing
 from django.http import JsonResponse
 from pydantic import ValidationError
-from rest_framework import serializers
-from rest_framework.decorators import api_view, parser_classes
-from rest_framework.parsers import JSONParser
-from rest_framework.response import Response
+from rest_framework.decorators import api_view
 
-from . import _multipart, _registry
+from . import _multipart
 from ._multipart import (
     ObjectNotFoundError,
-    PresignedUploadCompletion,
     TransferredPart,
     TransferredParts,
     UploadTooLargeError,
 )
 from ._pydantic_utils import PydanticEncoder
 from ._schemas import (
+    FieldValueModel,
     PartInitializationModel,
+    UploadCompletionRequestModel,
+    UploadCompletionResponseModel,
+    UploadFinalizationRequestModel,
+    UploadFinalizationResponseModel,
     UploadInitializationRequestModel,
     UploadInitializationResponseModel,
     UploadSignatureModel,
 )
 
 if TYPE_CHECKING:
-    from django.http.response import HttpResponseBase
     from rest_framework.request import Request
-
-
-class TransferredPartRequestSerializer(serializers.Serializer[TransferredPart]):
-    part_number = serializers.IntegerField(min_value=1)
-    size = serializers.IntegerField(min_value=1)
-    etag = serializers.CharField()
-
-
-class UploadCompletionRequestSerializer(serializers.Serializer[TransferredParts]):
-    upload_signature = serializers.CharField(trim_whitespace=False)
-    parts = TransferredPartRequestSerializer(many=True, allow_empty=False)
-
-    @override
-    def create(self, validated_data: dict[str, Any]) -> TransferredParts:
-        parts = [
-            TransferredPart(**part)
-            for part in sorted(validated_data.pop("parts"), key=lambda part: part["part_number"])
-        ]
-        upload_signature = signing.loads(validated_data["upload_signature"], salt="s3_file_field")
-        object_key = upload_signature["object_key"]
-        upload_id = upload_signature["upload_id"]
-        return TransferredParts(parts=parts, object_key=object_key, upload_id=upload_id)
-
-
-class UploadCompletionResponseSerializer(serializers.Serializer[PresignedUploadCompletion]):
-    complete_url = serializers.URLField()
-    body = serializers.CharField(trim_whitespace=False)
-
-
-@dataclass
-class FinalizationRequest:
-    upload_signature: str
-
-
-class FinalizationRequestSerializer(serializers.Serializer[FinalizationRequest]):
-    upload_signature = serializers.CharField(trim_whitespace=False)
-
-    @override
-    def create(self, validated_data: dict[str, Any]) -> FinalizationRequest:
-        return FinalizationRequest(**validated_data)
-
-
-@dataclass
-class FinalizationResponse:
-    field_value: str
-
-
-class FinalizationResponseSerializer(serializers.Serializer[FinalizationResponse]):
-    field_value = serializers.CharField(trim_whitespace=False)
 
 
 @api_view(["POST"])
@@ -121,7 +69,12 @@ def upload_initialize(request: Request) -> JsonResponse:
                 object_key=initialization.object_key,
             ),
             parts=[
-                PartInitializationModel(**dataclasses.asdict(part)) for part in initialization.parts
+                PartInitializationModel(
+                    part_number=part.part_number,
+                    size=part.size,
+                    upload_url=part.upload_url,
+                )
+                for part in initialization.parts
             ],
         ).model_dump(),
         encoder=PydanticEncoder,
@@ -129,64 +82,73 @@ def upload_initialize(request: Request) -> JsonResponse:
 
 
 @api_view(["POST"])
-@parser_classes([JSONParser])
-def upload_complete(request: Request) -> HttpResponseBase:
-    request_serializer = UploadCompletionRequestSerializer(data=request.data)
-    request_serializer.is_valid(raise_exception=True)
-    transferred_parts: TransferredParts = request_serializer.save()
+def upload_complete(request: Request) -> JsonResponse:
+    try:
+        upload_request = UploadCompletionRequestModel.model_validate_json(request.body)
+    except ValidationError as e:
+        return JsonResponse(
+            {"detail": e.errors(include_url=False, include_context=False, include_input=False)},
+            status=400,
+            encoder=PydanticEncoder,
+        )
 
-    upload_signature = signing.loads(
-        request_serializer.validated_data["upload_signature"], salt="s3_file_field"
-    )
-    field = _registry.get_field(upload_signature["field_id"])
-
-    # check if upload_prepare signed this less than max age ago
-    # tsigner = TimestampSigner()
-    # if object_key != tsigner.unsign(
-    #     upload_sig, max_age=int(MultipartManager._url_expiration.total_seconds())
-    # ):
-    #     raise BadSignature()
-
+    field = upload_request.upload_signature.field_id
     completed_upload = _multipart.MultipartManager.from_storage(field.storage).complete_upload(
-        transferred_parts
+        TransferredParts(
+            upload_id=upload_request.upload_signature.upload_id,
+            object_key=upload_request.upload_signature.object_key,
+            parts=[
+                TransferredPart(
+                    part_number=part.part_number,
+                    etag=part.etag,
+                )
+                for part in upload_request.parts
+            ],
+        )
     )
 
     # signals.s3_file_field_upload_finalize.send(
     #     sender=multipart_upload_finalize, name=name, object_key=object_key
     # )
 
-    response_serializer = UploadCompletionResponseSerializer(completed_upload)
-    return Response(response_serializer.data)
+    return JsonResponse(
+        UploadCompletionResponseModel(
+            complete_url=completed_upload.complete_url,
+            body=completed_upload.body,
+        ).model_dump(),
+        encoder=PydanticEncoder,
+    )
 
 
 @api_view(["POST"])
-@parser_classes([JSONParser])
-def finalize(request: Request) -> HttpResponseBase:
-    request_serializer = FinalizationRequestSerializer(data=request.data)
-    request_serializer.is_valid(raise_exception=True)
-    finalization_request: FinalizationRequest = request_serializer.save()
+def finalize(request: Request) -> JsonResponse:
+    try:
+        upload_request = UploadFinalizationRequestModel.model_validate_json(request.body)
+    except ValidationError as e:
+        return JsonResponse(
+            {"detail": e.errors(include_url=False, include_context=False, include_input=False)},
+            status=400,
+            encoder=PydanticEncoder,
+        )
 
-    upload_signature = signing.loads(finalization_request.upload_signature, salt="s3_file_field")
-    field_id = upload_signature["field_id"]
-    object_key = upload_signature["object_key"]
-
-    field = _registry.get_field(field_id)
+    field = upload_request.upload_signature.field_id
+    object_key = upload_request.upload_signature.object_key
 
     # get_object_size implicitly verifies that the object exists.
     # We don't want to distribute the field value if the upload did not complete.
     try:
         size = _multipart.MultipartManager.from_storage(field.storage).get_object_size(object_key)
     except ObjectNotFoundError:
-        return Response("Object not found", status=400)
+        return JsonResponse(
+            {"detail": "The upload was not completed or the object has been deleted."}, status=400
+        )
 
-    field_value = signing.dumps(
-        {
-            "object_key": object_key,
-            "file_size": size,
-        }
+    return JsonResponse(
+        UploadFinalizationResponseModel(
+            field_value=FieldValueModel.model_construct(
+                object_key=object_key,
+                file_size=size,
+            ),
+        ).model_dump(),
+        encoder=PydanticEncoder,
     )
-
-    response_serializer = FinalizationResponseSerializer(
-        FinalizationResponse(field_value=field_value)
-    )
-    return Response(response_serializer.data)

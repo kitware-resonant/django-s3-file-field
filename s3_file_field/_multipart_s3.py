@@ -84,4 +84,6 @@ class S3MultipartManager(MultipartManager):
             )
             return stats["ContentLength"]
         except ClientError as e:
-            raise ObjectNotFoundError from e
+            if e.response["ResponseMetadata"]["HTTPStatusCode"] == 404:
+                raise ObjectNotFoundError from e
+            raise
