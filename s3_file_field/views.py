@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, override
 
 from django.core import signing
+from django.http import JsonResponse
+from pydantic import ValidationError
 from rest_framework import serializers
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import JSONParser
@@ -12,62 +15,22 @@ from rest_framework.response import Response
 from . import _multipart, _registry
 from ._multipart import (
     ObjectNotFoundError,
-    PresignedPartTransfer,
-    PresignedTransfer,
     PresignedUploadCompletion,
     TransferredPart,
     TransferredParts,
     UploadTooLargeError,
 )
+from ._pydantic_utils import PydanticEncoder
+from ._schemas import (
+    PartInitializationModel,
+    UploadInitializationRequestModel,
+    UploadInitializationResponseModel,
+    UploadSignatureModel,
+)
 
 if TYPE_CHECKING:
     from django.http.response import HttpResponseBase
     from rest_framework.request import Request
-
-
-@dataclass
-class UploadInitializationRequest:
-    field_id: str
-    file_name: str
-    file_size: int
-    content_type: str
-
-
-class UploadInitializationRequestSerializer(serializers.Serializer[UploadInitializationRequest]):
-    field_id = serializers.CharField()
-    file_name = serializers.CharField(trim_whitespace=False)
-    file_size = serializers.IntegerField(min_value=1)
-    # part_size = serializers.IntegerField(min_value=1)
-    content_type = serializers.CharField()
-
-    def validate_field_id(self, field_id: str) -> str:
-        try:
-            _registry.get_field(field_id)
-        except KeyError:
-            raise serializers.ValidationError(f'Invalid field ID: "{field_id}".') from None
-        return field_id
-
-    @override
-    def create(self, validated_data: dict[str, Any]) -> UploadInitializationRequest:
-        return UploadInitializationRequest(**validated_data)
-
-
-class PartInitializationResponseSerializer(serializers.Serializer[PresignedPartTransfer]):
-    part_number = serializers.IntegerField(min_value=1)
-    size = serializers.IntegerField(min_value=1)
-    upload_url = serializers.URLField()
-
-
-@dataclass
-class UploadInitializationResponse(PresignedTransfer):
-    upload_signature: str
-
-
-class UploadInitializationResponseSerializer(serializers.Serializer[UploadInitializationResponse]):
-    object_key = serializers.CharField(trim_whitespace=False)
-    upload_id = serializers.CharField()
-    parts = PartInitializationResponseSerializer(many=True, allow_empty=False)
-    upload_signature = serializers.CharField(trim_whitespace=False)
 
 
 class TransferredPartRequestSerializer(serializers.Serializer[TransferredPart]):
@@ -87,7 +50,7 @@ class UploadCompletionRequestSerializer(serializers.Serializer[TransferredParts]
             TransferredPart(**part)
             for part in sorted(validated_data.pop("parts"), key=lambda part: part["part_number"])
         ]
-        upload_signature = signing.loads(validated_data["upload_signature"])
+        upload_signature = signing.loads(validated_data["upload_signature"], salt="s3_file_field")
         object_key = upload_signature["object_key"]
         upload_id = validated_data["upload_id"]
         return TransferredParts(parts=parts, object_key=object_key, upload_id=upload_id)
@@ -121,18 +84,21 @@ class FinalizationResponseSerializer(serializers.Serializer[FinalizationResponse
 
 
 @api_view(["POST"])
-@parser_classes([JSONParser])
-def upload_initialize(request: Request) -> HttpResponseBase:
-    request_serializer = UploadInitializationRequestSerializer(data=request.data)
-    request_serializer.is_valid(raise_exception=True)
-    upload_request: UploadInitializationRequest = request_serializer.save()
-    field = _registry.get_field(upload_request.field_id)
+def upload_initialize(request: Request) -> JsonResponse:
+    try:
+        upload_request = UploadInitializationRequestModel.model_validate_json(request.body)
+    except ValidationError as e:
+        return JsonResponse(
+            {"detail": e.errors(include_url=False, include_context=False, include_input=False)},
+            status=400,
+            encoder=PydanticEncoder,
+        )
 
-    file_name = upload_request.file_name
+    field = upload_request.field_id
     # TODO: The first argument to generate_filename() is an instance of the model.
     # We do not and will never have an instance of the model during field upload.
     # Maybe we need a different generate method/upload_to with a different signature?
-    object_key = field.generate_filename(None, file_name)
+    object_key = field.generate_filename(None, upload_request.file_name)
 
     try:
         initialization = _multipart.MultipartManager.from_storage(field.storage).initialize_upload(
@@ -141,29 +107,26 @@ def upload_initialize(request: Request) -> HttpResponseBase:
             upload_request.content_type,
         )
     except UploadTooLargeError:
-        return Response("Upload size is too large.", status=400)
+        return JsonResponse({"detail": "Upload size is too large."}, status=400)
 
     # signals.s3_file_field_upload_prepare.send(
     #     sender=upload_prepare, name=name, object_key=object_key
     # )
 
-    # We sign the field_id and object_key to create a "session token" for this upload
-    upload_signature = signing.dumps(
-        {
-            "field_id": upload_request.field_id,
-            "object_key": object_key,
-        }
-    )
-
-    response_serializer = UploadInitializationResponseSerializer(
-        UploadInitializationResponse(
+    return JsonResponse(
+        UploadInitializationResponseModel(
             object_key=initialization.object_key,
             upload_id=initialization.upload_id,
-            parts=initialization.parts,
-            upload_signature=upload_signature,
-        )
+            parts=[
+                PartInitializationModel(**dataclasses.asdict(part)) for part in initialization.parts
+            ],
+            # TODO: any risks to model_construct?
+            upload_signature=UploadSignatureModel.model_construct(
+                field_id=field, object_key=initialization.object_key
+            ),
+        ).model_dump(),
+        encoder=PydanticEncoder,
     )
-    return Response(response_serializer.data)
 
 
 @api_view(["POST"])
@@ -173,7 +136,9 @@ def upload_complete(request: Request) -> HttpResponseBase:
     request_serializer.is_valid(raise_exception=True)
     transferred_parts: TransferredParts = request_serializer.save()
 
-    upload_signature = signing.loads(request_serializer.validated_data["upload_signature"])
+    upload_signature = signing.loads(
+        request_serializer.validated_data["upload_signature"], salt="s3_file_field"
+    )
     field = _registry.get_field(upload_signature["field_id"])
 
     # check if upload_prepare signed this less than max age ago
@@ -202,7 +167,7 @@ def finalize(request: Request) -> HttpResponseBase:
     request_serializer.is_valid(raise_exception=True)
     finalization_request: FinalizationRequest = request_serializer.save()
 
-    upload_signature = signing.loads(finalization_request.upload_signature)
+    upload_signature = signing.loads(finalization_request.upload_signature, salt="s3_file_field")
     field_id = upload_signature["field_id"]
     object_key = upload_signature["object_key"]
 

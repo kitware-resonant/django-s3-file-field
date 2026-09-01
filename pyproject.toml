@@ -39,6 +39,7 @@ classifiers = [
 dependencies = [
   "django>=5.2",
   "djangorestframework",
+  "pydantic==2.13.5",
 ]
 dynamic = ["version"]
 
@@ -94,6 +95,7 @@ type = [
 test = [
   "django-stubs-ext==6.1.0",
   "factory-boy==3.3.3",
+  "freezegun==1.5.5",
   "pytest==9.1.1",
   "pytest-cov==7.1.0",
   "pytest-django==4.14.0",

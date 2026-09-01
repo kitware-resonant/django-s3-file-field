@@ -2,97 +2,66 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from django.core import signing
 from django.core.files.storage import default_storage
 from django.urls import reverse
 import pytest
 import requests
 
-from fuzzy import FUZZY_UPLOAD_ID, FUZZY_URL, Fuzzy
+from fuzzy import FUZZY_POSITIVE_INT, FUZZY_UPLOAD_ID, FUZZY_URL, Fuzzy
 from s3_file_field._sizes import mb
 
 if TYPE_CHECKING:
     from rest_framework.test import APIClient
 
 
-def test_prepare(api_client: APIClient) -> None:
+@pytest.mark.parametrize(
+    ("file_size", "num_parts"),
+    [
+        (10, 1),
+        (mb(10), 2),
+        (mb(12), 3),
+    ],
+    ids=["10B", "10MB", "12MB"],
+)
+def test_prepare(api_client: APIClient, file_size: int, num_parts: int) -> None:
+    resp = api_client.post(
+        reverse("s3_file_field:upload-initialize"),
+        {
+            "field_id": "test_app.Resource.blob",
+            "file_name": "test.txt",
+            "file_size": file_size,
+            "content_type": "text/plain",
+        },
+        format="json",
+    )
+    assert resp.status_code == 200
+    resp_json = resp.json()
+    assert resp_json == {
+        "object_key": Fuzzy(
+            r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt"
+        ),
+        "upload_id": FUZZY_UPLOAD_ID,
+        "parts": [
+            {"part_number": part_num, "size": FUZZY_POSITIVE_INT, "upload_url": FUZZY_URL}
+            for part_num in range(1, num_parts + 1)
+        ],
+        "upload_signature": Fuzzy(r"\A.+\Z"),
+    }
+
+
+def test_prepare_content_type_invalid(api_client: APIClient) -> None:
     resp = api_client.post(
         reverse("s3_file_field:upload-initialize"),
         {
             "field_id": "test_app.Resource.blob",
             "file_name": "test.txt",
             "file_size": 10,
-            "content_type": "text/plain",
+            "content_type": "not a mime type",
         },
         format="json",
     )
-    assert resp.status_code == 200
-    assert resp.data == {
-        "object_key": Fuzzy(
-            r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt"
-        ),
-        "upload_id": FUZZY_UPLOAD_ID,
-        "parts": [{"part_number": 1, "size": 10, "upload_url": FUZZY_URL}],
-        "upload_signature": Fuzzy(r".*:.*"),
-    }
-    assert signing.loads(resp.data["upload_signature"]) == {
-        "object_key": Fuzzy(
-            r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt"
-        ),
-        "field_id": "test_app.Resource.blob",
-    }
-
-
-def test_prepare_two_parts(api_client: APIClient) -> None:
-    resp = api_client.post(
-        reverse("s3_file_field:upload-initialize"),
-        {
-            "field_id": "test_app.Resource.blob",
-            "file_name": "test.txt",
-            "file_size": mb(10),
-            "content_type": "text/plain",
-        },
-        format="json",
-    )
-    assert resp.status_code == 200
-    assert resp.data == {
-        "object_key": Fuzzy(
-            r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt"
-        ),
-        "upload_id": FUZZY_UPLOAD_ID,
-        "parts": [
-            # 5 MB size
-            {"part_number": 1, "size": mb(5), "upload_url": FUZZY_URL},
-            {"part_number": 2, "size": mb(5), "upload_url": FUZZY_URL},
-        ],
-        "upload_signature": Fuzzy(r".*:.*"),
-    }
-
-
-def test_prepare_three_parts(api_client: APIClient) -> None:
-    resp = api_client.post(
-        reverse("s3_file_field:upload-initialize"),
-        {
-            "field_id": "test_app.Resource.blob",
-            "file_name": "test.txt",
-            "file_size": mb(12),
-            "content_type": "text/plain",
-        },
-        format="json",
-    )
-    assert resp.status_code == 200
-    assert resp.data == {
-        "object_key": Fuzzy(
-            r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt"
-        ),
-        "upload_id": FUZZY_UPLOAD_ID,
-        "parts": [
-            {"part_number": 1, "size": mb(5), "upload_url": FUZZY_URL},
-            {"part_number": 2, "size": mb(5), "upload_url": FUZZY_URL},
-            {"part_number": 3, "size": mb(2), "upload_url": FUZZY_URL},
-        ],
-        "upload_signature": Fuzzy(r".*:.*"),
-    }
+    assert resp.status_code == 400
+    assert [error["loc"] for error in resp.json()["detail"]] == [["content_type"]]
 
 
 @pytest.mark.parametrize("file_size", [10, mb(10), mb(12)], ids=["10B", "10MB", "12MB"])
@@ -112,7 +81,7 @@ def test_full_upload_flow(
         format="json",
     )
     assert resp.status_code == 200
-    initialization = resp.data
+    initialization = resp.json()
     assert isinstance(initialization, dict)
     upload_signature = initialization["upload_signature"]
 
@@ -163,7 +132,7 @@ def test_full_upload_flow(
     )
     assert resp.status_code == 200
     assert resp.data == {
-        "field_value": Fuzzy(r".*:.*"),
+        "field_value": Fuzzy(r"\A.+\Z"),
     }
 
     # Verify that the Content headers were stored correctly on the object
