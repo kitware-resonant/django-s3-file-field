@@ -12,12 +12,16 @@ from s3_file_field.views import (
 
 def test_upload_completion_request_deserialization() -> None:
     upload_signature = signing.dumps(
-        {"object_key": "test-object-key", "field_id": "test-field-id"}, salt="s3_file_field"
+        {
+            "field_id": "test-field-id",
+            "upload_id": "test-upload-id",
+            "object_key": "test-object-key",
+        },
+        salt="s3_file_field",
     )
     serializer = UploadCompletionRequestSerializer(
         data={
             "upload_signature": upload_signature,
-            "upload_id": "test-upload-id",
             "parts": [
                 {"part_number": 1, "size": 10_000, "etag": "test-etag-1"},
                 {"part_number": 2, "size": 3_500, "etag": "test-etag-2"},

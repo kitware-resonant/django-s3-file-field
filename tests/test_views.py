@@ -7,7 +7,7 @@ from django.urls import reverse
 import pytest
 import requests
 
-from fuzzy import FUZZY_POSITIVE_INT, FUZZY_UPLOAD_ID, FUZZY_URL, Fuzzy
+from fuzzy import FUZZY_POSITIVE_INT, FUZZY_URL, Fuzzy
 from s3_file_field._multipart import MultipartManager
 from s3_file_field._sizes import mb
 
@@ -39,12 +39,11 @@ def test_prepare(api_client: APIClient, file_size: int, num_parts: int) -> None:
     assert resp.status_code == 200
     resp_json = resp.json()
     assert resp_json == {
-        "upload_id": FUZZY_UPLOAD_ID,
+        "upload_signature": Fuzzy(r"\A.+\Z"),
         "parts": [
             {"part_number": part_num, "size": FUZZY_POSITIVE_INT, "upload_url": FUZZY_URL}
             for part_num in range(1, num_parts + 1)
         ],
-        "upload_signature": Fuzzy(r"\A.+\Z"),
     }
 
 
@@ -104,9 +103,8 @@ def test_full_upload_flow(
     resp = api_client.post(
         reverse("s3_file_field:upload-complete"),
         {
-            "upload_id": initialization["upload_id"],
-            "parts": initialization["parts"],
             "upload_signature": upload_signature,
+            "parts": initialization["parts"],
         },
         format="json",
     )

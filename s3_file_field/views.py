@@ -41,7 +41,6 @@ class TransferredPartRequestSerializer(serializers.Serializer[TransferredPart]):
 
 class UploadCompletionRequestSerializer(serializers.Serializer[TransferredParts]):
     upload_signature = serializers.CharField(trim_whitespace=False)
-    upload_id = serializers.CharField()
     parts = TransferredPartRequestSerializer(many=True, allow_empty=False)
 
     @override
@@ -52,7 +51,7 @@ class UploadCompletionRequestSerializer(serializers.Serializer[TransferredParts]
         ]
         upload_signature = signing.loads(validated_data["upload_signature"], salt="s3_file_field")
         object_key = upload_signature["object_key"]
-        upload_id = validated_data["upload_id"]
+        upload_id = upload_signature["upload_id"]
         return TransferredParts(parts=parts, object_key=object_key, upload_id=upload_id)
 
 
@@ -115,14 +114,15 @@ def upload_initialize(request: Request) -> JsonResponse:
 
     return JsonResponse(
         UploadInitializationResponseModel(
-            upload_id=initialization.upload_id,
+            # TODO: any risks to model_construct?
+            upload_signature=UploadSignatureModel.model_construct(
+                field_id=field,
+                upload_id=initialization.upload_id,
+                object_key=initialization.object_key,
+            ),
             parts=[
                 PartInitializationModel(**dataclasses.asdict(part)) for part in initialization.parts
             ],
-            # TODO: any risks to model_construct?
-            upload_signature=UploadSignatureModel.model_construct(
-                field_id=field, object_key=initialization.object_key
-            ),
         ).model_dump(),
         encoder=PydanticEncoder,
     )

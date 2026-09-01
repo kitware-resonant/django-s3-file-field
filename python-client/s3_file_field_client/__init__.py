@@ -89,11 +89,10 @@ class S3FileFieldClient:
         resp = self.api_session.post(
             f"{self.base_url}/upload-complete/",
             json={
-                "upload_id": multipart_info["upload_id"],
+                "upload_signature": multipart_info["upload_signature"],
                 # Mypy doesn't yet implement PEP 728 Mapping assignability for closed TypedDicts
                 # (python/mypy#18176); once it does, this ignore will be flagged as unused
                 "parts": upload_infos,  # type: ignore[dict-item]
-                "upload_signature": multipart_info["upload_signature"],
             },
             timeout=self.request_timeout,
         )

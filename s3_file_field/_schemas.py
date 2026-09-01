@@ -16,6 +16,7 @@ class UploadInitializationRequestModel(BaseModel):
 
 class UploadSignatureModel(SignedModel):
     field_id: S3FileFieldId
+    upload_id: str
     object_key: str
 
 
@@ -26,6 +27,5 @@ class PartInitializationModel(BaseModel):
 
 
 class UploadInitializationResponseModel(BaseModel):
-    upload_id: str
-    parts: Annotated[list[PartInitializationModel], Field(min_length=1)]
     upload_signature: UploadSignatureModel
+    parts: Annotated[list[PartInitializationModel], Field(min_length=1)]
