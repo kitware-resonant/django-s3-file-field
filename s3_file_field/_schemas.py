@@ -26,7 +26,6 @@ class PartInitializationModel(BaseModel):
 
 
 class UploadInitializationResponseModel(BaseModel):
-    object_key: str
     upload_id: str
     parts: Annotated[list[PartInitializationModel], Field(min_length=1)]
     upload_signature: UploadSignatureModel

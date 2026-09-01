@@ -12,7 +12,6 @@ interface PartInfo {
 interface MultipartInfo {
   // biome-ignore-start lint/style/useNamingConvention: API interface names
   upload_signature: string;
-  object_key: string;
   upload_id: string;
   parts: PartInfo[];
   // biome-ignore-end lint/style/useNamingConvention: API interface names

@@ -15,7 +15,6 @@ class PartInitialization(TypedDict, closed=True):
 
 
 class MultipartInitialization(TypedDict, closed=True):
-    object_key: str
     upload_id: str
     parts: list[PartInitialization]
     upload_signature: str

@@ -8,9 +8,11 @@ import pytest
 import requests
 
 from fuzzy import FUZZY_POSITIVE_INT, FUZZY_UPLOAD_ID, FUZZY_URL, Fuzzy
+from s3_file_field._multipart import MultipartManager
 from s3_file_field._sizes import mb
 
 if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
     from rest_framework.test import APIClient
 
 
@@ -37,9 +39,6 @@ def test_prepare(api_client: APIClient, file_size: int, num_parts: int) -> None:
     assert resp.status_code == 200
     resp_json = resp.json()
     assert resp_json == {
-        "object_key": Fuzzy(
-            r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test.txt"
-        ),
         "upload_id": FUZZY_UPLOAD_ID,
         "parts": [
             {"part_number": part_num, "size": FUZZY_POSITIVE_INT, "upload_url": FUZZY_URL}
@@ -68,7 +67,10 @@ def test_prepare_content_type_invalid(api_client: APIClient) -> None:
 def test_full_upload_flow(
     api_client: APIClient,
     file_size: int,
+    mocker: MockerFixture,
 ) -> None:
+    initialize_upload_spy = mocker.spy(MultipartManager, "initialize_upload")
+
     # Initialize the multipart upload
     resp = api_client.post(
         reverse("s3_file_field:upload-initialize"),
@@ -84,6 +86,8 @@ def test_full_upload_flow(
     initialization = resp.json()
     assert isinstance(initialization, dict)
     upload_signature = initialization["upload_signature"]
+    # The response does not contain the object_key; capture it from the server internals
+    object_key: str = initialize_upload_spy.spy_return.object_key
 
     # Perform the upload
     for part in initialization["parts"]:
@@ -120,7 +124,7 @@ def test_full_upload_flow(
     complete_resp.raise_for_status()
 
     # Verify the object is present in the store
-    assert default_storage.exists(initialization["object_key"])
+    assert default_storage.exists(object_key)
 
     # Finalize the upload
     resp = api_client.post(
@@ -136,8 +140,8 @@ def test_full_upload_flow(
     }
 
     # Verify that the Content headers were stored correctly on the object
-    object_resp = requests.get(default_storage.url(initialization["object_key"]), timeout=5)
+    object_resp = requests.get(default_storage.url(object_key), timeout=5)
     assert resp.status_code == 200
     assert object_resp.headers["Content-Type"] == "text/plain"
 
-    default_storage.delete(initialization["object_key"])
+    default_storage.delete(object_key)

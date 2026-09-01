@@ -115,7 +115,6 @@ def upload_initialize(request: Request) -> JsonResponse:
 
     return JsonResponse(
         UploadInitializationResponseModel(
-            object_key=initialization.object_key,
             upload_id=initialization.upload_id,
             parts=[
                 PartInitializationModel(**dataclasses.asdict(part)) for part in initialization.parts
