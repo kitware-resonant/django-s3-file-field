@@ -115,39 +115,42 @@ class ResourceSerializer(serializers.ModelSerializer):
         fields = ["blob"]
 ```
 
+When declaring the field on a plain (non-model) `Serializer`, pass the model field it
+submits to:
+```python
+from rest_framework import serializers
+from s3_file_field.rest_framework import S3FileSerializerField
+from .models import Resource
+
+
+class ResourceSerializer(serializers.Serializer):
+    blob = S3FileSerializerField(model_field=Resource._meta.get_field("blob"))
+```
+
 Clients interacting with these RESTful APIs will need to use a corresponding django-s3-file-field
 client library. Client libraries (and associated documentation) are available for:
 * [Python](python-client/README.md)
 * [Javascript / TypeScript](javascript-client/README.md)
 
 ### Pytest
-When installed, django-s3-file-field makes several
-[Pytest fixtures](https://docs.pytest.org/en/latest/explanation/fixtures.html) automatically
+When installed, django-s3-file-field makes a
+[Pytest fixture](https://docs.pytest.org/en/latest/explanation/fixtures.html) automatically
 available for use.
 
-The `s3ff_field_value` fixture will return a valid input value for Django `ModelForm` or
-Django Rest Framework `ModelSerializer` subclasses:
-```python
-from .forms import ResourceForm
-
-
-def test_resource_form(s3ff_field_value: str) -> None:
-    form = ResourceForm(data={"blob": s3ff_field_value})
-    assert form.is_valid()
-```
-
-Alternatively, the `s3ff_field_value_factory` fixture transforms a `File` object into a valid input
-value (for Django `ModelForm` or Django Rest Framework `ModelSerializer` subclasses), providing
-more control over the uploaded file:
+The `s3ff_field_value_factory` fixture transforms a stored `File` object into a valid input value
+for Django `ModelForm` or Django Rest Framework `ModelSerializer` subclasses. Since a field value
+is bound to the `S3FileField` it is uploaded to, the target model field must be passed too:
 ```python
 from django.core.files.storage import default_storage
 from rest_framework.test import APIClient
+
+from .models import Resource
 
 
 def test_resource_create(s3ff_field_value_factory):
     client = APIClient()
     stored_file = default_storage.open("some_existing_file.txt")
-    s3ff_field_value = s3ff_field_value_factory(stored_file)
+    s3ff_field_value = s3ff_field_value_factory(stored_file, Resource._meta.get_field("blob"))
     resp = client.post("/resource", data={"blob": s3ff_field_value})
     assert resp.status_code == 201
 ```

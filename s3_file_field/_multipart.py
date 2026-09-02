@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import timedelta
 import math
@@ -13,37 +14,29 @@ if TYPE_CHECKING:
     from django.core.files.storage import Storage
 
 
-@dataclass
-class PresignedPartTransfer:
+@dataclass(frozen=True)
+class PresignedPart:
     part_number: int
     size: int
-    upload_url: str
+    url: str
 
 
-@dataclass
-class PresignedTransfer:
-    object_key: str
+@dataclass(frozen=True)
+class PresignedUpload:
     upload_id: str
-    parts: list[PresignedPartTransfer]
+    object_key: str
+    parts: list[PresignedPart]
 
 
-@dataclass
-class TransferredPart:
+@dataclass(frozen=True)
+class CompletedPart:
     part_number: int
-    size: int
     etag: str
 
 
-@dataclass
-class TransferredParts:
-    object_key: str
-    upload_id: str
-    parts: list[TransferredPart]
-
-
-@dataclass
-class PresignedUploadCompletion:
-    complete_url: str
+@dataclass(frozen=True)
+class PresignedCompletion:
+    url: str
     body: str
 
 
@@ -59,49 +52,60 @@ class ObjectNotFoundError(Exception):
 
 
 class UploadTooLargeError(Exception):
-    """Raised when an upload exceeds the maximum object size for a Storage."""
+    """Raised when an upload exceeds the maximum upload size for a Storage."""
 
     def __init__(self, *args: Any) -> None:
-        super().__init__("File is larger than the maximum object size.", *args)
+        super().__init__("File is larger than the maximum upload size.", *args)
 
 
-class MultipartManager:
+class MultipartManager(ABC):
     """A facade providing management of S3 multipart uploads to multiple Storages."""
 
-    part_size: ClassVar[int] = mb(64)
+    baseline_part_size: ClassVar[int] = mb(64)
     max_object_size: ClassVar[int]
+    # S3 multipart limits, also enforced by MinIO:
+    # https://docs.aws.amazon.com/AmazonS3/latest/userguide/qfacts.html
+    max_parts: ClassVar[int] = 10_000
+    min_part_size: ClassVar[int] = mb(5)
+    max_part_size: ClassVar[int] = gb(5)
 
-    def initialize_upload(
+    @property
+    def max_upload_size(self) -> int:
+        return min(self.max_object_size, self.max_parts * self.max_part_size)
+
+    def initiate_upload(
         self,
         object_key: str,
         file_size: int,
         content_type: str,
-    ) -> PresignedTransfer:
-        if file_size > self.max_object_size:
-            raise UploadTooLargeError("File is larger than the S3 maximum object size.")
+    ) -> PresignedUpload:
+        if file_size > self.max_upload_size:
+            raise UploadTooLargeError
 
         upload_id = self._create_upload_id(
             object_key,
             content_type,
         )
         parts = [
-            PresignedPartTransfer(
+            PresignedPart(
                 part_number=part_number,
                 size=part_size,
-                upload_url=self._generate_presigned_part_url(
-                    object_key, upload_id, part_number, part_size
+                url=self._generate_presigned_part_url(
+                    upload_id, object_key, part_number, part_size
                 ),
             )
             for part_number, part_size in self._iter_part_sizes(file_size)
         ]
-        return PresignedTransfer(object_key=object_key, upload_id=upload_id, parts=parts)
+        return PresignedUpload(upload_id=upload_id, object_key=object_key, parts=parts)
 
-    def complete_upload(self, transferred_parts: TransferredParts) -> PresignedUploadCompletion:
-        complete_url = self._generate_presigned_complete_url(transferred_parts)
-        body = self._generate_presigned_complete_body(transferred_parts)
-        return PresignedUploadCompletion(complete_url=complete_url, body=body)
+    def complete_upload(
+        self, upload_id: str, object_key: str, parts: list[CompletedPart]
+    ) -> PresignedCompletion:
+        url = self._generate_presigned_complete_url(upload_id, object_key)
+        body = self._generate_presigned_complete_body(parts)
+        return PresignedCompletion(url=url, body=body)
 
-    def _generate_presigned_complete_body(self, transferred_parts: TransferredParts) -> str:
+    def _generate_presigned_complete_body(self, parts: list[CompletedPart]) -> str:
         """
         Generate the body of a presigned completion request.
 
@@ -109,7 +113,7 @@ class MultipartManager:
         """
         body = '<?xml version="1.0" encoding="UTF-8"?>'
         body += '<CompleteMultipartUpload xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
-        for part in transferred_parts.parts:
+        for part in parts:
             body += "<Part>"
             body += f"<PartNumber>{part.part_number}</PartNumber>"
             body += f"<ETag>{part.etag}</ETag>"
@@ -121,7 +125,7 @@ class MultipartManager:
         object_key = ".s3-file-field-test-file"
         # TODO: is it possible to use a shorter timeout?
         upload_id = self._create_upload_id(object_key, "application/octet-stream")
-        self._abort_upload_id(object_key, upload_id)
+        self._abort_upload_id(upload_id, object_key)
 
     @classmethod
     def from_storage(cls, storage: Storage) -> MultipartManager:
@@ -160,44 +164,38 @@ class MultipartManager:
     # The AWS default expiration of 1 hour may not be enough for large uploads to complete
     _url_expiration = timedelta(hours=24)
 
+    @abstractmethod
     def _create_upload_id(
         self,
         object_key: str,
         content_type: str,
-    ) -> str:
-        # Require content headers here
-        raise NotImplementedError
+    ) -> str: ...
 
-    def _abort_upload_id(self, object_key: str, upload_id: str) -> None:
-        raise NotImplementedError
+    @abstractmethod
+    def _abort_upload_id(self, upload_id: str, object_key: str) -> None: ...
 
+    @abstractmethod
     def _generate_presigned_part_url(
-        self, object_key: str, upload_id: str, part_number: int, part_size: int
-    ) -> str:
-        raise NotImplementedError
+        self, upload_id: str, object_key: str, part_number: int, part_size: int
+    ) -> str: ...
 
-    def _generate_presigned_complete_url(self, transferred_parts: TransferredParts) -> str:
-        raise NotImplementedError
+    @abstractmethod
+    def _generate_presigned_complete_url(self, upload_id: str, object_key: str) -> str: ...
 
-    def get_object_size(self, object_key: str) -> int:
-        raise NotImplementedError
+    @abstractmethod
+    def get_object_size(self, object_key: str) -> int: ...
 
     @classmethod
     def _iter_part_sizes(cls, file_size: int) -> Iterator[tuple[int, int]]:
-        part_size = cls.part_size
+        """Yield (part_number, part_size) for a multipart upload."""
+        part_size = cls.baseline_part_size
 
-        # 10k is the maximum number of allowed parts allowed by S3
-        max_parts = 10_000
-        if math.ceil(file_size / part_size) >= max_parts:
-            part_size = math.ceil(file_size / max_parts)
+        # If the file would yield too many parts, grow the part size to fit
+        if math.ceil(file_size / part_size) > cls.max_parts:
+            part_size = math.ceil(file_size / cls.max_parts)
 
-        # 5MB is the minimum part size allowed by S3
-        min_part_size = mb(5)
-        part_size = max(part_size, min_part_size)
-
-        # 5GB is the maximum part size allowed by S3
-        max_part_size = gb(5)
-        part_size = min(part_size, max_part_size)
+        part_size = max(part_size, cls.min_part_size)
+        part_size = min(part_size, cls.max_part_size)
 
         remaining_file_size = file_size
         part_num = 1

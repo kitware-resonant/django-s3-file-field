@@ -13,14 +13,14 @@ import requests
 from storages.backends.s3 import S3Storage
 
 from s3_file_field._multipart import (
+    CompletedPart,
     MultipartManager,
     ObjectNotFoundError,
-    TransferredPart,
-    TransferredParts,
+    UploadTooLargeError,
 )
 from s3_file_field._multipart_minio import MinioMultipartManager
 from s3_file_field._multipart_s3 import S3MultipartManager
-from s3_file_field._sizes import gb, mb
+from s3_file_field._sizes import gb, mb, tb
 
 if TYPE_CHECKING:
     # mypy_boto3_s3 only provides types
@@ -110,37 +110,45 @@ def test_multipart_manager_supported_storage_unsupported() -> None:
     assert not MultipartManager.supported_storage(storage)
 
 
-def test_multipart_manager_initialize_upload(multipart_manager: MultipartManager) -> None:
-    initialization = multipart_manager.initialize_upload(
+def test_multipart_manager_initiate_upload(multipart_manager: MultipartManager) -> None:
+    presigned_upload = multipart_manager.initiate_upload(
         "new-object",
         100,
         "text/plain",
     )
 
-    assert initialization
+    assert presigned_upload
+
+
+def test_multipart_manager_initiate_upload_too_large(
+    multipart_manager: MultipartManager,
+) -> None:
+    with pytest.raises(UploadTooLargeError):
+        multipart_manager.initiate_upload("new-object", tb(75), "text/plain")
 
 
 @pytest.mark.parametrize("file_size", [10, mb(10), mb(12)], ids=["10B", "10MB", "12MB"])
 def test_multipart_manager_complete_upload(
     multipart_manager: MultipartManager, file_size: int
 ) -> None:
-    initialization = multipart_manager.initialize_upload("new-object", file_size, "text/plain")
+    presigned_upload = multipart_manager.initiate_upload("new-object", file_size, "text/plain")
 
-    transferred_parts = TransferredParts(
-        object_key=initialization.object_key, upload_id=initialization.upload_id, parts=[]
-    )
-
-    for part in initialization.parts:
-        resp = requests.put(part.upload_url, data=b"a" * part.size, timeout=5)
+    completed_parts = []
+    for part in presigned_upload.parts:
+        resp = requests.put(part.url, data=b"a" * part.size, timeout=5)
         resp.raise_for_status()
-        transferred_parts.parts.append(
-            TransferredPart(part_number=part.part_number, size=part.size, etag=resp.headers["ETag"])
+        completed_parts.append(
+            CompletedPart(part_number=part.part_number, etag=resp.headers["ETag"])
         )
 
-    completed_upload = multipart_manager.complete_upload(transferred_parts)
-    assert completed_upload
-    assert completed_upload.complete_url
-    assert completed_upload.body
+    presigned_completion = multipart_manager.complete_upload(
+        upload_id=presigned_upload.upload_id,
+        object_key=presigned_upload.object_key,
+        parts=completed_parts,
+    )
+    assert presigned_completion
+    assert presigned_completion.url
+    assert presigned_completion.body
 
 
 def test_multipart_manager_test_upload(multipart_manager: MultipartManager) -> None:
@@ -153,11 +161,9 @@ def test_multipart_manager_create_upload_id(multipart_manager: MultipartManager)
 
 
 def test_multipart_manager_generate_presigned_part_url(multipart_manager: MultipartManager) -> None:
-    upload_url = multipart_manager._generate_presigned_part_url(
-        "new-object", "fake-upload-id", 1, 100
-    )
+    url = multipart_manager._generate_presigned_part_url("fake-upload-id", "new-object", 1, 100)
 
-    assert isinstance(upload_url, str)
+    assert isinstance(url, str)
 
 
 @pytest.mark.skip
@@ -165,35 +171,27 @@ def test_multipart_manager_generate_presigned_part_url_content_length(
     multipart_manager: MultipartManager,
 ) -> None:
     # TODO: make this work for Minio
-    upload_url = multipart_manager._generate_presigned_part_url(
-        "new-object", "fake-upload-id", 1, 100
-    )
+    url = multipart_manager._generate_presigned_part_url("fake-upload-id", "new-object", 1, 100)
     # Ensure Content-Length is a signed header
-    assert "content-length" in upload_url
+    assert "content-length" in url
 
 
 def test_multipart_manager_generate_presigned_complete_url(
     multipart_manager: MultipartManager,
 ) -> None:
-    upload_url = multipart_manager._generate_presigned_complete_url(
-        TransferredParts(object_key="new-object", upload_id="fake-upload-id", parts=[])
-    )
+    url = multipart_manager._generate_presigned_complete_url("fake-upload-id", "new-object")
 
-    assert isinstance(upload_url, str)
+    assert isinstance(url, str)
 
 
 def test_multipart_manager_generate_presigned_complete_body(
     multipart_manager: MultipartManager,
 ) -> None:
     body = multipart_manager._generate_presigned_complete_body(
-        TransferredParts(
-            object_key="new-object",
-            upload_id="fake-upload-id",
-            parts=[
-                TransferredPart(part_number=1, size=1, etag="fake-etag-1"),
-                TransferredPart(part_number=2, size=2, etag="fake-etag-2"),
-            ],
-        )
+        [
+            CompletedPart(part_number=1, etag="fake-etag-1"),
+            CompletedPart(part_number=2, etag="fake-etag-2"),
+        ]
     )
 
     assert body == (
@@ -230,7 +228,7 @@ def test_multipart_manager_get_object_size_not_found(multipart_manager: Multipar
 
 
 @pytest.mark.parametrize(
-    ("file_size", "requested_part_size", "initial_part_size", "final_part_size", "part_count"),
+    ("file_size", "baseline_part_size", "initial_part_size", "final_part_size", "part_count"),
     [
         # Base
         (mb(50), mb(10), mb(10), mb(10), 5),
@@ -238,13 +236,14 @@ def test_multipart_manager_get_object_size_not_found(multipart_manager: Multipar
         (mb(55), mb(10), mb(10), mb(5), 6),
         # Single part
         (mb(10), mb(10), 0, mb(10), 1),
-        # Too small requested_part_size
+        # Too small baseline_part_size
         (mb(50), mb(2), mb(5), mb(5), 10),
-        # Too large requested_part_size
+        # Too large baseline_part_size
         (gb(50), gb(10), gb(5), gb(5), 10),
         # Too many parts
         (mb(100_000), mb(5), mb(10), mb(10), 10_000),
-        # TODO: file too large
+        # Maximum transferable size: exactly max_parts parts of max_part_size
+        (gb(5) * 10_000, mb(64), gb(5), gb(5), 10_000),
     ],
     ids=[
         "base",
@@ -253,17 +252,18 @@ def test_multipart_manager_get_object_size_not_found(multipart_manager: Multipar
         "too_small_part",
         "too_large_part",
         "too_many_part",
+        "max_size",
     ],
 )
 def test_multipart_manager_iter_part_sizes(  # noqa: PLR0917
     mocker: MockerFixture,
     file_size: int,
-    requested_part_size: int,
+    baseline_part_size: int,
     initial_part_size: int,
     final_part_size: int,
     part_count: int,
 ) -> None:
-    mocker.patch.object(MultipartManager, "part_size", new=requested_part_size)
+    mocker.patch.object(MultipartManager, "baseline_part_size", new=baseline_part_size)
 
     part_nums, part_sizes = zip(*MultipartManager._iter_part_sizes(file_size), strict=True)
 

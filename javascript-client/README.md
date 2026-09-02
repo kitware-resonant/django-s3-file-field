@@ -20,7 +20,7 @@ import axios from 'axios';
 import S3FileFieldClient, { S3FileFieldProgress, S3FileFieldProgressState } from 'django-s3-file-field';
 
 function onUploadProgress (progress: S3FileFieldProgress) {
-  if (progress.state == S3FileFieldProgressState.Sending) {
+  if (progress.state == S3FileFieldProgressState.Uploading) {
     console.log(`Uploading ${progress.uploaded} / ${progress.total}`);
   }
 }

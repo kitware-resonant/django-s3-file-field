@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, override
 
 import minio
 
-from ._multipart import MultipartManager, ObjectNotFoundError, TransferredParts
+from ._multipart import MultipartManager, ObjectNotFoundError
 from ._sizes import tb
 
 if TYPE_CHECKING:
@@ -38,7 +38,7 @@ class MinioMultipartManager(MultipartManager):
         )
 
     @override
-    def _abort_upload_id(self, object_key: str, upload_id: str) -> None:
+    def _abort_upload_id(self, upload_id: str, object_key: str) -> None:
         self._client._abort_multipart_upload(  # noqa: SLF001
             bucket_name=self._bucket_name,
             object_name=object_key,
@@ -47,7 +47,7 @@ class MinioMultipartManager(MultipartManager):
 
     @override
     def _generate_presigned_part_url(
-        self, object_key: str, upload_id: str, part_number: int, part_size: int
+        self, upload_id: str, object_key: str, part_number: int, part_size: int
     ) -> str:
         return self._signing_client.get_presigned_url(
             method="PUT",
@@ -64,14 +64,14 @@ class MinioMultipartManager(MultipartManager):
         )
 
     @override
-    def _generate_presigned_complete_url(self, transferred_parts: TransferredParts) -> str:
+    def _generate_presigned_complete_url(self, upload_id: str, object_key: str) -> str:
         return self._signing_client.get_presigned_url(
             method="POST",
             bucket_name=self._bucket_name,
-            object_name=transferred_parts.object_key,
+            object_name=object_key,
             expires=self._url_expiration,
             response_headers={
-                "uploadId": transferred_parts.upload_id,
+                "uploadId": upload_id,
             },
         )
 

@@ -1,17 +1,20 @@
 # This module shouldn't be imported explicitly, as it will be loaded by pytest via entry point.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
-from django.core import signing
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 import pytest
+
+from ._schemas import FieldValue
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
 
     from django.core.files import File
+
+    from .fields import S3FileField
 
 
 @pytest.fixture
@@ -28,23 +31,16 @@ def stored_file_object() -> Generator[File[bytes]]:
 
 
 @pytest.fixture
-def s3ff_field_value_factory() -> Callable[[File[bytes]], str]:
+def s3ff_field_value_factory() -> Callable[[File[bytes], S3FileField], str]:
     """Return a function to produce a valid field_value from a File object."""
 
-    def s3ff_field_value_factory(file_object: File[bytes]) -> str:
-        return signing.dumps(
-            {
-                "object_key": file_object.name,
-                "file_size": file_object.size,
-            }
-        )
+    def s3ff_field_value_factory(file_object: File[bytes], field: S3FileField) -> str:
+        field_value = FieldValue.model_construct(
+            field=field,
+            object_key=file_object.name,
+            file_size=file_object.size,
+        ).model_dump()
+        # SignedModel serializes itself to a str, but type stubs cannot express this
+        return cast("str", field_value)
 
     return s3ff_field_value_factory
-
-
-@pytest.fixture
-def s3ff_field_value(
-    s3ff_field_value_factory: Callable[[File[bytes]], str], stored_file_object: File[bytes]
-) -> str:
-    """Return a valid field_value for an existent File in the default Storage."""
-    return s3ff_field_value_factory(stored_file_object)
