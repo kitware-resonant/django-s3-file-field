@@ -120,6 +120,7 @@ def finalize(request: Request) -> JsonResponse:
     return JsonResponse(
         _schemas.FinalizationResponse(
             field_value=_schemas.FieldValue.model_construct(
+                field=finalization_request.upload_token.field,
                 object_key=finalization_request.upload_token.object_key,
                 file_size=size,
             ),

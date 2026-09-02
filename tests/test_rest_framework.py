@@ -1,15 +1,21 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
+from django.core.exceptions import ImproperlyConfigured
 import pytest
+from rest_framework import serializers
 
+from s3_file_field.rest_framework import S3FileSerializerField
+from test_app.models import MultiResource, Resource
 from test_app.rest import ResourceSerializer
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from django.core.files import File
 
-    from test_app.models import Resource
+    from s3_file_field.fields import S3FileField
 
 
 def test_serializer_data_missing() -> None:
@@ -35,10 +41,48 @@ def test_serializer_data_invalid() -> None:
     assert serializer.errors["blob"][0].code == "invalid"
 
 
+def test_serializer_field_plain_read_only() -> None:
+    class PlainSerializer(serializers.Serializer[Any]):
+        blob = S3FileSerializerField(read_only=True)
+
+    serializer = PlainSerializer()
+    assert "blob" in serializer.fields
+
+
+def test_serializer_field_plain_model_field_explicit(s3ff_field_value: str) -> None:
+    class PlainSerializer(serializers.Serializer[Any]):
+        blob = S3FileSerializerField(model_field=Resource._meta.get_field("blob"))
+
+    serializer = PlainSerializer(data={"blob": s3ff_field_value})
+    assert serializer.is_valid()
+
+
+def test_serializer_field_plain_model_field_missing() -> None:
+    class PlainSerializer(serializers.Serializer[Any]):
+        blob = S3FileSerializerField()
+
+    serializer = PlainSerializer()
+    with pytest.raises(ImproperlyConfigured):
+        _ = serializer.fields
+
+
 def test_serializer_is_valid(s3ff_field_value: str) -> None:
     serializer = ResourceSerializer(data={"blob": s3ff_field_value})
 
     assert serializer.is_valid()
+
+
+def test_serializer_cross_field_invalid(
+    s3ff_field_value_factory: Callable[[File[bytes], S3FileField], str],
+    stored_file_object: File[bytes],
+) -> None:
+    """A FieldValue minted for one S3FileField must not validate on another."""
+    other_field = MultiResource._meta.get_field("blob")
+    field_value = s3ff_field_value_factory(stored_file_object, other_field)
+    serializer = ResourceSerializer(data={"blob": field_value})
+
+    assert not serializer.is_valid()
+    assert serializer.errors["blob"][0].code == "invalid"
 
 
 def test_serializer_validated_data(stored_file_object: File[bytes], s3ff_field_value: str) -> None:

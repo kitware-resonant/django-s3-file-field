@@ -15,9 +15,12 @@ from s3_file_field._sizes import mb
 from test_app.models import Resource
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
+    from collections.abc import Callable, Generator
 
+    from django.core.files import File
     from pytest_mock import MockerFixture
+
+    from s3_file_field.fields import S3FileField
 
 # Explicitly load s3_file_field fixtures, late in Pytest plugin load order.
 # If this is auto-loaded via entry point, the import happens before coverage tracing is started by
@@ -38,6 +41,15 @@ def _reduce_part_size(mocker: MockerFixture) -> None:
 @pytest.fixture
 def api_client() -> APIClient:
     return APIClient()
+
+
+@pytest.fixture
+def s3ff_field_value(
+    s3ff_field_value_factory: Callable[[File[bytes], S3FileField], str],
+    stored_file_object: File[bytes],
+) -> str:
+    """Return a valid field_value for Resource.blob, for an existent File."""
+    return s3ff_field_value_factory(stored_file_object, Resource._meta.get_field("blob"))
 
 
 class ResourceFactory(factory.Factory[Resource]):

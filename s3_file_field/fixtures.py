@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 
     from django.core.files import File
 
+    from .fields import S3FileField
+
 
 @pytest.fixture
 def stored_file_object() -> Generator[File[bytes]]:
@@ -29,11 +31,12 @@ def stored_file_object() -> Generator[File[bytes]]:
 
 
 @pytest.fixture
-def s3ff_field_value_factory() -> Callable[[File[bytes]], str]:
+def s3ff_field_value_factory() -> Callable[[File[bytes], S3FileField], str]:
     """Return a function to produce a valid field_value from a File object."""
 
-    def s3ff_field_value_factory(file_object: File[bytes]) -> str:
+    def s3ff_field_value_factory(file_object: File[bytes], field: S3FileField) -> str:
         field_value = FieldValue.model_construct(
+            field=field,
             object_key=file_object.name,
             file_size=file_object.size,
         ).model_dump()
@@ -41,11 +44,3 @@ def s3ff_field_value_factory() -> Callable[[File[bytes]], str]:
         return cast("str", field_value)
 
     return s3ff_field_value_factory
-
-
-@pytest.fixture
-def s3ff_field_value(
-    s3ff_field_value_factory: Callable[[File[bytes]], str], stored_file_object: File[bytes]
-) -> str:
-    """Return a valid field_value for an existent File in the default Storage."""
-    return s3ff_field_value_factory(stored_file_object)

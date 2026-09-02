@@ -2,18 +2,14 @@ from __future__ import annotations
 
 import functools
 import posixpath
-from typing import TYPE_CHECKING, Any, NoReturn, override
+from typing import TYPE_CHECKING, Any, override
 
-from django.core.files import File
 from django.forms import ClearableFileInput
 from django.forms.widgets import FILE_INPUT_CONTRADICTION, CheckboxInput
 from django.urls import reverse
-from pydantic import ValidationError
-
-from ._schemas import FieldValue
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping
+    from collections.abc import Mapping
 
     from django.core.files.uploadedfile import UploadedFile
     from django.utils.datastructures import MultiValueDict
@@ -25,50 +21,6 @@ def get_base_url() -> str:
     complete_url = reverse("s3_file_field:complete")
     # Use posixpath to always parse URL paths with forward slashes
     return posixpath.commonpath([initiate_url, complete_url])
-
-
-class S3PlaceholderFile(File[Any]):
-    name: str
-    size: int
-
-    def __init__(self, name: str, size: int) -> None:
-        self.name = name
-        self.size = size
-
-    @override
-    def open(
-        self,
-        mode: str | None = None,
-        buffering: int = -1,
-        encoding: str | None = None,
-        errors: str | None = None,
-        newline: str | None = None,
-        closefd: bool = True,
-        opener: Callable[[str, int], int] | None = None,
-    ) -> NoReturn:
-        raise NotImplementedError
-
-    @override
-    def close(self) -> NoReturn:
-        raise NotImplementedError
-
-    @override
-    def chunks(self, chunk_size: int | None = None) -> NoReturn:
-        raise NotImplementedError
-
-    @override
-    def multiple_chunks(self, chunk_size: int | None = None) -> bool:
-        # Since it's in memory, we'll never have multiple chunks.
-        return False
-
-    @classmethod
-    def from_field_value(cls, field_value: str) -> S3PlaceholderFile | None:
-        try:
-            parsed = FieldValue.model_validate(field_value)
-        except ValidationError:
-            return None
-        # Since the field is signed, we know the content is structurally valid
-        return cls(parsed.object_key, parsed.file_size)
 
 
 class S3FileInput(ClearableFileInput):
@@ -92,14 +44,12 @@ class S3FileInput(ClearableFileInput):
         self, data: Mapping[str, Any], files: MultiValueDict[str, UploadedFile[Any]], name: str
     ) -> Any:
         if name in data:
-            upload = data[name]
-            # An empty string indicates the field was not populated, so don't wrap it in a File
-            if upload != "":
-                upload = S3PlaceholderFile.from_field_value(upload)
+            # The raw value, expected to be a signed FieldValue string;
+            # S3FormFileField.to_python verifies and converts it
+            upload: Any = data[name]
         elif name in files:
-            # Files were uploaded, client JS library may not be functioning
-            # So, fallback to direct upload
-            upload = super().value_from_datadict(data, files, name)
+            # A direct file upload, which S3FormFileField.to_python will refuse
+            upload = files.get(name)
         else:
             upload = None
 

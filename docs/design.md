@@ -58,15 +58,17 @@ object back to a model in the database.
 
 - **Django never touches file bytes.** The server only issues presigned URLs and verifies
   outcomes; all content flows client → S3. Even `CompleteMultipartUpload` is presigned by
-  the server and executed by the client.
+  the server and executed by the client. Inline file submissions are refused by both the
+  form field and the DRF serializer field.
 - **An upload targets a specific `S3FileField` instance.** The initiation request
   identifies it by a stringified reference; that `S3FileField`'s options determine both
   the generated object key and the Django `Storage` used for every S3 interaction.
 - **The server is stateless.** No database rows track in-flight uploads. All upload
   state (`field`, `upload_id`, `object_key`) travels in the `UploadToken`: a signed,
   timestamped, opaque string the client must return at subsequent stages. The final
-  `field_value` is likewise a signed claim (`FieldValue`: `object_key`, `file_size`), so
-  any later Django form or DRF serializer submission is verifiable without shared state.
+  `field_value` is likewise a signed claim (`FieldValue`: `field`, `object_key`,
+  `file_size`), so any later Django form or DRF serializer submission is verifiable
+  without shared state.
 - **The client is untrusted.** Every inbound payload is validated by a Pydantic model
   (`_schemas.py`); anything echoed back by the client is either signed (tokens) or
   strictly constrained (e.g. ETags, which are interpolated into the completion XML body).
@@ -76,9 +78,10 @@ object back to a model in the database.
 - **`FieldValue` stands in where the file would be.** A Django form or DRF serializer
   receives the signed `FieldValue` string as the submitted value for the file field, in
   place of file content. The Django form `S3FileInput` widget or DRF serializer
-  `S3FileSerializerField` field verifies it and substitutes a placeholder file
-  (`S3PlaceholderFile`), which is saved by Django as a simple string reference to the S3
-  key, without needing to access S3.
+  `S3FileSerializerField` field verifies it (both the signature and that it is bound to
+  that same `S3FileField`, so a `FieldValue` cannot be replayed against a different
+  field) and substitutes a placeholder file (`S3PlaceholderFile`), which is saved by
+  Django as a simple string reference to the S3 key, without needing to access S3.
 - **Storage backends are pluggable.** `MultipartManager` is the S3-layer facade;
   `S3MultipartManager` (`django-storages`) and `MinioMultipartManager`
   (`django-minio-storage`) implement the storage-specific presigning. It is selected at

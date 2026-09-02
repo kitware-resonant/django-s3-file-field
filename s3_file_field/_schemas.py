@@ -73,6 +73,7 @@ class CompletionResponse(BaseModel, frozen=True, extra="forbid"):
 class FieldValue(SignedModel, frozen=True, extra="forbid"):
     signer = TimestampSigner(salt="s3_file_field.FieldValue")
 
+    field: S3FileFieldRef
     object_key: str
     file_size: Annotated[int, Field(gt=0)]
 
