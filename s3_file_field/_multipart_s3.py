@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from http import HTTPStatus
 from typing import TYPE_CHECKING, override
 
 from botocore.exceptions import ClientError
@@ -84,6 +85,6 @@ class S3MultipartManager(MultipartManager):
             )
             return stats["ContentLength"]
         except ClientError as e:
-            if e.response["ResponseMetadata"]["HTTPStatusCode"] == 404:
+            if e.response["ResponseMetadata"]["HTTPStatusCode"] == HTTPStatus.NOT_FOUND:
                 raise ObjectNotFoundError from e
             raise

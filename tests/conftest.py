@@ -33,9 +33,9 @@ pytest_plugins = ["s3_file_field.fixtures"]
 
 
 @pytest.fixture(autouse=True)
-def _reduce_part_size(mocker: MockerFixture) -> None:
-    """To speed up tests, reduce the part size to the minimum supported by S3 (5MB)."""
-    mocker.patch.object(MultipartManager, "part_size", new=mb(5))
+def _reduce_baseline_part_size(mocker: MockerFixture) -> None:
+    """To speed up tests, reduce the baseline part size to the minimum supported by S3 (5MB)."""
+    mocker.patch.object(MultipartManager, "baseline_part_size", new=mb(5))
 
 
 @pytest.fixture
