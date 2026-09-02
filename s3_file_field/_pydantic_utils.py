@@ -57,7 +57,9 @@ class SignedModel(BaseModel, frozen=True, extra="forbid"):
     is older than `max_age`; an already-constructed instance is passed through unchanged.
     """
 
-    signer: ClassVar[TimestampSigner] = TimestampSigner(salt="s3_file_field")
+    # Abstract; each subclass must define its own signer, with a distinct salt, so a
+    # signed serialization of one model type can never validate as a different model type
+    signer: ClassVar[TimestampSigner]
     max_age: ClassVar[timedelta] = timedelta(days=1)
 
     @model_validator(mode="wrap")
@@ -65,13 +67,15 @@ class SignedModel(BaseModel, frozen=True, extra="forbid"):
     def _validate_model(cls, data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if isinstance(data, cls):
             return data
-        try:
-            serialized_data = cls.signer.unsign_object(
-                data, serializer=_PydanticSerializer, max_age=cls.max_age
-            )
-        except BadSignature as e:
-            raise ValueError(f"invalid signature on {cls.__name__}: {e}") from e
-        return handler(serialized_data)
+        if isinstance(data, str):
+            try:
+                serialized_data = cls.signer.unsign_object(
+                    data, serializer=_PydanticSerializer, max_age=cls.max_age
+                )
+            except BadSignature as e:
+                raise ValueError(f"invalid signature on {cls.__name__}: {e}") from e
+            return handler(serialized_data)
+        raise ValueError(f"expected string, got {type(data).__name__}")
 
     @model_serializer(mode="wrap")
     def _serialize_model(self, handler: SerializerFunctionWrapHandler) -> str:
@@ -122,6 +126,9 @@ VerbatimUrl = Annotated[str, StringConstraints(pattern=r"^https?://[!-~]+$")]
 
 
 # An S3-style ETag: a 32-character hex MD5, possibly with a "-<part count>" suffix for
-# multipart uploads, possibly surrounded by literal double quotes (as HTTP serializes
-# it).
-ETag = Annotated[str, StringConstraints(pattern=r'^"?[0-9a-fA-F]{32}(?:-[0-9]+)?"?$')]
+# multipart uploads, possibly surrounded by a balanced pair of literal double quotes (as
+# HTTP serializes it).
+ETag = Annotated[
+    str,
+    StringConstraints(pattern=r'^(?:"[0-9a-fA-F]{32}(?:-[0-9]+)?"|[0-9a-fA-F]{32}(?:-[0-9]+)?)$'),
+]

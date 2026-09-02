@@ -9,7 +9,13 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 import pytest
 
 from conftest import SignedModelFactory
-from s3_file_field._pydantic_utils import MimeType, S3FileFieldRef, SignedModel
+from s3_file_field._pydantic_utils import (
+    ETag,
+    MimeType,
+    S3FileFieldRef,
+    SignedModel,
+    VerbatimUrl,
+)
 from test_app.models import Resource
 
 if TYPE_CHECKING:
@@ -19,6 +25,8 @@ if TYPE_CHECKING:
 
 
 class ExampleSignedModel(SignedModel, frozen=True, extra="forbid"):
+    signer = TimestampSigner(salt="test.ExampleSignedModel")
+
     name: str
     when: datetime
 
@@ -68,6 +76,16 @@ def test_signed_model_expired() -> None:
 
     with pytest.raises(ValidationError, match=r"invalid signature"):
         ExampleSignedModel.model_validate(signed)
+
+
+@pytest.mark.parametrize(
+    "data",
+    [42, None, b"abc", {"name": "test-name"}],
+    ids=["int", "none", "bytes", "dict"],
+)
+def test_signed_model_type_invalid(data: object) -> None:
+    with pytest.raises(ValidationError, match=r"expected string"):
+        ExampleSignedModel.model_validate(data)
 
 
 def test_signed_model_nested() -> None:
@@ -164,3 +182,74 @@ def test_mime_type_invalid(mime_type: str) -> None:
 )
 def test_mime_type_whitespace(mime_type: str) -> None:
     assert MIME_TYPE_ADAPTER.validate_python(mime_type) == "text/plain"
+
+
+VERBATIM_URL_ADAPTER: TypeAdapter[str] = TypeAdapter(VerbatimUrl)
+
+
+def test_verbatim_url_valid() -> None:
+    # Presigned URLs must round-trip byte-exact, with no normalization
+    url = "https://bucket.example.com:9000/key%2Fname?X-Amz-Signature=aBc123&x=%20"
+    assert VERBATIM_URL_ADAPTER.validate_python(url) == url
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "ftp://example.com/key",
+        "https://example.com/a b",
+        "https://example.com/a\nb",
+    ],
+    ids=["scheme", "space", "newline"],
+)
+def test_verbatim_url_invalid(url: str) -> None:
+    with pytest.raises(ValidationError):
+        VERBATIM_URL_ADAPTER.validate_python(url)
+
+
+ETAG_ADAPTER: TypeAdapter[str] = TypeAdapter(ETag)
+
+
+@pytest.mark.parametrize(
+    "etag",
+    [
+        "9a0364b9e99bb480dd25e1f0284c8555",
+        '"9a0364b9e99bb480dd25e1f0284c8555"',
+        "9A0364B9E99BB480DD25E1F0284C8555",
+        "79b16a42b3e022500b1d0723a4f6cbf3-2",
+        '"79b16a42b3e022500b1d0723a4f6cbf3-1000"',
+    ],
+    ids=["bare", "quoted", "uppercase", "multipart", "quoted-multipart"],
+)
+def test_etag_valid(etag: str) -> None:
+    ETAG_ADAPTER.validate_python(etag)
+
+
+@pytest.mark.parametrize(
+    "etag",
+    [
+        "",
+        "9a0364b9e99bb480dd25e1f0284c855",
+        "9a0364b9e99bb480dd25e1f0284c85555",
+        "9a0364b9e99bb480dd25e1f0284c855g",
+        '"9a0364b9e99bb480dd25e1f0284c8555',
+        '9a0364b9e99bb480dd25e1f0284c8555"',
+        "9a0364b9e99bb480dd25e1f0284c8555-",
+        "9a0364b9e99bb480dd25e1f0284c8555</ETag><Evil>",
+        "9a0364b9e99bb480dd25e1f0284c8555&lt;",
+    ],
+    ids=[
+        "empty",
+        "too-short",
+        "too-long",
+        "non-hex",
+        "unbalanced-leading-quote",
+        "unbalanced-trailing-quote",
+        "empty-part-count",
+        "xml-tag-injection",
+        "xml-entity-injection",
+    ],
+)
+def test_etag_invalid(etag: str) -> None:
+    with pytest.raises(ValidationError):
+        ETAG_ADAPTER.validate_python(etag)

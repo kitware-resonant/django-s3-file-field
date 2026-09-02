@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
+from django.core.signing import TimestampSigner
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 
 from ._pydantic_utils import (
@@ -21,6 +22,8 @@ class InitiationRequest(BaseModel, frozen=True, extra="forbid"):
 
 
 class UploadToken(SignedModel, frozen=True, extra="forbid"):
+    signer = TimestampSigner(salt="s3_file_field.UploadToken")
+
     field: S3FileFieldRef
     upload_id: str
     object_key: str
@@ -53,6 +56,14 @@ class CompletionRequest(BaseModel, frozen=True, extra="forbid"):
     def ordered_parts(cls, value: list[CompletedPart]) -> list[CompletedPart]:
         return sorted(value, key=lambda part: part.part_number)
 
+    @field_validator("parts", mode="after")
+    @classmethod
+    def unique_parts(cls, value: list[CompletedPart]) -> list[CompletedPart]:
+        part_numbers = [part.part_number for part in value]
+        if len(part_numbers) != len(set(part_numbers)):
+            raise ValueError("duplicate part numbers")
+        return value
+
 
 class CompletionResponse(BaseModel, frozen=True, extra="forbid"):
     url: VerbatimUrl
@@ -60,6 +71,8 @@ class CompletionResponse(BaseModel, frozen=True, extra="forbid"):
 
 
 class FieldValue(SignedModel, frozen=True, extra="forbid"):
+    signer = TimestampSigner(salt="s3_file_field.FieldValue")
+
     object_key: str
     file_size: Annotated[int, Field(gt=0)]
 
