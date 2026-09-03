@@ -1,4 +1,5 @@
 import S3FileFieldClient from 'django-s3-file-field';
+import prettyBytes from 'pretty-bytes';
 
 export const EVENT_UPLOAD_STARTED = 's3UploadStarted';
 export const EVENT_UPLOAD_COMPLETE = 's3UploadComplete';
@@ -26,6 +27,8 @@ export default class S3FileInput {
 
   private readonly fieldId: string;
 
+  private readonly maxSize: number | undefined;
+
   constructor(input: HTMLInputElement) {
     this.input = input;
 
@@ -40,6 +43,9 @@ export default class S3FileInput {
       throw new Error('Missing "data-field-id" attribute on input element.');
     }
     this.fieldId = fieldId;
+
+    const maxSize = this.input.dataset?.maxSize;
+    this.maxSize = maxSize ? Number(maxSize) : undefined;
 
     this.node = input.ownerDocument.createElement('div');
     this.node.classList.add(cssClass('wrapper'));
@@ -116,6 +122,19 @@ export default class S3FileInput {
     const files = Array.from(this.input.files || []);
     const file = files[0];
     if (file === undefined) {
+      return;
+    }
+
+    // The server enforces this too, but rejecting here avoids a needless upload
+    if (this.maxSize !== undefined && file.size > this.maxSize) {
+      this.input.value = ''; // reset file selection
+      this.node.classList.add(cssClass('set'), cssClass('error'));
+      this.input.setCustomValidity(i18n('File is too large.'));
+      this.input.type = 'hidden';
+      this.info.innerText = i18n(
+        `File is too large (${prettyBytes(file.size, { binary: true })}), ` +
+          `maximum is ${prettyBytes(this.maxSize, { binary: true })}.`,
+      );
       return;
     }
 

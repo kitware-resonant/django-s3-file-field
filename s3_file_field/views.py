@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from django.core.exceptions import SuspiciousOperation
 from django.http import JsonResponse
 from pydantic import ValidationError
 from rest_framework.decorators import api_view
@@ -106,22 +107,31 @@ def finalize(request: Request) -> JsonResponse:
             status=400,
             encoder=PydanticEncoder,
         )
+    upload_token = finalization_request.upload_token
 
-    multipart_manager = _multipart.MultipartManager.from_storage(
-        finalization_request.upload_token.field.storage
-    )
+    multipart_manager = _multipart.MultipartManager.from_storage(upload_token.field.storage)
     try:
-        size = multipart_manager.get_object_size(finalization_request.upload_token.object_key)
+        size = multipart_manager.get_object_size(upload_token.object_key)
     except ObjectNotFoundError:
         return JsonResponse(
             {"detail": "The upload was not completed or the object has been deleted."}, status=400
+        )
+    # Initiation checked the declared size, but the limit may have been lowered mid-upload,
+    # and MinIO never enforces the presigned part Content-Length; so re-check the actual size
+    max_size = upload_token.field.effective_max_size
+    if size > max_size:
+        # The object is already fully uploaded, so remove it
+        upload_token.field.storage.delete(upload_token.object_key)
+        raise SuspiciousOperation(
+            f"Uploaded object {upload_token.object_key!r} is {size} bytes, "
+            f"exceeding the maximum of {max_size} bytes."
         )
 
     return JsonResponse(
         _schemas.FinalizationResponse(
             field_value=_schemas.FieldValue.model_construct(
-                field=finalization_request.upload_token.field,
-                object_key=finalization_request.upload_token.object_key,
+                field=upload_token.field,
+                object_key=upload_token.object_key,
                 file_size=size,
             ),
         ).model_dump(),

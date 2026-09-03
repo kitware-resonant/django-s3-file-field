@@ -132,6 +132,22 @@ client library. Client libraries (and associated documentation) are available fo
 * [Python](python-client/README.md)
 * [Javascript / TypeScript](javascript-client/README.md)
 
+### Limiting file size
+A maximum file size (in bytes) may be set on each `S3FileField`:
+```python
+class Resource(models.Model):
+    blob = S3FileField(max_size=100 * 1024 * 1024)  # 100 MiB
+```
+
+A default for all `S3FileField`s which don't set their own `max_size` may be set globally:
+```python
+# settings.py
+S3_FILE_FIELD_MAX_SIZE = 100 * 1024 * 1024  # 100 MiB
+```
+
+When neither is set, the limit is the storage backend's own maximum upload size
+(5 TB on AWS S3).
+
 ### Pytest
 When installed, django-s3-file-field makes a
 [Pytest fixture](https://docs.pytest.org/en/latest/explanation/fixtures.html) automatically
