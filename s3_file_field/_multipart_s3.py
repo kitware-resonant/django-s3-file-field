@@ -24,6 +24,23 @@ class S3MultipartManager(MultipartManager):
         self._client: s3.Client = resource.meta.client
         self._bucket_name: str = storage.bucket_name
 
+    @property
+    def presigns_with_sigv4(self) -> bool:
+        """Return whether presigned URLs will be signed with Signature Version 4."""
+        # When no signature version is explicitly configured (via a botocore Config, a
+        # django-storages setting, or the AWS config file), botocore registers a client
+        # event handler which, for backwards compatibility, downgrades presigning (only)
+        # to SigV2 in legacy AWS regions; the client's resolved config still reports
+        # "s3v4", so it cannot be trusted here.
+        # "_choose_signer" runs the actual "choose-signer" event chain, so this is exactly
+        # the decision that presigning will make; it generates nothing and needs no
+        # credentials. Presigning with SigV4 yields "s3v4-query".
+        signature_version = self._client._request_signer._choose_signer(  # type: ignore[attr-defined]  # noqa: SLF001
+            "UploadPart", "presign-url", {}
+        )
+        # A non-string (the botocore.UNSIGNED sentinel) is correctly reported as False
+        return str(signature_version) == "s3v4-query"
+
     @override
     def _create_upload_id(
         self,
