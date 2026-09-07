@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from io import BytesIO
 from typing import TYPE_CHECKING, cast
+import urllib.parse
 
 from botocore.exceptions import ClientError
 from django.conf import settings
@@ -35,6 +36,8 @@ def s3_storage_factory() -> S3Storage:
         access_key=settings.MINIO_STORAGE_ACCESS_KEY,
         secret_key=settings.MINIO_STORAGE_SECRET_KEY,
         region_name="test-region",
+        # Explicitly use the recommended production configuration for signing
+        signature_version="s3v4",
         bucket_name=settings.MINIO_STORAGE_MEDIA_BUCKET_NAME,
         # For testing, connect to a local Minio instance
         endpoint_url=(
@@ -166,14 +169,50 @@ def test_multipart_manager_generate_presigned_part_url(multipart_manager: Multip
     assert isinstance(url, str)
 
 
-@pytest.mark.skip
+@pytest.mark.parametrize(
+    "multipart_manager_fixture",
+    [
+        pytest.param("s3_multipart_manager", id="s3"),
+        pytest.param(
+            "minio_multipart_manager",
+            id="minio",
+            # If this passes, declared file sizes may now be enforceable on MinIO
+            marks=pytest.mark.xfail(
+                strict=True,
+                reason="Content-Length is not a signed header in MinIO presigned part URLs",
+            ),
+        ),
+    ],
+)
 def test_multipart_manager_generate_presigned_part_url_content_length(
-    multipart_manager: MultipartManager,
+    request: pytest.FixtureRequest, multipart_manager_fixture: str
 ) -> None:
-    # TODO: make this work for Minio
+    multipart_manager: MultipartManager = request.getfixturevalue(multipart_manager_fixture)
     url = multipart_manager._generate_presigned_part_url("fake-upload-id", "new-object", 1, 100)
+
     # Ensure Content-Length is a signed header
-    assert "content-length" in url
+    query = dict(urllib.parse.parse_qsl(urllib.parse.urlparse(url).query))
+    assert "content-length" in query["X-Amz-SignedHeaders"].lower().split(";")
+
+
+def test_multipart_manager_presigns_with_sigv4(s3_multipart_manager: S3MultipartManager) -> None:
+    assert s3_multipart_manager.presigns_with_sigv4
+
+
+# If this passes, botocore has removed this downgrading behavior
+@pytest.mark.xfail(
+    strict=True,
+    reason="botocore downgrades presigning to SigV2 at client creation, in legacy AWS "
+    "regions with no explicitly configured signature version",
+)
+def test_multipart_manager_presigns_with_sigv4_legacy_region() -> None:
+    storage = S3Storage(
+        access_key="fake-access-key",
+        secret_key="fake-secret-key",
+        region_name="us-east-1",
+        bucket_name="fake-bucket",
+    )
+    assert S3MultipartManager(storage).presigns_with_sigv4
 
 
 def test_multipart_manager_generate_presigned_complete_url(

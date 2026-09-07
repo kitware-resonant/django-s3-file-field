@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from typing import TYPE_CHECKING
 
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
@@ -9,6 +10,9 @@ import pytest
 
 from s3_file_field._sizes import gb
 from test_app.models import LimitedResource, Resource
+
+if TYPE_CHECKING:
+    from pytest_django.fixtures import Settings
 
 
 @pytest.mark.django_db
@@ -67,6 +71,19 @@ def test_fields_clean_empty() -> None:
 
 def test_fields_check_success(resource: Resource) -> None:
     assert resource._meta.get_field("blob").check() == []
+
+
+def test_fields_check_s3_signature_version_invalid(settings: Settings) -> None:
+    # The check only applies to S3Storage; instantiating one does not connect, so no
+    # credentials or bucket are needed
+    settings.STORAGES = {
+        **settings.STORAGES,
+        "default": {"BACKEND": "storages.backends.s3.S3Storage"},
+    }
+    # Explicitly configure SigV2 signing
+    settings.AWS_S3_SIGNATURE_VERSION = "s3"
+    field = Resource._meta.get_field("blob")
+    assert [message.id for message in field.check()] == ["s3_file_field.E004"]
 
 
 def test_fields_max_size_default() -> None:

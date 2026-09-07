@@ -30,6 +30,12 @@ Serializer `Field` subclass which will automatically be used for `ModelSerialize
 django-s3-file-field must be used with a compatible Django Storage, which are:
 * `S3Storage` in [django-storages](https://django-storages.readthedocs.io/),
   for [AWS S3](https://aws.amazon.com/s3/)
+  * This must be explicitly configured (the defaults are insufficient) to use
+    [Signature Version 4](https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-authenticating-requests.html):
+    ```python
+    # settings.py
+    AWS_S3_SIGNATURE_VERSION = "s3v4"
+    ```
 * `MinioStorage` or `MinioMediaStorage` in [django-minio-storage](https://django-minio-storage.readthedocs.io/),
   for [MinIO](https://min.io/)
 
