@@ -22,6 +22,29 @@ def test_initiation_request_deserialization() -> None:
     )
 
 
+def test_initiation_request_file_size_within_max_size() -> None:
+    InitiationRequest.model_validate(
+        {
+            "field": "test_app.LimitedResource.blob",
+            "file_name": "test-name.jpg",
+            "file_size": 10,
+            "content_type": "image/jpeg",
+        }
+    )
+
+
+def test_initiation_request_file_size_exceeds_max_size() -> None:
+    with pytest.raises(ValidationError, match=r"file size exceeds the maximum of 10 bytes"):
+        InitiationRequest.model_validate(
+            {
+                "field": "test_app.LimitedResource.blob",
+                "file_name": "test-name.jpg",
+                "file_size": 11,
+                "content_type": "image/jpeg",
+            }
+        )
+
+
 def test_completion_request_deserialization(upload_token: UploadToken) -> None:
     completion_request = CompletionRequest.model_validate(
         {

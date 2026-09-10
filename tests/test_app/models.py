@@ -12,3 +12,7 @@ class Resource(models.Model):
 class MultiResource(models.Model):
     blob = S3FileField()
     optional_blob = S3FileField(blank=True)
+
+
+class LimitedResource(models.Model):
+    blob = S3FileField(max_size=10)

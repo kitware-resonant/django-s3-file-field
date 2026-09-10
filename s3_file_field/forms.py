@@ -111,6 +111,8 @@ class S3FormFileField(FileField):
             {
                 "data-field-id": self.model_field.id,
                 "data-s3fileinput": "",
+                # Allow the client to reject oversized files before uploading
+                "data-max-size": str(self.model_field.effective_max_size),
             }
         )
         # 'data-s3fileinput' cannot be determined at this point, during app startup.

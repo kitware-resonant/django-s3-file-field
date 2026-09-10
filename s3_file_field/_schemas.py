@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Self
 
 from django.core.signing import TimestampSigner
-from pydantic import BaseModel, Field, StringConstraints, field_validator
+from pydantic import BaseModel, Field, StringConstraints, field_validator, model_validator
 
 from ._pydantic_utils import (
     ETag,
@@ -19,6 +19,15 @@ class InitiationRequest(BaseModel, frozen=True, extra="forbid"):
     file_name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
     file_size: Annotated[int, Field(gt=0)]
     content_type: MimeType
+
+    # This needs access to multiple fields
+    @model_validator(mode="after")
+    def max_file_size(self) -> Self:
+        if self.file_size > self.field.effective_max_size:
+            raise ValueError(
+                f"file size exceeds the maximum of {self.field.effective_max_size} bytes"
+            )
+        return self
 
 
 class UploadToken(SignedModel, frozen=True, extra="forbid"):

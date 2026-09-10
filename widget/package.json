@@ -19,7 +19,8 @@
     "last 1 firefox version"
   ],
   "dependencies": {
-    "django-s3-file-field": "file:../javascript-client"
+    "django-s3-file-field": "file:../javascript-client",
+    "pretty-bytes": "^7.1.2"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.11",

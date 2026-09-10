@@ -4,6 +4,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Final, override
 from uuid import uuid4
 
+from django.conf import settings
 from django.core import checks
 from django.db.models.fields.files import FileField
 
@@ -35,9 +36,10 @@ class S3FileField(FileField):
         "UI and fallsback to uploaded to <randomuuid>/filename."
     )
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, max_size: int | None = None, **kwargs: Any) -> None:
         kwargs.setdefault("max_length", _DEFAULT_MAX_LENGTH)
         kwargs.setdefault("upload_to", self.uuid_prefix_filename)
+        self.max_size = max_size
         super().__init__(*args, **kwargs)
 
     @override
@@ -47,6 +49,7 @@ class S3FileField(FileField):
             del kwargs["max_length"]
         if kwargs.get("upload_to") is self.uuid_prefix_filename:
             del kwargs["upload_to"]
+        # "max_size" is intentionally omitted, as it has no effect on the database schema
         return name, path, args, kwargs
 
     @property
@@ -56,6 +59,16 @@ class S3FileField(FileField):
             # TODO: raise a more specific exception
             raise RuntimeError("contribute_to_class has not been called yet on this field.")
         return str(self)
+
+    @property
+    def effective_max_size(self) -> int:
+        """Return the maximum file size for uploads to this field."""
+        if self.max_size is not None:
+            return self.max_size
+        setting_max_size: int | None = getattr(settings, "S3_FILE_FIELD_MAX_SIZE", None)
+        if setting_max_size is not None:
+            return setting_max_size
+        return MultipartManager.from_storage(self.storage).max_upload_size
 
     @override
     def contribute_to_class(

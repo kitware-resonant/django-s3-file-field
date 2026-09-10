@@ -4,9 +4,11 @@ import re
 
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
+from django.test import override_settings
 import pytest
 
-from test_app.models import Resource
+from s3_file_field._sizes import gb
+from test_app.models import LimitedResource, Resource
 
 
 @pytest.mark.django_db
@@ -65,3 +67,27 @@ def test_fields_clean_empty() -> None:
 
 def test_fields_check_success(resource: Resource) -> None:
     assert resource._meta.get_field("blob").check() == []
+
+
+def test_fields_max_size_default() -> None:
+    field = Resource._meta.get_field("blob")
+    assert field.max_size is None
+    # For MinIO, the 10,000 x 5 GB part limit is lower than the 50 TB maximum object size
+    assert field.effective_max_size == gb(50_000)
+
+
+def test_fields_max_size_explicit() -> None:
+    field = LimitedResource._meta.get_field("blob")
+    assert field.max_size == 10
+    assert field.effective_max_size == 10
+
+
+@override_settings(S3_FILE_FIELD_MAX_SIZE=5)
+def test_fields_max_size_setting() -> None:
+    assert Resource._meta.get_field("blob").effective_max_size == 5
+    assert LimitedResource._meta.get_field("blob").effective_max_size == 10
+
+
+@override_settings(S3_FILE_FIELD_MAX_SIZE=None)
+def test_fields_max_size_setting_none() -> None:
+    assert Resource._meta.get_field("blob").effective_max_size == gb(50_000)
