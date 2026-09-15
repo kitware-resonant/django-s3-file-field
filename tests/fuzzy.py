@@ -28,6 +28,9 @@ class Fuzzy:
 # This only validates the beginning of a URL, which is good enough
 FUZZY_URL = Fuzzy(r"^http[s]?://[a-zA-Z0-9_-]+(?::[0-9]+)?/?")
 
+# An integer, as a string (e.g. in an HTML attribute)
+FUZZY_INT = Fuzzy(r"^-?\d+$")
+
 
 class FuzzyPositiveInt:
     # Hashing cannot be made consistent with this __eq__, so disable it

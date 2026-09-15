@@ -1,18 +1,20 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, NoReturn, override
+from typing import TYPE_CHECKING, Any, Literal, NoReturn, override
 
-from django.contrib.admin.widgets import AdminFileWidget
 from django.core.exceptions import ValidationError
 from django.core.files import File
+from django.db.models.fields.files import FieldFile
 from django.forms import FileField, Widget
 from pydantic import ValidationError as PydanticValidationError
 
 from ._schemas import FieldValue
-from .widgets import AdminS3FileInput, S3FileInput
+from .widgets import S3FileInput
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from django.core.files.uploadedfile import UploadedFile
 
     from .fields import S3FileField
 
@@ -75,54 +77,89 @@ class S3FormFileField(FileField):
         "invalid": "Not a valid signed S3 upload.",
     }
 
-    def __init__(
-        self,
-        *,
-        model_field: S3FileField,
-        widget: type[Widget] | Widget | None = None,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, *, model_field: S3FileField, **kwargs: Any) -> None:
         self.model_field = model_field
-
-        # For form fields created under django.contrib.admin.options.BaseModelAdmin, any form
-        # field representing a model.FileField subclass will request a
-        # django.contrib.admin.widgets.AdminFileWidget as a 'widget' parameter override
-        # Custom subclasses of BaseModelAdmin can use formfield_overrides to change
-        # the default widget for their forms, but this is burdensome
-        # So, instead change any requests for an AdminFileWidget to a S3AdminFileInput
-        if widget:
-            if isinstance(widget, type):
-                # widget is a type
-                if issubclass(widget, AdminFileWidget):
-                    widget = AdminS3FileInput
-            else:  # noqa: PLR5501
-                # widget is an instance
-                if isinstance(widget, AdminFileWidget):
-                    # We can't easily re-instantiate the Widget, since we need its initial
-                    # parameters, so attempt to rebuild the constructor parameters
-                    widget = AdminS3FileInput(attrs={"type": widget.input_type, **widget.attrs})
-
-        super().__init__(widget=widget, **kwargs)
+        super().__init__(**kwargs)
 
     @override
     def widget_attrs(self, widget: Widget) -> dict[str, str]:
+        """
+        Return additional HTML attributes for the widget, derived from the model_field.
+
+        This is called when this form field is instantiated.
+        """
         attrs = super().widget_attrs(widget)
         attrs.update(
             {
-                "data-field-id": self.model_field.id,
-                "data-s3fileinput": "",
-                # Allow the client to reject oversized files before uploading
-                "data-max-size": str(self.model_field.effective_max_size),
+                "field-id": self.model_field.id,
+                "max-size": str(self.model_field.effective_max_size),
             }
         )
-        # 'data-s3fileinput' cannot be determined at this point, during app startup.
-        # It will be added at render-time by "S3FileInput.get_context".
         return attrs
 
     @override
-    def to_python(self, data: Any) -> Any:
+    def bound_data[InitialT: FieldFile | None](
+        self, data: str | Literal[False] | UploadedFile[Any] | None, initial: InitialT
+    ) -> str | Literal[False] | InitialT:
+        """Return the value to redisplay for this field when rendering a bound form."""
+        if self.disabled:
+            # A disabled field ignores submitted data when cleaning, so ignore it here too
+            return initial
+        if isinstance(data, str) and data:
+            # A pending signed FieldValue string is redisplayed (as the widget's "value"), so
+            # a completed upload survives a validation error elsewhere on the form.
+            return data
+        if data is False and initial:
+            # A clear of an existing value is redisplayed (as the widget's "cleared" state), so
+            # it also survives a validation error elsewhere on the form. Without an existing
+            # value, a clear is equivalent to a keep.
+            return False
+        # Otherwise (a keep), redisplay the initial value.
+        return initial
+
+    @override
+    def clean(
+        self,
+        data: str | Literal[False] | UploadedFile[Any] | FieldFile | None,
+        initial: FieldFile | None = None,
+    ) -> S3PlaceholderFile | FieldFile | Literal[False] | None:
+        """
+        Validate the submission in light of the existing value, and return the cleaned value.
+
+        This is called by the form, after "S3FileInput.value_from_datadict"; within it, a
+        submitted value is converted and validated by "to_python".
+        """
+        if data is False:
+            if not initial:
+                # There is no existing value to clear; the widget never submits this
+                raise ValidationError(self.error_messages["invalid"], code="invalid")
+            if self.required:
+                # The widget offers to clear a required field (as with any existing value), so
+                # this must be refused explicitly; "FileField.clean" would instead demote the
+                # clear to None, which then falls back to the existing value, silently keeping it
+                raise ValidationError(self.error_messages["required"], code="required")
+        # The superclass is untyped, but it only returns values from "to_python" or "initial"
+        cleaned: S3PlaceholderFile | FieldFile | Literal[False] | None = super().clean(
+            data, initial
+        )
+        return cleaned
+
+    @override
+    def to_python(self, data: str | File[Any] | None) -> S3PlaceholderFile | FieldFile | None:
+        """
+        Validate and convert a submitted FieldValue string, independently of any existing value.
+
+        This is called during "clean", for a submitted value.
+        """
+        # A False (clear) value has already been consumed internally by "FileField.clean",
+        # so it never reaches here
         if data in self.empty_values:
             return None
+        if isinstance(data, FieldFile):
+            # A FieldFile can only be this field's own initial value, cleaned in place of any
+            # submitted data when this field is disabled; it never arrives from the wire.
+            # It's already stored, so accept it unchanged.
+            return data
         if not isinstance(data, str):
             # If this is an inline file upload, it should still be refused. We don't want to reward
             # clients for sending inline files, as it burdens the server (the very thing S3FF
@@ -134,5 +171,6 @@ class S3FormFileField(FileField):
         if file_object is None:
             raise ValidationError(self.error_messages["invalid"], code="invalid")
 
-        # Check validity of the file name and size
-        return super().to_python(file_object)
+        # Check validity of the file name and size; this returns its argument unchanged
+        super().to_python(file_object)
+        return file_object

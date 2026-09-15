@@ -29,7 +29,7 @@ def initiate(request: Request) -> JsonResponse:
     # TODO: The first argument to generate_filename() is an instance of the model.
     # We do not and will never have an instance of the model during field upload.
     # Maybe we need a different generate method/upload_to with a different signature?
-    object_key = initiation_request.field.generate_filename(None, initiation_request.file_name)
+    object_key = initiation_request.field.generate_filename(None, initiation_request.file_name)  # type: ignore[arg-type]
 
     multipart_manager = _multipart.MultipartManager.from_storage(initiation_request.field.storage)
     try:
