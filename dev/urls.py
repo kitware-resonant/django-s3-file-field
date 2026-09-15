@@ -18,7 +18,17 @@ urlpatterns = [
     path("", RedirectView.as_view(pattern_name="resource-list")),
     path("resources/", views.ResourceList.as_view(), name="resource-list"),
     path("resources/create/", views.ResourceCreate.as_view(), name="resource-create"),
+    path(
+        "resources/create/daisyui/",
+        views.ResourceCreateDaisyUI.as_view(),
+        name="resource-create-daisyui",
+    ),
     path("resources/<int:pk>/", views.ResourceUpdate.as_view(), name="resource-update"),
+    path(
+        "resources/<int:pk>/daisyui/",
+        views.ResourceUpdateDaisyUI.as_view(),
+        name="resource-update-daisyui",
+    ),
     path("resources/<int:pk>/delete/", views.ResourceDelete.as_view(), name="resource-delete"),
     path("api/", include(router.urls)),
 ]

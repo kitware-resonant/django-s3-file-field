@@ -106,6 +106,55 @@ along with the Form. Typically, this can be done in any Form-containing Template
 </head>
 ```
 
+When declaring the field on a plain (non-model) `Form`, use an `S3FormFileField`, whose required
+argument `model_field` references the model field it submits to:
+```python
+from django.forms import Form
+from s3_file_field.forms import S3FormFileField
+from .models import Resource
+
+
+class ResourceForm(Form):
+    blob = S3FormFileField(model_field=Resource._meta.get_field("blob"))
+```
+
+#### The `<s3-file-input>` element
+The form widget renders as an `<s3-file-input>` custom element, which is defined by the included
+assets. Its API is expressed as properties, which may also be set as HTML attributes, so it can be
+server-rendered by Django or driven by a frontend framework:
+
+| Property | Attribute | Type | Meaning |
+|---|---|---|---|
+| `baseUrl` | `base-url` | `string` | The base URL of the upload API |
+| `fieldId` | `field-id` | `string` | The identifier of the `S3FileField` to upload to |
+| `maxSize` | `max-size` | `number` | The maximum file size, checked before uploading; absent when none is configured |
+| `value` | `value` | `string` | The signed value of a pending upload; empty when there is none |
+| `cleared` | `cleared` | `boolean` | Whether the existing file is to be cleared |
+| `disabled` | `disabled` | `boolean` | Whether the field is disabled; the field is also disabled by a disabled ancestor `<fieldset>` |
+| `required` | `required` | `boolean` | Whether a file is required; an existing file satisfies this, until it is removed |
+| `fileName` | `file-name` | `string` | The full name of the represented file; display-only |
+| `fileUrl` | `file-url` | `string` | A download URL for the represented file; display-only |
+
+The standard `name` and `id` attributes also apply.
+
+The element participates in form submission directly: after an upload, it submits `value`; when
+`cleared`, it submits an empty string; otherwise, it submits nothing, which keeps any existing
+file.
+
+A file may be chosen with the element's picker, or dropped onto it.
+
+The element inherits the page's font and text color, from which its borders and fills are
+derived. Its accent color, error color and corner radius are read from the page's theme variables,
+as published by [DaisyUI](https://daisyui.com/) (`--color-primary`, `--color-error`,
+`--radius-field`) or [Vuetify](https://vuetifyjs.com/) (`--v-theme-primary`, `--v-theme-error`),
+or may be set directly:
+
+| Property | Meaning |
+|---|---|
+| `--s3-file-input-accent-color` | The color of the progress line, the drop target and focus rings |
+| `--s3-file-input-error-color` | The color of an error message and border |
+| `--s3-file-input-radius` | The corner radius of the field |
+
 ### Django Rest Framework
 When defining a
 [Django Rest Framework `ModelSerializer`](https://www.django-rest-framework.org/api-guide/serializers/#modelserializer),
