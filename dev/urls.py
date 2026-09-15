@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import debug_toolbar.toolbar
 from django.contrib import admin
+from django.contrib.staticfiles.views import serve as serve_static
 from django.urls import include, path
 from django.views.generic import RedirectView
 from rest_framework import routers
@@ -18,7 +19,26 @@ urlpatterns = [
     path("", RedirectView.as_view(pattern_name="resource-list")),
     path("resources/", views.ResourceList.as_view(), name="resource-list"),
     path("resources/create/", views.ResourceCreate.as_view(), name="resource-create"),
+    path(
+        "resources/create/daisyui/",
+        views.ResourceCreateDaisyUI.as_view(),
+        name="resource-create-daisyui",
+    ),
     path("resources/<int:pk>/", views.ResourceUpdate.as_view(), name="resource-update"),
+    path(
+        "resources/<int:pk>/daisyui/",
+        views.ResourceUpdateDaisyUI.as_view(),
+        name="resource-update-daisyui",
+    ),
+    # A stand-in for a single-page app: a static page (with its own routes, in the URL fragment),
+    # served without templating, as a web server would
+    path(
+        "resources/vuetify/",
+        serve_static,
+        # Set "insecure" to allow serving static files even if DEBUG is False
+        {"path": "s3ff_dev/vuetify/index.html", "insecure": True},
+        name="resource-vuetify",
+    ),
     path("resources/<int:pk>/delete/", views.ResourceDelete.as_view(), name="resource-delete"),
     path("api/", include(router.urls)),
 ]

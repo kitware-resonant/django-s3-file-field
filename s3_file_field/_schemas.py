@@ -83,7 +83,9 @@ class FieldValue(SignedModel, frozen=True, extra="forbid"):
     signer = TimestampSigner(salt="s3_file_field.FieldValue")
 
     field: S3FileFieldRef
-    object_key: str
+    # The server never mints empty object keys; an empty name would also be treated as an
+    # empty value by "django.forms.FileField.to_python", changing the meaning of the value
+    object_key: Annotated[str, StringConstraints(min_length=1)]
     file_size: Annotated[int, Field(gt=0)]
 
 

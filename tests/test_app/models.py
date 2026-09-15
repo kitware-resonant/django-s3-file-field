@@ -9,6 +9,10 @@ class Resource(models.Model):
     blob = S3FileField()
 
 
+class OptionalResource(models.Model):
+    blob = S3FileField(blank=True)
+
+
 class MultiResource(models.Model):
     blob = S3FileField()
     optional_blob = S3FileField(blank=True)

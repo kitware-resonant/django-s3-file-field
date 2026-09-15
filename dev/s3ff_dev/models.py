@@ -15,6 +15,9 @@ class Resource(models.Model):
     legacy_optional_blob = models.FileField(blank=True)
     s3ff_mandatory_blob = S3FileField()
     s3ff_optional_blob = S3FileField(blank=True)
+    s3ff_optional_limited_blob = S3FileField(blank=True, max_size=1024)
+    s3ff_disabled_blob = S3FileField(blank=True)
+    s3ff_disabled_existing_blob = S3FileField(default="seed/example.txt")
 
     def __str__(self) -> str:
         return f"Resource {self.pk}"
