@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core import checks
 from django.db.models.fields.files import FileField
 
-from ._multipart import MultipartManager
+from ._multipart import MultipartManager, UnsupportedStorageError
 from ._registry import register_field
 
 if TYPE_CHECKING:
@@ -130,6 +130,7 @@ class S3FileField(FileField):
         return [
             *super().check(**kwargs),
             *self._check_supported_storage_provider(),
+            *self._check_s3_signature_version(),
         ]
 
     def _check_supported_storage_provider(self) -> list[checks.CheckMessage]:
@@ -137,4 +138,25 @@ class S3FileField(FileField):
             msg = f"Incompatible storage type used with an {self.__class__.__name__}."
             logger.warning(msg)
             return [checks.Warning(msg, obj=self, id="s3_file_field.W001")]
+        return []
+
+    def _check_s3_signature_version(self) -> list[checks.CheckMessage]:
+        try:
+            from ._multipart_s3 import S3MultipartManager  # noqa: PLC0415
+        except ImportError:
+            return []
+        try:
+            multipart_manager = MultipartManager.from_storage(self.storage)
+        except UnsupportedStorageError:
+            return []
+        if isinstance(multipart_manager, S3MultipartManager):  # noqa: SIM102
+            if not multipart_manager.presigns_with_sigv4:
+                return [
+                    checks.Error(
+                        "S3Storage must be configured to sign requests with "
+                        "Signature Version 4 (AWS_S3_SIGNATURE_VERSION = 's3v4').",
+                        obj=self,
+                        id="s3_file_field.E004",
+                    )
+                ]
         return []
