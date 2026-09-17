@@ -162,7 +162,7 @@ class MultipartManager(ABC):
             return True
 
     # The AWS default expiration of 1 hour may not be enough for large uploads to complete
-    _url_expiration = timedelta(hours=24)
+    _url_expiration = timedelta(days=7)
 
     @abstractmethod
     def _create_upload_id(
