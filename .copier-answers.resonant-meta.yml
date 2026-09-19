@@ -1,4 +1,4 @@
-_commit: v9
+_commit: v10
 _src_path: https://github.com/kitware-resonant/resonant-meta-template
 django_project: false
 max_python_minor_version: 14
