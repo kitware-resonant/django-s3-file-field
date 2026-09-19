@@ -239,12 +239,9 @@ files = [
   "tests",
   "python-client/s3_file_field_client",
 ]
-check_untyped_defs = true
-show_error_codes = true
 strict = true
-warn_redundant_casts = true
 warn_unused_configs = true
-warn_unused_ignores = true
+enable_error_code = ["exhaustive-match"]
 plugins = [
   "mypy_django_plugin.main",
   "mypy_drf_plugin.main",
@@ -271,13 +268,11 @@ testpaths = ["tests"]
 pythonpath = ["tests"]
 # Configure pythonpath ourselves, not based on manage.py
 django_find_project = false
+strict = true
 addopts = [
   # Use the Pytest-recommended "importlib" mode
   "--import-mode=importlib",
-  "--strict-config",
-  "--strict-markers",
   "--showlocals",
-  "--verbose",
   # Disable the entry point loading of "s3_file_field" fixtures, to support coverage.
   # See the comment with "pytest_plugins" in "conftest.py" for full details.
   "-p", "no:s3_file_field",
