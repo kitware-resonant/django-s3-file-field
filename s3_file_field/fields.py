@@ -90,8 +90,10 @@ class S3FileField(FileField):
     @override
     def formfield(
         self,
+        *,
         form_class: type[forms.Field] | None = None,
         choices_form_class: type[forms.ChoiceField] | None = None,
+        widget: forms.Widget | type[forms.Widget] | None = None,
         **kwargs: Any,
     ) -> forms.Field | None:
         """
@@ -106,8 +108,25 @@ class S3FileField(FileField):
             form_class = S3FormFileField if form_class is None else form_class
             # Allow the form field to reference this model field
             kwargs.setdefault("model_field", self)
+
+            # Under django.contrib.admin.options.BaseModelAdmin, any model.FileField subclass
+            # (including this field) receives a "widget" kwarg of
+            # django.contrib.admin.widgets.AdminFileWidget, which renders a native file input
+            # that cannot work with S3FF's upload flow. Users could suppress that with
+            # formfield_overrides on each of their ModelAdmins, but this is burdensome.
+            # So, instead change any AdminFileWidget to a S3FileInput here.
+            if widget:
+                from django.contrib.admin.widgets import AdminFileWidget  # noqa: PLC0415
+
+                from .widgets import S3FileInput  # noqa: PLC0415
+
+                if isinstance(widget, type):
+                    if issubclass(widget, AdminFileWidget):
+                        widget = S3FileInput
+                elif isinstance(widget, AdminFileWidget):
+                    widget = S3FileInput(attrs=widget.attrs)
         return super().formfield(
-            form_class=form_class, choices_form_class=choices_form_class, **kwargs
+            form_class=form_class, choices_form_class=choices_form_class, widget=widget, **kwargs
         )
 
     @override

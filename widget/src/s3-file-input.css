@@ -1,0 +1,7 @@
+/* Reserve the space of the widget before its element is defined, so the page doesn't shift when
+   it renders; only the outer box matters, as nothing renders inside until then */
+s3-file-input:not(:defined) {
+  display: inline-block;
+  /* The height of a row containing a native file picker, plus the padding */
+  min-height: 2.5em;
+}

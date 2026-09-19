@@ -5,46 +5,25 @@
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
-    "build": "npm-run-all build:clean build:compile",
-    "build:clean": "rimraf ../s3_file_field/static/s3_file_field",
-    "build:compile": "parcel build --no-source-maps --no-cache",
+    "build": "vite build",
     "format": "biome check --write --error-on-warnings",
     "test": "npm-run-all test:*",
     "test:lint": "biome ci --error-on-warnings",
-    "test:type": "tsc --noEmit",
-    "watch": "parcel watch --watch-dir .."
+    "test:type": "tsc",
+    "watch": "vite build --watch"
   },
-  "browserslist": [
-    "last 1 chrome version",
-    "last 1 firefox version"
-  ],
   "dependencies": {
     "django-s3-file-field": "file:../javascript-client",
+    "lit": "^3.3.3",
     "pretty-bytes": "^7.1.2"
   },
   "devDependencies": {
+    "@babel/plugin-proposal-decorators": "^8.0.2",
     "@biomejs/biome": "^2.5.11",
-    "@parcel/transformer-sass": "^2.16.4",
     "@resonant/biome-config": "^0.4.0",
-    "buffer": "^6.0.3",
+    "@rolldown/plugin-babel": "^0.2.4",
     "npm-run-all2": "^9.0.3",
-    "parcel": "^2.16.4",
-    "rimraf": "^6.1.3",
-    "typescript": "^7.0.2"
-  },
-  "alias": {
-    "buffer": false
-  },
-  "allowScripts": {
-    "@parcel/watcher": false,
-    "@swc/core": false,
-    "lmdb": false,
-    "msgpackr-extract": false
-  },
-  "targets": {
-    "default": {
-      "source": "./src/widget.ts",
-      "distDir": "../s3_file_field/static/s3_file_field/"
-    }
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2"
   }
 }
