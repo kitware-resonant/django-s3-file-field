@@ -205,6 +205,7 @@ ignore = [
   "DJ008", # django-model-without-dunder-str
   "INP001", # implicit-namespace-package
   "PLR0913", # too-many-arguments
+  "PLR0917", # too-many-positional-arguments
   "PLR2004", # magic-value-comparison
   "S", # flake8-bandit
   "SLF001", # private-member-access
