@@ -99,8 +99,7 @@ def test_form_render_edit() -> None:
         "base-url": "/api/s3ff_test",
         "field-id": "test_app.Resource.blob",
         "required": None,
-        "file-name": "key/file.txt",
-        "file-url": Fuzzy(r"^https?://.*/key/file\.txt"),
+        "existing-url": Fuzzy(r"^https?://.*/key/file\.txt"),
     }
 
 

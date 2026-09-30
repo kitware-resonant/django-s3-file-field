@@ -29,14 +29,14 @@ def test_form_redisplay_create() -> None:
     form = MultiResourceForm(data={"optional_blob": field_value_str})
 
     assert not form.is_valid()
-    # A pending upload is not yet validated, so no "file-url" is rendered to serve it
+    # A pending upload is not yet validated, so its storage key (not a URL) is rendered to name it
     assert rendered_attrs(form["optional_blob"]) == {
         "name": "optional_blob",
         "id": "id_optional_blob",
         "base-url": "/api/s3ff_test",
         "field-id": "test_app.MultiResource.optional_blob",
         "value": field_value_str,
-        "file-name": "key/file.txt",
+        "existing-url": "key/file.txt",
     }
 
 
@@ -89,8 +89,7 @@ def test_form_redisplay_edit() -> None:
         "id": "id_optional_blob",
         "base-url": "/api/s3ff_test",
         "field-id": "test_app.MultiResource.optional_blob",
-        "file-name": "key/file.txt",
-        "file-url": Fuzzy(r"^https?://.*/key/file\.txt"),
+        "existing-url": Fuzzy(r"^https?://.*/key/file\.txt"),
     }
 
 
@@ -163,6 +162,5 @@ def test_form_redisplay_edit_disabled() -> None:
         "field-id": "test_app.Resource.blob",
         "required": None,
         "disabled": None,
-        "file-name": "key/file.txt",
-        "file-url": Fuzzy(r"^https?://.*/key/file\.txt"),
+        "existing-url": Fuzzy(r"^https?://.*/key/file\.txt"),
     }

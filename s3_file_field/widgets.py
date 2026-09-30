@@ -67,23 +67,22 @@ class S3FileInput(Widget):
         # (during app startup), as it requires URLconf resolution
         attrs["base-url"] = get_base_url()
 
-        # "file-name" and "file-url" are best-effort display information
+        # "existing-url" is best-effort display information, which the widget names the file by
         if isinstance(value, str) and value:
             # A pending FieldValue shouldn't provide a URL (the upload is not yet validated, so it
-            # shouldn't be served), but it still has a usable file name
+            # shouldn't be served), but its storage key still names it
             try:
                 parsed = FieldValue.model_validate(value)
             except PydanticValidationError:
                 # The value is still rendered, but will be rejected if resubmitted
                 pass
             else:
-                attrs["file-name"] = parsed.object_key
+                attrs["existing-url"] = parsed.object_key
         elif isinstance(value, FieldFile) and value:
-            # A saved FieldFile provides both, but only if it's not falsey (as it is when editing
-            # an empty optional field)
-            attrs["file-name"] = value.name
-            attrs["file-url"] = value.url
-        # A cleared existing file (on redisplay) has no file info available, and needn't show any
+            # A saved FieldFile provides its URL, but only if it's not falsey (as it is when
+            # editing an empty optional field)
+            attrs["existing-url"] = value.url
+        # A cleared existing file (on redisplay) has no URL available, and needn't show any
 
         return super().get_context(name, value, attrs)
 
@@ -100,9 +99,9 @@ class S3FileInput(Widget):
         if isinstance(value, str) and value:
             # A pending FieldValue (on redisplay)
             return value
-        # An initial FieldFile is conveyed via "file-name" and "file-url" instead (see
-        # "get_context"), as keeping it is expressed by submitting nothing; an empty value is
-        # equivalent, so it's not rendered either
+        # An initial FieldFile is conveyed via "existing-url" instead (see "get_context"), as
+        # keeping it is expressed by submitting nothing; an empty value is equivalent, so it's not
+        # rendered either
         return None
 
     @override
