@@ -74,8 +74,16 @@ def test_form_create_missing() -> None:
 
 
 def test_form_create_empty() -> None:
-    """On a create form, an explicit empty value is refused, as there is nothing to clear."""
+    """On a create form, an empty value is equivalent to an omitted one."""
     form = ResourceForm(data={"blob": ""})
+
+    assert not form.is_valid()
+    assert field_error_codes(form, "blob") == ["required"]
+
+
+def test_form_create_clear() -> None:
+    """On a create form, a clear is refused, as there is nothing to clear."""
+    form = ResourceForm(data={"blob": "s3ff:clear"})
 
     assert not form.is_valid()
     assert field_error_codes(form, "blob") == ["invalid"]
@@ -203,10 +211,20 @@ def test_form_edit_keep() -> None:
     assert form.instance.blob.name == "key/file.txt"
 
 
-def test_form_edit_clear() -> None:
-    """On an edit form, an explicit empty value signals to clear the existing value."""
+def test_form_edit_empty() -> None:
+    """On an edit form, an empty value is equivalent to an omitted one, keeping the existing."""
     instance = OptionalResourceFactory.build(blob="key/file.txt")
     form = OptionalResourceForm(data={"blob": ""}, instance=instance)
+
+    assert form.is_valid()
+    assert form.cleaned_data["blob"] == instance.blob
+    assert form.instance.blob.name == "key/file.txt"
+
+
+def test_form_edit_clear() -> None:
+    """On an edit form, the clear value signals to clear the existing value."""
+    instance = OptionalResourceFactory.build(blob="key/file.txt")
+    form = OptionalResourceForm(data={"blob": "s3ff:clear"}, instance=instance)
 
     assert form.is_valid()
     assert form.cleaned_data["blob"] is False
@@ -216,7 +234,7 @@ def test_form_edit_clear() -> None:
 def test_form_edit_clear_required() -> None:
     """On an edit form, clearing a required field is refused, keeping the existing value."""
     instance = ResourceFactory.build(blob="key/file.txt")
-    form = ResourceForm(data={"blob": ""}, instance=instance)
+    form = ResourceForm(data={"blob": "s3ff:clear"}, instance=instance)
 
     assert not form.is_valid()
     assert field_error_codes(form, "blob") == ["required"]

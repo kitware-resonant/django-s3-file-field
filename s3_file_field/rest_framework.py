@@ -5,9 +5,11 @@ from typing import TYPE_CHECKING, Any, override
 from django.core.exceptions import FieldDoesNotExist, ImproperlyConfigured
 from django.core.files import File
 from rest_framework.fields import FileField as FileSerializerField
+from rest_framework.fields import empty
 
 from s3_file_field.fields import S3FileField
 from s3_file_field.forms import S3PlaceholderFile
+from s3_file_field.widgets import CLEAR_VALUE
 
 if TYPE_CHECKING:
     from rest_framework.serializers import BaseSerializer
@@ -45,6 +47,16 @@ class S3FileSerializerField(FileSerializerField):
                 "S3FileSerializerField cannot determine its S3FileField; "
                 'pass "model_field" explicitly.'
             )
+
+    @override
+    def validate_empty_values(self, data: Any) -> tuple[bool, Any]:
+        # Translate the wire protocol to DRF's own conventions: an empty value is equivalent to
+        # an omitted one (keeping any existing file), and the clear value to null
+        if data == "":
+            data = empty
+        elif data == CLEAR_VALUE:
+            data = None
+        return super().validate_empty_values(data)
 
     @override
     def to_internal_value(self, data: str | File[Any]) -> str:  # type: ignore[override]

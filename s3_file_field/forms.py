@@ -108,9 +108,9 @@ class S3FormFileField(FileField):
             # a completed upload survives a validation error elsewhere on the form.
             return data
         if data is False and initial:
-            # A clear of an existing value is redisplayed (as the widget's "cleared" state), so
-            # it also survives a validation error elsewhere on the form. Without an existing
-            # value, a clear is equivalent to a keep.
+            # A clear of an existing value is redisplayed (as the widget's clear value), so it
+            # also survives a validation error elsewhere on the form. Without an existing value,
+            # a clear is equivalent to a keep.
             return False
         # Otherwise (a keep), redisplay the initial value.
         return initial

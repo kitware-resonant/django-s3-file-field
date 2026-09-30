@@ -33,6 +33,12 @@ def get_base_url() -> str:
     return _get_base_url(get_urlconf(), get_script_prefix())
 
 
+# The submitted value which clears an existing file. Otherwise, a submitted value is a signed
+# FieldValue (which this can never be mistaken for), and an empty or omitted value keeps any
+# existing file. Kept identical in the widget's JavaScript.
+CLEAR_VALUE = "s3ff:clear"
+
+
 class S3FileInput(Widget):
     """Widget rendering an S3FormFileField as a "s3-file-input" custom element."""
 
@@ -77,20 +83,27 @@ class S3FileInput(Widget):
             # an empty optional field)
             attrs["file-name"] = value.name
             attrs["file-url"] = value.url
-        elif value is False:
-            # A cleared existing file (on redisplay) is conveyed as a state, so the clear
-            # survives; its file info is no longer available, and needn't be shown anyway
-            attrs["cleared"] = True
+        # A cleared existing file (on redisplay) has no file info available, and needn't show any
 
         return super().get_context(name, value, attrs)
 
     @override
     def format_value(self, value: FieldFile | str | Literal[False] | None) -> str | None:
-        """Return the value as it should be provided to the widget template."""
-        # Only a pending FieldValue string is rendered as the "value" (its presence determines
-        # the pending state); an initial FieldFile is conveyed via "file-name" and "file-url"
-        # and a cleared one via "cleared" (see get_context).
-        return value if isinstance(value, str) and value else None
+        """
+        Return the value as it should be provided to the widget template.
+
+        The "value" is rendered as it's to be resubmitted, which mirrors "value_from_datadict".
+        """
+        if value is False:
+            # A clear of an existing file (on redisplay)
+            return CLEAR_VALUE
+        if isinstance(value, str) and value:
+            # A pending FieldValue (on redisplay)
+            return value
+        # An initial FieldFile is conveyed via "file-name" and "file-url" instead (see
+        # "get_context"), as keeping it is expressed by submitting nothing; an empty value is
+        # equivalent, so it's not rendered either
+        return None
 
     @override
     def value_from_datadict(
@@ -103,10 +116,12 @@ class S3FileInput(Widget):
         """
         if name in data:
             value = data[name]
-            if not value:
-                # An explicit empty value signals to clear any existing value, as opposed to
-                # None (from an omitted entry), which signals to keep it.
+            if value == CLEAR_VALUE:
+                # Clear any existing value
                 return False
+            if not value:
+                # An empty value is equivalent to an omitted one: keep any existing value
+                return None
             # Expected to be a signed FieldValue string;
             # S3FormFileField.to_python verifies and converts it
             return value
@@ -120,4 +135,5 @@ class S3FileInput(Widget):
         self, data: Mapping[str, str], files: MultiValueDict[str, UploadedFile[Any]], name: str
     ) -> bool:
         """Return whether this widget's value is omitted from the submitted form data."""
-        return (name not in data) and (name not in files)
+        # An empty value is equivalent to an omitted one
+        return (not data.get(name)) and (name not in files)

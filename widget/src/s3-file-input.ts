@@ -5,7 +5,13 @@ import { css, html, LitElement, nothing, svg, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import prettyBytes from 'pretty-bytes';
-import { deriveFileState, type FileState, formValueFor, hasExistingFile } from './state.js';
+import {
+  CLEAR_VALUE,
+  deriveFileState,
+  type FileState,
+  formValueFor,
+  hasExistingFile,
+} from './state.js';
 import { uploadFile } from './upload.js';
 
 /**
@@ -15,7 +21,6 @@ import { uploadFile } from './upload.js';
  */
 interface RestorableState {
   value: string;
-  cleared: boolean;
   uploadedFileName: string;
 }
 
@@ -36,9 +41,10 @@ const removeIcon = svg`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6
  * A form-associated custom element, uploading a file directly to S3 for an S3FileField.
  *
  * The API is expressed as properties, which may also be set as HTML attributes, so the element
- * can be server-rendered by Django or driven by a frontend framework. Form submission is
- * determined by the state: after an upload, "value" is submitted; when "cleared", an empty string
- * is submitted; otherwise, nothing is submitted, which keeps any existing file.
+ * can be server-rendered by Django or driven by a frontend framework. The "value" is what is
+ * submitted: after an upload, its signed FieldValue; on removing an existing file, the clear
+ * value; otherwise, it is empty and nothing is submitted, which keeps any existing file. An
+ * "input" event is fired when the user changes it, so a framework may bind it (as with v-model).
  *
  * The element inherits the page's font and text color, from which its borders and fills are
  * derived. Its accent color, error color and corner radius are read from the page's theme
@@ -301,22 +307,15 @@ export class S3FileInputElement extends LitElement {
   accessor maxSize: number | undefined;
 
   /**
-   * A pending signed FieldValue, server-rendered (on form redisplay) or set after an upload.
+   * The value to submit: empty to keep any existing file, the clear value to remove it, or a
+   * pending upload's signed FieldValue.
    *
-   * Along with "cleared", this determines what is submitted; "fileName" and "fileUrl"
-   * describe the represented file, for display.
+   * This may be server-rendered (on form redisplay) or set by the user; "fileName" and
+   * "fileUrl" describe the represented file, for display. An empty value is always a string
+   * (never null or undefined), which frameworks may rely on.
    */
   @property()
   accessor value = '';
-
-  /**
-   * Whether the existing file is to be cleared.
-   *
-   * This may be server-rendered (on form redisplay), in which case "fileName" and "fileUrl"
-   * are absent, or set by the user.
-   */
-  @property({ type: Boolean })
-  accessor cleared = false;
 
   /**
    * Whether the field is disabled, so no controls are rendered.
@@ -394,7 +393,7 @@ export class S3FileInputElement extends LitElement {
   private readonly internals = this.attachInternals();
 
   /** The server-rendered state, captured on connection, to which a form reset returns. */
-  private initial: RestorableState = { value: '', cleared: false, uploadedFileName: '' };
+  private initial: RestorableState = { value: '', uploadedFileName: '' };
 
   /** Whether an existing (already saved) file is represented, kept or cleared. */
   private hasExistingFile = false;
@@ -509,15 +508,18 @@ export class S3FileInputElement extends LitElement {
     // by a framework binding), which is equivalent to empty
     return {
       value: this.value ?? '',
-      cleared: this.cleared,
       uploadedFileName: this.uploadedFileName,
     };
   }
 
   private set restorableState(restorableState: RestorableState) {
     this.value = restorableState.value;
-    this.cleared = restorableState.cleared;
     this.uploadedFileName = restorableState.uploadedFileName;
+  }
+
+  /** Announce a change of the value by the user, as a native input does. */
+  private dispatchInput(): void {
+    this.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
   }
 
   /** Whether the field is disabled, by its own property or by the browser. */
@@ -761,12 +763,14 @@ export class S3FileInputElement extends LitElement {
       this.uploadedFileName = '';
     } else {
       // Clear the kept file
-      this.cleared = true;
+      this.value = CLEAR_VALUE;
     }
+    this.dispatchInput();
   }
 
   private handleUndo(): void {
-    this.cleared = false;
+    this.value = '';
+    this.dispatchInput();
   }
 
   private readonly handleFormSubmit = (event: SubmitEvent): void => {
@@ -798,7 +802,7 @@ export class S3FileInputElement extends LitElement {
 
     this.value = fieldValue;
     this.uploadedFileName = file.name;
-    this.cleared = false;
+    this.dispatchInput();
   }
 
   /**

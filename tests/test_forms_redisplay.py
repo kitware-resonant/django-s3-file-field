@@ -42,7 +42,7 @@ def test_form_redisplay_create() -> None:
 
 def test_form_redisplay_create_clear() -> None:
     """An abnormal clear (with no existing file) is refused, and redisplayed as nothing."""
-    form = ResourceForm(data={"blob": ""})
+    form = ResourceForm(data={"blob": "s3ff:clear"})
 
     assert not form.is_valid()
     assert rendered_attrs(form["blob"]) == {
@@ -98,7 +98,7 @@ def test_form_redisplay_edit_clear() -> None:
     """A clear of an existing file survives when validation fails elsewhere on an edit form."""
     instance = MultiResourceFactory.build(blob="", optional_blob="key/file.txt")
     # "blob" is missing, so the form is invalid
-    form = MultiResourceForm(data={"optional_blob": ""}, instance=instance)
+    form = MultiResourceForm(data={"optional_blob": "s3ff:clear"}, instance=instance)
 
     assert not form.is_valid()
     # The cleared file's info is no longer available
@@ -107,14 +107,14 @@ def test_form_redisplay_edit_clear() -> None:
         "id": "id_optional_blob",
         "base-url": "/api/s3ff_test",
         "field-id": "test_app.MultiResource.optional_blob",
-        "cleared": None,
+        "value": "s3ff:clear",
     }
 
 
 def test_form_redisplay_edit_clear_required() -> None:
     """A refused clear of a required field's existing file is still redisplayed as cleared."""
     instance = ResourceFactory.build(blob="key/file.txt")
-    form = ResourceForm(data={"blob": ""}, instance=instance)
+    form = ResourceForm(data={"blob": "s3ff:clear"}, instance=instance)
 
     assert not form.is_valid()
     # The user may then keep the existing file, or upload a replacement
@@ -124,7 +124,7 @@ def test_form_redisplay_edit_clear_required() -> None:
         "base-url": "/api/s3ff_test",
         "field-id": "test_app.Resource.blob",
         "required": None,
-        "cleared": None,
+        "value": "s3ff:clear",
         "aria-invalid": "true",
         "aria-describedby": "id_blob_error",
     }

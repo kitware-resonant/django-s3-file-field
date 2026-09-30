@@ -26,6 +26,22 @@ def test_serializer_data_missing() -> None:
     assert serializer.errors["blob"][0].code == "required"
 
 
+def test_serializer_data_empty() -> None:
+    """An empty value is equivalent to an omitted one."""
+    serializer = ResourceSerializer(data={"blob": ""})
+
+    assert not serializer.is_valid()
+    assert serializer.errors["blob"][0].code == "required"
+
+
+def test_serializer_data_clear() -> None:
+    """The clear value is equivalent to null, which this field doesn't allow."""
+    serializer = ResourceSerializer(data={"blob": "s3ff:clear"})
+
+    assert not serializer.is_valid()
+    assert serializer.errors["blob"][0].code == "null"
+
+
 def test_serializer_data_invalid() -> None:
     serializer = ResourceSerializer(
         data={
