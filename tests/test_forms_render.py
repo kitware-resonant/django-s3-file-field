@@ -65,7 +65,7 @@ def test_form_render_create() -> None:
     assert rendered_attrs(form["blob"]) == {
         "name": "blob",
         "id": "id_blob",
-        "base-url": "/api/s3ff_test",
+        "base-url": "/api/s3ff_test/",
         "field-id": "test_app.Resource.blob",
         "required": None,
     }
@@ -96,7 +96,7 @@ def test_form_render_edit() -> None:
     assert rendered_attrs(form["blob"]) == {
         "name": "blob",
         "id": "id_blob",
-        "base-url": "/api/s3ff_test",
+        "base-url": "/api/s3ff_test/",
         "field-id": "test_app.Resource.blob",
         "required": None,
         "existing-url": Fuzzy(r"^https?://.*/key/file\.txt"),
@@ -110,7 +110,7 @@ def test_form_render_edit_empty() -> None:
     assert rendered_attrs(form["blob"]) == {
         "name": "blob",
         "id": "id_blob",
-        "base-url": "/api/s3ff_test",
+        "base-url": "/api/s3ff_test/",
         "field-id": "test_app.OptionalResource.blob",
     }
 

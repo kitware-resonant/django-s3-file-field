@@ -26,7 +26,9 @@ def _get_base_url(urlconf: str | None, _script_prefix: str) -> str:
     initiate_url = reverse("s3_file_field:initiate", urlconf=urlconf)
     complete_url = reverse("s3_file_field:complete", urlconf=urlconf)
     # Use posixpath to always parse URL paths with forward slashes
-    return posixpath.commonpath([initiate_url, complete_url])
+    base_url = posixpath.commonpath([initiate_url, complete_url])
+    # As with Django's own URLs (and so the URLconf), a base URL ends with a slash
+    return base_url if base_url.endswith("/") else f"{base_url}/"
 
 
 def get_base_url() -> str:

@@ -33,7 +33,7 @@ def test_form_redisplay_create() -> None:
     assert rendered_attrs(form["optional_blob"]) == {
         "name": "optional_blob",
         "id": "id_optional_blob",
-        "base-url": "/api/s3ff_test",
+        "base-url": "/api/s3ff_test/",
         "field-id": "test_app.MultiResource.optional_blob",
         "value": field_value_str,
         "existing-url": "key/file.txt",
@@ -48,7 +48,7 @@ def test_form_redisplay_create_clear() -> None:
     assert rendered_attrs(form["blob"]) == {
         "name": "blob",
         "id": "id_blob",
-        "base-url": "/api/s3ff_test",
+        "base-url": "/api/s3ff_test/",
         "field-id": "test_app.Resource.blob",
         "required": None,
         "aria-invalid": "true",
@@ -68,7 +68,7 @@ def test_form_redisplay_create_invalid() -> None:
     assert rendered_attrs(form["blob"]) == {
         "name": "blob",
         "id": "id_blob",
-        "base-url": "/api/s3ff_test",
+        "base-url": "/api/s3ff_test/",
         "field-id": "test_app.Resource.blob",
         "required": None,
         "value": invalid_value,
@@ -87,7 +87,7 @@ def test_form_redisplay_edit() -> None:
     assert rendered_attrs(form["optional_blob"]) == {
         "name": "optional_blob",
         "id": "id_optional_blob",
-        "base-url": "/api/s3ff_test",
+        "base-url": "/api/s3ff_test/",
         "field-id": "test_app.MultiResource.optional_blob",
         "existing-url": Fuzzy(r"^https?://.*/key/file\.txt"),
     }
@@ -104,7 +104,7 @@ def test_form_redisplay_edit_clear() -> None:
     assert rendered_attrs(form["optional_blob"]) == {
         "name": "optional_blob",
         "id": "id_optional_blob",
-        "base-url": "/api/s3ff_test",
+        "base-url": "/api/s3ff_test/",
         "field-id": "test_app.MultiResource.optional_blob",
         "value": "s3ff:clear",
     }
@@ -120,7 +120,7 @@ def test_form_redisplay_edit_clear_required() -> None:
     assert rendered_attrs(form["blob"]) == {
         "name": "blob",
         "id": "id_blob",
-        "base-url": "/api/s3ff_test",
+        "base-url": "/api/s3ff_test/",
         "field-id": "test_app.Resource.blob",
         "required": None,
         "value": "s3ff:clear",
@@ -140,7 +140,7 @@ def test_form_redisplay_edit_invalid() -> None:
     assert rendered_attrs(form["blob"]) == {
         "name": "blob",
         "id": "id_blob",
-        "base-url": "/api/s3ff_test",
+        "base-url": "/api/s3ff_test/",
         "field-id": "test_app.OptionalResource.blob",
         "value": "invalid:field_value",
         "aria-invalid": "true",
@@ -158,7 +158,7 @@ def test_form_redisplay_edit_disabled() -> None:
     assert rendered_attrs(form["blob"]) == {
         "name": "blob",
         "id": "id_blob",
-        "base-url": "/api/s3ff_test",
+        "base-url": "/api/s3ff_test/",
         "field-id": "test_app.Resource.blob",
         "required": None,
         "disabled": None,
