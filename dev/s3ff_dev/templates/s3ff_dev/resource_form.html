@@ -7,7 +7,8 @@
 {% block content %}
 <nav>
   Render with: <b>plain Django</b> |
-  <a href="{% if object %}{% url "resource-update-daisyui" object.pk %}{% else %}{% url "resource-create-daisyui" %}{% endif %}">DaisyUI</a>
+  <a href="{% if object %}{% url "resource-update-daisyui" object.pk %}{% else %}{% url "resource-create-daisyui" %}{% endif %}">DaisyUI</a> |
+  <a href="{% url "resource-vuetify" %}#/{% if object %}{{ object.pk }}{% endif %}">Vuetify</a>
 </nav>
 <a href="{% url "resource-list" %}">[Back to List]</a>
 <h1>Resource</h1>

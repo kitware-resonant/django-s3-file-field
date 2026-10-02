@@ -15,6 +15,7 @@
   Render with:
   <a href="{% if object %}{% url "resource-update" object.pk %}{% else %}{% url "resource-create" %}{% endif %}" class="link">plain Django</a>
   | <b>DaisyUI</b>
+  | <a href="{% url "resource-vuetify" %}#/{% if object %}{{ object.pk }}{% endif %}" class="link">Vuetify</a>
 </nav>
 <form method="get" class="mt-4">
   <label class="flex items-center gap-2">
