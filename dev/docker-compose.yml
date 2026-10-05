@@ -1,6 +1,6 @@
 services:
   seaweedfs:
-    image: chrislusf/seaweedfs:4.47
+    image: chrislusf/seaweedfs:4.48
     environment:
       AWS_ACCESS_KEY_ID: seaweedAccessKey
       AWS_SECRET_ACCESS_KEY: seaweedSecretKey
