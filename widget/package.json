@@ -25,5 +25,14 @@
     "npm-run-all2": "^9.0.3",
     "typescript": "^7.0.2",
     "vite": "^8.2.2"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "npm"
+    },
+    "runtime": {
+      "name": "node",
+      "version": ">=24"
+    }
   }
 }
