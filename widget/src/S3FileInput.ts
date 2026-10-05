@@ -3,6 +3,7 @@ import prettyBytes from 'pretty-bytes';
 
 export const EVENT_UPLOAD_STARTED = 's3UploadStarted';
 export const EVENT_UPLOAD_COMPLETE = 's3UploadComplete';
+export const EVENT_UPLOAD_CLEARED = 's3UploadCleared';
 
 function cssClass(clazz: string): string {
   return `s3fileinput-${clazz}`;
@@ -86,6 +87,11 @@ export default class S3FileInput {
       this.input.value = '';
       this.info.innerText = '';
       this.node.classList.remove(cssClass('set'), cssClass('error'));
+      this.input.dispatchEvent(
+        new CustomEvent(EVENT_UPLOAD_CLEARED, {
+          detail: evt,
+        }),
+      );
     };
   }
 
