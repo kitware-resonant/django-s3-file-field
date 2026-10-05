@@ -294,7 +294,7 @@ def test_multipart_manager_get_object_size_not_found(multipart_manager: Multipar
         "max_size",
     ],
 )
-def test_multipart_manager_iter_part_sizes(  # noqa: PLR0917
+def test_multipart_manager_iter_part_sizes(
     mocker: MockerFixture,
     file_size: int,
     baseline_part_size: int,
