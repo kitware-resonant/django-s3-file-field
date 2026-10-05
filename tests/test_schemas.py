@@ -3,11 +3,12 @@ from __future__ import annotations
 from pydantic import ValidationError
 import pytest
 
+from factories import FieldValueFactory, UploadTokenFactory
 from s3_file_field._schemas import (
     CompletionRequest,
+    FieldValue,
     FinalizationRequest,
     InitiationRequest,
-    UploadToken,
 )
 
 
@@ -45,7 +46,8 @@ def test_initiation_request_file_size_exceeds_max_size() -> None:
         )
 
 
-def test_completion_request_deserialization(upload_token: UploadToken) -> None:
+def test_completion_request_deserialization() -> None:
+    upload_token = UploadTokenFactory.build()
     completion_request = CompletionRequest.model_validate(
         {
             "upload_token": upload_token,
@@ -59,7 +61,8 @@ def test_completion_request_deserialization(upload_token: UploadToken) -> None:
     assert completion_request.parts[1].part_number == 2
 
 
-def test_finalization_request_deserialization(upload_token: UploadToken) -> None:
+def test_finalization_request_deserialization() -> None:
+    upload_token = UploadTokenFactory.build()
     FinalizationRequest.model_validate(
         {
             "upload_token": upload_token,
@@ -67,7 +70,8 @@ def test_finalization_request_deserialization(upload_token: UploadToken) -> None
     )
 
 
-def test_completion_request_parts_duplicate(upload_token: UploadToken) -> None:
+def test_completion_request_parts_duplicate() -> None:
+    upload_token = UploadTokenFactory.build()
     with pytest.raises(ValidationError, match=r"duplicate part numbers"):
         CompletionRequest.model_validate(
             {
@@ -78,3 +82,10 @@ def test_completion_request_parts_duplicate(upload_token: UploadToken) -> None:
                 ],
             }
         )
+
+
+def test_field_value_deserialization() -> None:
+    """A signed FieldValue round-trips through its serialized form."""
+    field_value = FieldValueFactory.build()
+
+    assert FieldValue.model_validate(field_value.model_dump()) == field_value

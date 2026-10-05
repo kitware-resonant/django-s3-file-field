@@ -53,7 +53,8 @@ def test_registry_get_field(s3ff_field: S3FileField) -> None:
 def test_registry_iter_fields(s3ff_field: S3FileField) -> None:
     fields = list(_registry.iter_fields())
 
-    assert len(fields) == 4
+    # Every S3FileField on the test app's models
+    assert len(fields) == 5
     assert any(field is s3ff_field for field in fields)
 
 

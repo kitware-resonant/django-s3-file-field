@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Resource{% endblock %}
+
+{% block head %}
+{{ form.media }}
+<link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/daisyui@5/themes.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+{% endblock %}
+
+{% block content %}
+<main class="min-h-screen bg-base-100 p-4 text-base-content" data-theme="{{ theme }}">
+<nav>
+  Render with:
+  <a href="{% if object %}{% url "resource-update" object.pk %}{% else %}{% url "resource-create" %}{% endif %}" class="link">plain Django</a>
+  | <b>DaisyUI</b>
+  | <a href="{% url "resource-vuetify" %}#/{% if object %}{{ object.pk }}{% endif %}" class="link">Vuetify</a>
+</nav>
+<form method="get" class="mt-4">
+  <label class="flex items-center gap-2">
+    DaisyUI theme:
+    <select name="theme" class="select select-sm w-auto" onchange="this.form.requestSubmit()">
+      {% for name in daisyui_themes %}
+      <option{% if name == theme %} selected{% endif %}>{{ name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+</form>
+<a href="{% url "resource-list" %}" class="link">[Back to List]</a>
+<h1 class="my-4 text-2xl font-bold">Resource</h1>
+
+<form method="post"{% if form.is_multipart %} enctype="multipart/form-data"{% endif %} class="grid w-xs gap-2">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  {% for field in form %}
+  <fieldset class="fieldset">
+    <label class="fieldset-legend" for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {{ field }}
+    {% if field.help_text %}<p class="label">{{ field.help_text }}</p>{% endif %}
+    {% for error in field.errors %}<p class="label text-error">{{ error }}</p>{% endfor %}
+  </fieldset>
+  {% endfor %}
+  <button type="submit" class="btn btn-primary">Save</button>
+</form>
+</main>
+{% endblock %}

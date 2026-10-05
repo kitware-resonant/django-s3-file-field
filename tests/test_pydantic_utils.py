@@ -8,7 +8,7 @@ from freezegun import freeze_time
 from pydantic import BaseModel, TypeAdapter, ValidationError
 import pytest
 
-from conftest import SignedModelFactory
+from factories import SignedModelFactory
 from s3_file_field._pydantic_utils import (
     ETag,
     MimeType,

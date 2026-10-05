@@ -1,0 +1,83 @@
+<!doctype html>
+<!--
+A stand-in for a single-page app: a static page, served by Django without any templating, which
+renders the form itself (with Vuetify) and loads and saves the resource through the API. So the
+widget is placed like any other element, with what an app would know statically: the upload API's
+base URL and each S3FileField's identifier.
+
+The legacy (native) file field is Vuetify's own file input, for comparison with the widget; it
+needs the request to be multipart.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Resource</title>
+  <!-- The widget's assets, from Django's static files -->
+  <link rel="stylesheet" href="/static/s3_file_field/s3-file-input.css">
+  <script type="module" src="/static/s3_file_field/s3-file-input.js"></script>
+  <!-- Vue and Vuetify as ES modules from a CDN; the import map resolves Vuetify's bare imports -->
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7/css/materialdesignicons.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/vuetify@4/dist/vuetify.min.css" rel="stylesheet">
+  <script type="importmap">
+    {
+      "imports": {
+        "vue": "https://cdn.jsdelivr.net/npm/vue@3/dist/vue.esm-browser.prod.js",
+        "vuetify": "https://cdn.jsdelivr.net/npm/vuetify@4/dist/vuetify.esm.js",
+        "@vuetify/v0": "https://cdn.jsdelivr.net/npm/@vuetify/v0@1/dist/index.mjs"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <v-app>
+      <v-main>
+        <v-container>
+          <nav>
+            Render with:
+            <a :href="plainUrl">plain Django</a>
+            | <a :href="daisyuiUrl">DaisyUI</a>
+            | <b>Vuetify</b>
+          </nav>
+          <v-switch v-model="dark" label="Dark theme" density="compact" hide-details></v-switch>
+          <a href="/resources/">[Back to List]</a>
+          <h1 class="text-h5 my-4">Resource</h1>
+
+          <v-form class="d-flex flex-column ga-4" style="max-width: 20rem" @submit.prevent="submit">
+            <ul v-if="Object.keys(errors).length" class="text-error">
+              <li v-for="(messages, field) in errors">{{ field }}: {{ messages.join(" ") }}</li>
+            </ul>
+            <div>
+              <v-file-input v-model="legacyFile" label="Legacy optional blob" prepend-icon="" clearable hide-details></v-file-input>
+              <a v-if="existing.legacy_optional_blob" :href="existing.legacy_optional_blob" class="text-caption">Current file</a>
+            </div>
+            <div>
+              <v-label for="s3ff_mandatory_blob" class="d-block mb-1">S3ff mandatory blob</v-label>
+              <s3-file-input id="s3ff_mandatory_blob" base-url="/api/s3ff/" field-id="s3ff_dev.Resource.s3ff_mandatory_blob" required
+                :existing-url="existing.s3ff_mandatory_blob" v-model="values.s3ff_mandatory_blob"></s3-file-input>
+            </div>
+            <div>
+              <v-label for="s3ff_optional_blob" class="d-block mb-1">S3ff optional blob</v-label>
+              <s3-file-input id="s3ff_optional_blob" base-url="/api/s3ff/" field-id="s3ff_dev.Resource.s3ff_optional_blob"
+                :existing-url="existing.s3ff_optional_blob" v-model="values.s3ff_optional_blob"></s3-file-input>
+            </div>
+            <div>
+              <v-label for="s3ff_optional_limited_blob" class="d-block mb-1">S3ff optional limited blob</v-label>
+              <s3-file-input id="s3ff_optional_limited_blob" base-url="/api/s3ff/" field-id="s3ff_dev.Resource.s3ff_optional_limited_blob" max-size="1024"
+                :existing-url="existing.s3ff_optional_limited_blob" v-model="values.s3ff_optional_limited_blob"></s3-file-input>
+            </div>
+            <div>
+              <v-label for="s3ff_disabled_blob" class="d-block mb-1">S3ff disabled blob</v-label>
+              <s3-file-input id="s3ff_disabled_blob" base-url="/api/s3ff/" field-id="s3ff_dev.Resource.s3ff_disabled_blob" disabled
+                :existing-url="existing.s3ff_disabled_blob" v-model="values.s3ff_disabled_blob"></s3-file-input>
+            </div>
+            <v-btn type="submit" color="primary">Save</v-btn>
+          </v-form>
+        </v-container>
+      </v-main>
+    </v-app>
+  </div>
+
+  <script type="module" src="/static/s3ff_dev/vuetify/app.js"></script>
+</body>
+</html>
