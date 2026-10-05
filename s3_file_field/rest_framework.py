@@ -8,7 +8,7 @@ from rest_framework.fields import FileField as FileSerializerField
 from rest_framework.fields import empty
 
 from s3_file_field.fields import S3FileField
-from s3_file_field.forms import S3PlaceholderFile
+from s3_file_field.files import S3PlaceholderFile
 from s3_file_field.widgets import CLEAR_VALUE
 
 if TYPE_CHECKING:
@@ -110,9 +110,9 @@ class S3FileSerializerField(FileSerializerField):
         return super().validate_empty_values(data)
 
     @override
-    def to_internal_value(self, data: str | File[Any]) -> str:  # type: ignore[override]
+    def to_internal_value(self, data: str | File[Any]) -> S3PlaceholderFile:
         """
-        Validate and convert a submitted FieldValue string, to the name of its stored object.
+        Validate and convert a submitted FieldValue string, to a placeholder for its stored object.
 
         This is called for a non-empty submitted value, after "validate_empty_values".
         """
@@ -122,13 +122,10 @@ class S3FileSerializerField(FileSerializerField):
             # API callers shouldn't be rewarded for submitting inline files.
             self.fail("invalid")
 
-        file_object = S3PlaceholderFile.from_field_value(data, self.model_field)
-        if file_object is None:
+        placeholder_file = S3PlaceholderFile.from_field_value(data, self.model_field)
+        if placeholder_file is None:
             self.fail("invalid")
 
-        # This checks validity of the file name and size
-        super().to_internal_value(file_object)
-
-        # fields.S3FileField.save_form_data is not called by DRF, so the same behavior must be
-        # implemented here
-        return file_object.name
+        # Check validity of the file name and size; this returns its argument unchanged
+        super().to_internal_value(placeholder_file)
+        return placeholder_file

@@ -5,32 +5,53 @@ from typing import TYPE_CHECKING
 from django.core.files.uploadedfile import SimpleUploadedFile
 import pytest
 
-from factories import FieldValueFactory, OptionalResourceFactory, ResourceFactory
+from factories import (
+    FieldValueFactory,
+    OptionalResourceFactory,
+    ResourceFactory,
+    ValidatedResourceFactory,
+)
 from serializer_inspection import field_error_codes
 from test_app.models import (
     LimitedResource,
     MultiResource,
     OptionalResource,
     Resource,
+    ValidatedResource,
 )
 from test_app.rest import (
     LimitedResourceSerializer,
     MultiResourceSerializer,
     OptionalResourceSerializer,
     ResourceSerializer,
+    ValidatedResourceSerializer,
 )
 
 if TYPE_CHECKING:
+    from django.core.files import File
     from pytest_mock import MockerFixture
 
 
 def test_serializer_validation() -> None:
-    field_value = FieldValueFactory.build(object_key="key/file.txt")
+    field_value = FieldValueFactory.build(object_key="key/file.txt", file_size=15)
     serializer = ResourceSerializer(data={"blob": field_value.model_dump()})
 
     assert serializer.is_valid()
-    # The stored object is referenced by its name, which the model field assigns as-is
-    assert serializer.validated_data["blob"] == "key/file.txt"
+    # The validated value describes the stored object, as a "validate_<field>" method would need
+    assert serializer.validated_data["blob"].name == "key/file.txt"
+    assert serializer.validated_data["blob"].size == 15
+
+
+def test_serializer_validation_content(stored_file_object: File[bytes]) -> None:
+    """The validated value's content is readable from storage, as a validator may need."""
+    field_value = FieldValueFactory.build(
+        object_key=stored_file_object.name, file_size=stored_file_object.size
+    )
+    serializer = ResourceSerializer(data={"blob": field_value.model_dump()})
+
+    assert serializer.is_valid()
+    with serializer.validated_data["blob"].open() as blob_stream:
+        assert blob_stream.read() == b"test content"
 
 
 def test_serializer_create_missing() -> None:
@@ -143,7 +164,7 @@ def test_serializer_update_replace() -> None:
     serializer = ResourceSerializer(resource, data={"blob": field_value.model_dump()})
 
     assert serializer.is_valid()
-    assert serializer.validated_data["blob"] == "key/file.txt"
+    assert serializer.validated_data["blob"].name == "key/file.txt"
 
 
 def test_serializer_invalid() -> None:
@@ -186,8 +207,8 @@ def test_serializer_multiple_fields() -> None:
     )
 
     assert serializer.is_valid()
-    assert serializer.validated_data["blob"] == "key/file.txt"
-    assert serializer.validated_data["optional_blob"] == "key/optional_file.txt"
+    assert serializer.validated_data["blob"].name == "key/file.txt"
+    assert serializer.validated_data["optional_blob"].name == "key/optional_file.txt"
 
 
 def test_serializer_cross_field_invalid() -> None:
@@ -235,6 +256,32 @@ def test_serializer_validation_oversized() -> None:
     serializer = LimitedResourceSerializer(data={"blob": field_value.model_dump()})
 
     assert serializer.is_valid()
+
+
+def test_serializer_validation_model_validators() -> None:
+    """The model field's validators run against the validated value, as a ModelSerializer does."""
+    field_value = FieldValueFactory.build(field_model=ValidatedResource, object_key="key/file.txt")
+    serializer = ValidatedResourceSerializer(data={"blob": field_value.model_dump()})
+
+    assert serializer.is_valid()
+
+
+def test_serializer_validation_model_validators_invalid() -> None:
+    """A value refused by the model field's validators fails with their error."""
+    field_value = FieldValueFactory.build(field_model=ValidatedResource, object_key="key/file.pdf")
+    serializer = ValidatedResourceSerializer(data={"blob": field_value.model_dump()})
+
+    assert not serializer.is_valid()
+    assert field_error_codes(serializer, "blob") == ["invalid_extension"]
+
+
+def test_serializer_update_clear_model_validators() -> None:
+    """Clearing an optional field never reaches the model field's validators."""
+    resource = ValidatedResourceFactory.build(blob="key/file.txt")
+    serializer = ValidatedResourceSerializer(resource, data={"blob": "s3ff:clear"})
+
+    assert serializer.is_valid()
+    assert serializer.validated_data["blob"] is None
 
 
 @pytest.mark.django_db

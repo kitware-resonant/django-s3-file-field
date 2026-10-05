@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.core.validators import FileExtensionValidator
 from django.db import models
 
 from s3_file_field.fields import S3FileField
@@ -20,3 +21,8 @@ class MultiResource(models.Model):
 
 class LimitedResource(models.Model):
     blob = S3FileField(max_size=10)
+
+
+class ValidatedResource(models.Model):
+    # Optional, so that clearing (which validators must never see) can be exercised too
+    blob = S3FileField(blank=True, validators=[FileExtensionValidator(allowed_extensions=["txt"])])

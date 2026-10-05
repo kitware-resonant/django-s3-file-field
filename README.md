@@ -113,6 +113,50 @@ S3_FILE_FIELD_MAX_SIZE = 100 * 1024 * 1024  # 100 MiB
 When neither is set, the limit is the storage backend's own maximum upload size
 (5 TB on AWS S3).
 
+#### Model validators
+[Validators](https://docs.djangoproject.com/en/stable/ref/validators/) may be set on an
+`S3FileField`. As with any model field, they run when a model instance is validated with
+[`full_clean()`](https://docs.djangoproject.com/en/stable/ref/models/instances/#django.db.models.Model.full_clean).
+
+For example:
+```python
+from django.core.validators import FileExtensionValidator
+from django.db import models
+from s3_file_field import S3FileField
+
+
+class Resource(models.Model):
+    blob = S3FileField(validators=[FileExtensionValidator(allowed_extensions=["pdf"])])
+```
+
+Custom validators may also be defined, receiving the uploaded file as
+[a `File`-like value](https://docs.djangoproject.com/en/stable/ref/files/file/#the-file-class).
+The value includes attributes for `name` and `size`, along with methods for reading the file
+content (though this downloads it from the storage backend). A validator is only called when a file
+is present; as with any model field, an empty or cleared field skips the validators entirely.
+
+For example:
+```python
+from django.core.exceptions import ValidationError
+from django.core.files import File
+from django.db import models
+from s3_file_field import S3FileField
+
+
+def validate_pdf(value: File) -> None:
+    with value.open() as stream:
+        if stream.read(5) != b"%PDF-":
+            raise ValidationError("Not a PDF file.", code="invalid_type")
+
+
+class Resource(models.Model):
+    blob = S3FileField(validators=[validate_pdf])
+```
+
+Note, validators run after the file has already been fully uploaded to the storage backend, so
+rejecting it only prevents a reference to the file from being saved; the uploaded file itself
+remains in the storage backend.
+
 ### Django Forms
 In this usage pattern, everything is handled by the Form layer, as with a Django `FileField`: the
 Form renders the upload widget, which performs the upload in the browser; validates the submitted
@@ -156,6 +200,52 @@ class ResourceForm(Form):
     blob = S3FormFileField(model_field=Resource._meta.get_field("blob"))
 ```
 
+#### Form validation
+A `ModelForm` will run all validators declared on the model field.
+
+Additionally, [Form validation](https://docs.djangoproject.com/en/stable/ref/forms/validation/)
+is supported. This provides access to the form's other fields (within `clean()`) and the
+`instance` (for a `ModelForm`), which a model validator can't see.
+
+Note, if the field is optional (the model sets `blank=True`), the `clean_<field>` method may also
+receive `None` or `False` values, indicating empty (no file at all) or cleared (existing file about
+to be removed) states, respectively. In all cases of editing an existing instance, a kept file
+(where the user didn't modify the field) will re-run form validation, with a `File`-like value of
+the existing file.
+
+For example:
+```python
+from pathlib import PurePosixPath
+
+from django.core.exceptions import ValidationError
+from django.core.files import File
+from django.db import models
+from django.db.models.fields.files import FieldFile
+from django.forms import ModelForm
+from .models import Resource
+
+
+class ResourceForm(ModelForm):
+    def clean_blob(self) -> File:
+        blob: File = self.cleaned_data["blob"]
+        existing_blob: FieldFile = self.instance.blob
+        if not existing_blob:
+            # The field is required, so this must be a new instance
+            return blob
+
+        blob_suffix = PurePosixPath(blob.name).suffix
+        existing_blob_suffix = PurePosixPath(existing_blob.name).suffix
+        # Once a file is saved, it can be replaced, but only with the same extension
+        if blob_suffix != existing_blob_suffix:
+            raise ValidationError("Cannot change the file's extension.", code="invalid")
+
+        return blob
+
+    class Meta:
+        model = Resource
+        fields = ["blob"]
+```
+
 ### REST APIs
 In this usage pattern, the application declares its API with a Django Rest Framework Serializer,
 using an `S3FileSerializerField` to provide an interface to an `S3FileField`. The application's
@@ -187,6 +277,43 @@ from .models import Resource
 
 class ResourceSerializer(serializers.Serializer):
     blob = S3FileSerializerField(model_field=Resource._meta.get_field("blob"))
+```
+
+##### Serializer validation
+A `ModelSerializer` will run all validators declared on the model field.
+
+Additionally,
+[serializer validation](https://www.django-rest-framework.org/api-guide/serializers/#validation)
+is supported. This provides access to the request (within `self.context`), the serializer's other
+fields (within `validate()`), and the `instance` (for a `ModelSerializer`, when updating), which a
+model validator can't see.
+
+Note, if the field is optional (the model sets `blank=True`), the `validate_<field>` method may also
+receive a `None` value, indicating a cleared (existing file about to be removed) state. In all cases
+of partially updating an existing instance, a kept file (where the client omitted the field or
+submitted an empty value) will skip serializer validation entirely.
+
+For example:
+```python
+from django.core.files import File
+from rest_framework import serializers
+from rest_framework.request import Request
+from .models import Resource
+
+
+class ResourceSerializer(serializers.ModelSerializer):
+    def validate_blob(self, value: File) -> File:
+        request: Request = self.context["request"]
+        if not request.user.is_staff and value.size > 10 * 1024 * 1024:
+            raise serializers.ValidationError(
+                "Non-staff uploads are limited to 10 MiB.", code="too_large"
+            )
+
+        return value
+
+    class Meta:
+        model = Resource
+        fields = ["blob"]
 ```
 
 #### Browser clients: the `<s3-file-input>` element

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from django.core.files.storage import default_storage
 
-from s3_file_field.forms import S3PlaceholderFile
+from s3_file_field.files import S3PlaceholderFile
 from test_app.models import Resource
 
 if TYPE_CHECKING:
