@@ -71,4 +71,4 @@ jobs:
         run: |
           npm ci
           npm version --no-git-tag-version $(git describe --tags --match '*[0-9]*' --abbrev=0 | sed 's/^v//')
-          npm publish --provenance
+          npm publish --access public
