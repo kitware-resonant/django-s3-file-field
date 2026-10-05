@@ -14,7 +14,7 @@ jobs:
         python-version: ["3.12", "3.13", "3.14"]
     services:
       seaweedfs:
-        image: chrislusf/seaweedfs:4.47
+        image: chrislusf/seaweedfs:4.48
         env:
           AWS_ACCESS_KEY_ID: seaweedAccessKey
           AWS_SECRET_ACCESS_KEY: seaweedSecretKey
@@ -31,7 +31,7 @@ jobs:
           # Tags are needed to compute the current version number
           fetch-depth: 0
       - name: Install uv
-        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Node.js
