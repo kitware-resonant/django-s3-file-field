@@ -37,5 +37,14 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "npm"
+    },
+    "runtime": {
+      "name": "node",
+      "version": ">=24"
+    }
   }
 }
