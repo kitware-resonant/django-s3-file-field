@@ -59,11 +59,13 @@ STORAGES = {
 }
 
 # Use values compatible with Docker Compose as defaults, in case environment variables are not set
-MINIO_STORAGE_ENDPOINT = os.environ.get("MINIO_STORAGE_ENDPOINT", "localhost:9000")
+MINIO_STORAGE_ENDPOINT = os.environ.get("MINIO_STORAGE_ENDPOINT", "localhost:8333")
 MINIO_STORAGE_USE_HTTPS = False
-MINIO_STORAGE_ACCESS_KEY = os.environ.get("MINIO_STORAGE_ACCESS_KEY", "minioAccessKey")
-MINIO_STORAGE_SECRET_KEY = os.environ.get("MINIO_STORAGE_SECRET_KEY", "minioSecretKey")
+MINIO_STORAGE_ACCESS_KEY = os.environ.get("MINIO_STORAGE_ACCESS_KEY", "seaweedAccessKey")
+MINIO_STORAGE_SECRET_KEY = os.environ.get("MINIO_STORAGE_SECRET_KEY", "seaweedSecretKey")
 MINIO_STORAGE_MEDIA_BUCKET_NAME = os.environ.get("MINIO_STORAGE_MEDIA_BUCKET_NAME", "s3ff-test")
-MINIO_STORAGE_AUTO_CREATE_MEDIA_POLICY = "READ_WRITE"
+# New buckets are already private to the public, so don't set any policy on them.
+# A "NONE" policy would send an empty policy document, which SeaweedFS rejects.
+MINIO_STORAGE_AUTO_CREATE_MEDIA_POLICY = False
 MINIO_STORAGE_AUTO_CREATE_MEDIA_BUCKET = True
 MINIO_STORAGE_MEDIA_USE_PRESIGNED = True

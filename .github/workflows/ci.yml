@@ -13,19 +13,17 @@ jobs:
       matrix:
         python-version: ["3.12", "3.13", "3.14"]
     services:
-      minio:
-        # This image does not require any command arguments (which GitHub Actions don't support)
-        image: bitnamilegacy/minio:latest
+      seaweedfs:
+        image: chrislusf/seaweedfs:4.47
         env:
-          MINIO_ROOT_USER: minioAccessKey
-          MINIO_ROOT_PASSWORD: minioSecretKey
+          AWS_ACCESS_KEY_ID: seaweedAccessKey
+          AWS_SECRET_ACCESS_KEY: seaweedSecretKey
         options: >-
-          --health-cmd "mc ready local"
-          --health-timeout 1s
+          --health-cmd "curl --fail --silent http://localhost:8333/healthz"
           --health-start-period 30s
           --health-start-interval 2s
         ports:
-          - 9000:9000
+          - 8333:8333
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -38,9 +36,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Run tests
         env:
-          MINIO_STORAGE_ENDPOINT: "localhost:9000"
-          MINIO_STORAGE_ACCESS_KEY: minioAccessKey
-          MINIO_STORAGE_SECRET_KEY: minioSecretKey
+          MINIO_STORAGE_ENDPOINT: "localhost:8333"
+          MINIO_STORAGE_ACCESS_KEY: seaweedAccessKey
+          MINIO_STORAGE_SECRET_KEY: seaweedSecretKey
           MINIO_STORAGE_MEDIA_BUCKET_NAME: s3ff-test
         run: |
           uv run --locked tox

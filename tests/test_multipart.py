@@ -39,7 +39,7 @@ def s3_storage_factory() -> S3Storage:
         # Explicitly use the recommended production configuration for signing
         signature_version="s3v4",
         bucket_name=settings.MINIO_STORAGE_MEDIA_BUCKET_NAME,
-        # For testing, connect to a local Minio instance
+        # For testing, connect to a local S3-compatible server
         endpoint_url=(
             f"{'https' if settings.MINIO_STORAGE_USE_HTTPS else 'http'}:"
             f"//{settings.MINIO_STORAGE_ENDPOINT}"
@@ -69,7 +69,7 @@ def minio_storage_factory() -> MinioStorage:
         auto_create_bucket=True,
         presign_urls=True,
         # TODO: Test the case of an alternate base_url
-        # base_url='http://minio:9000/bucket-name'
+        # base_url='http://seaweedfs:8333/bucket-name'
     )
 
 

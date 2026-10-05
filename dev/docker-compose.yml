@@ -1,18 +1,13 @@
 services:
-  minio:
-    image: minio/minio:latest
-    # When run with a TTY, minio prints credentials on startup
-    tty: true
-    command: ["server", "/data", "--console-address", ":9001"]
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.47
     environment:
-      MINIO_ROOT_USER: minioAccessKey
-      MINIO_ROOT_PASSWORD: minioSecretKey
+      AWS_ACCESS_KEY_ID: seaweedAccessKey
+      AWS_SECRET_ACCESS_KEY: seaweedSecretKey
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      # "mc ready" doesn't terminate on failure, so time it out
-      timeout: 1s
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8333/healthz"]
       start_period: 30s
       start_interval: 2s
     ports:
-      - 9000:9000
-      - 9001:9001
+      - 8333:8333
+      - 23646:23646
