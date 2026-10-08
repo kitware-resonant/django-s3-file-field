@@ -16,8 +16,7 @@ yarn add django-s3-file-field
 
 ## Usage
 ```typescript
-import axios from 'axios';
-import S3FileFieldClient, { S3FileFieldProgress, S3FileFieldProgressState } from 'django-s3-file-field';
+import S3FileFieldClient, { type S3FileFieldProgress, S3FileFieldProgressState } from 'django-s3-file-field';
 
 function onUploadProgress (progress: S3FileFieldProgress) {
   if (progress.state == S3FileFieldProgressState.Uploading) {
@@ -25,11 +24,13 @@ function onUploadProgress (progress: S3FileFieldProgress) {
   }
 }
 
-const apiClient = axios.create(...); // This can be used to set authentication headers, etc.
-
 const s3ffClient = new S3FileFieldClient({
   baseUrl: process.env.S3FF_BASE_URL, // e.g. 'http://localhost:8000/api/v1/s3-upload/', the path mounted in urlpatterns
-  apiConfig: apiClient.defaults, // This argument is optional
+  apiConfig: { // This argument is optional
+    // These are fetch() options for requests to the Django API, which can be used to set
+    // authentication headers, credentials, etc.
+    headers: { Authorization: `Bearer ${accessToken}` },
+  },
 });
 
 // This might be run in an event handler
@@ -41,11 +42,19 @@ const fieldValue = await s3ffClient.uploadFile(
   onUploadProgress, // This argument is optional
 );
 
-apiClient.post(
+// The field value is submitted in place of the file content, as in this REST API request
+fetch(
   'http://localhost:8000/api/v1/file/', // This is particular to the application
   {
-    'blob': fieldValue, // This should match the field uploaded to (e.g. 'core.File.blob')
-    ...: ...,  // Other fields for the POST request
-  }
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      blob: fieldValue, // This should match the field uploaded to (e.g. 'core.File.blob')
+      ...: ...,  // Other fields for the POST request
+    }),
+  },
 );
 ```
