@@ -680,7 +680,9 @@ export class S3FileInputElement extends LitElement {
 
   private get uploadFraction(): number | undefined {
     const progress = this.uploadProgress;
-    return progress?.uploaded !== undefined && progress.total
+    // The client reports bytes as each part completes, so until the first part does, the bar is
+    // indeterminate rather than pinned at zero
+    return progress?.uploaded !== undefined && progress.uploaded > 0 && progress.total
       ? progress.uploaded / progress.total
       : undefined;
   }
@@ -790,9 +792,15 @@ export class S3FileInputElement extends LitElement {
 
     let fieldValue: string;
     try {
-      fieldValue = await uploadFile(this.baseUrl, this.fieldId, file, (progress) => {
-        this.uploadProgress = progress;
-      });
+      fieldValue = await uploadFile(
+        this.baseUrl,
+        this.fieldId,
+        file,
+        this.internals.form,
+        (progress) => {
+          this.uploadProgress = progress;
+        },
+      );
     } catch {
       this.resetPicker();
       this.errorMessage = 'Error uploading file.';
