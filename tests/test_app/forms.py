@@ -4,7 +4,7 @@ from django.forms import ModelForm
 
 from s3_file_field.forms import S3FormFileField
 
-from .models import LimitedResource, MultiResource, OptionalResource, Resource
+from .models import LimitedResource, MultiResource, OptionalResource, Resource, ValidatedResource
 
 
 class ResourceForm(ModelForm[Resource]):
@@ -38,4 +38,10 @@ class MultiResourceForm(ModelForm[MultiResource]):
 class LimitedResourceForm(ModelForm[LimitedResource]):
     class Meta:
         model = LimitedResource
+        fields = "__all__"
+
+
+class ValidatedResourceForm(ModelForm[ValidatedResource]):
+    class Meta:
+        model = ValidatedResource
         fields = "__all__"

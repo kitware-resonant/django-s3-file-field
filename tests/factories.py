@@ -8,7 +8,7 @@ import factory
 
 from s3_file_field._pydantic_utils import SignedModel
 from s3_file_field._schemas import FieldValue, UploadToken
-from test_app.models import MultiResource, OptionalResource, Resource
+from test_app.models import MultiResource, OptionalResource, Resource, ValidatedResource
 
 if TYPE_CHECKING:
     from django.db.models import Model
@@ -81,3 +81,10 @@ class MultiResourceFactory(factory.Factory[MultiResource]):
 
     blob = factory.Sequence(_content_file)
     optional_blob = factory.Sequence(_content_file)
+
+
+class ValidatedResourceFactory(factory.Factory[ValidatedResource]):
+    class Meta:
+        model = ValidatedResource
+
+    blob = factory.Sequence(_content_file)

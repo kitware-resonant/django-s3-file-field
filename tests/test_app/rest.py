@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from .models import LimitedResource, MultiResource, OptionalResource, Resource
+from .models import LimitedResource, MultiResource, OptionalResource, Resource, ValidatedResource
 
 
 class ResourceSerializer(serializers.ModelSerializer[Resource]):
@@ -26,4 +26,10 @@ class MultiResourceSerializer(serializers.ModelSerializer[MultiResource]):
 class LimitedResourceSerializer(serializers.ModelSerializer[LimitedResource]):
     class Meta:
         model = LimitedResource
+        fields = "__all__"
+
+
+class ValidatedResourceSerializer(serializers.ModelSerializer[ValidatedResource]):
+    class Meta:
+        model = ValidatedResource
         fields = "__all__"

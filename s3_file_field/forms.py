@@ -1,72 +1,19 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, NoReturn, override
+from typing import TYPE_CHECKING, Any, Literal, override
 
 from django.core.exceptions import ValidationError
-from django.core.files import File
 from django.db.models.fields.files import FieldFile
 from django.forms import FileField, Widget
-from pydantic import ValidationError as PydanticValidationError
 
-from ._schemas import FieldValue
+from .files import S3PlaceholderFile
 from .widgets import S3FileInput
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
+    from django.core.files import File
     from django.core.files.uploadedfile import UploadedFile
 
     from .fields import S3FileField
-
-
-class S3PlaceholderFile(File[Any]):
-    name: str
-    size: int
-
-    def __init__(self, name: str, size: int) -> None:
-        self.name = name
-        self.size = size
-
-    @override
-    def open(
-        self,
-        mode: str | None = None,
-        buffering: int = -1,
-        encoding: str | None = None,
-        errors: str | None = None,
-        newline: str | None = None,
-        closefd: bool = True,
-        opener: Callable[[str, int], int] | None = None,
-    ) -> NoReturn:
-        raise NotImplementedError
-
-    @override
-    def close(self) -> NoReturn:
-        raise NotImplementedError
-
-    @override
-    def chunks(self, chunk_size: int | None = None) -> NoReturn:
-        raise NotImplementedError
-
-    @override
-    def multiple_chunks(self, chunk_size: int | None = None) -> bool:
-        # Since it's in memory, we'll never have multiple chunks.
-        return False
-
-    @classmethod
-    def from_field_value(cls, field_value: str, field: S3FileField) -> S3PlaceholderFile | None:
-        try:
-            parsed = FieldValue.model_validate(field_value)
-        except PydanticValidationError:
-            return None
-        # Compare field ids, to avoid needlessly depending on instance identities remaining stable
-        # (particularly given that the Django form layer frequently deep-copies objects).
-        if parsed.field.id != field.id:
-            # The FieldValue was minted for a different S3FileField instance; refuse to let it be
-            # replayed against this field, which may have a different storage or validation policy.
-            return None
-        # Since the field is signed, we know the content is structurally valid
-        return cls(parsed.object_key, parsed.file_size)
 
 
 class S3FormFileField(FileField):
@@ -165,10 +112,10 @@ class S3FormFileField(FileField):
             # same degree as typical S3FF uploads, which is too much complexity to support.
             raise ValidationError(self.error_messages["invalid"], code="invalid")
 
-        file_object = S3PlaceholderFile.from_field_value(data, self.model_field)
-        if file_object is None:
+        placeholder_file = S3PlaceholderFile.from_field_value(data, self.model_field)
+        if placeholder_file is None:
             raise ValidationError(self.error_messages["invalid"], code="invalid")
 
         # Check validity of the file name and size; this returns its argument unchanged
-        super().to_python(file_object)
-        return file_object
+        super().to_python(placeholder_file)
+        return placeholder_file

@@ -7,7 +7,12 @@ from django.http import QueryDict
 from django.utils.datastructures import MultiValueDict
 import pytest
 
-from factories import FieldValueFactory, OptionalResourceFactory, ResourceFactory
+from factories import (
+    FieldValueFactory,
+    OptionalResourceFactory,
+    ResourceFactory,
+    ValidatedResourceFactory,
+)
 from form_inspection import field_error_codes
 from test_app.forms import (
     DisabledResourceForm,
@@ -15,21 +20,44 @@ from test_app.forms import (
     MultiResourceForm,
     OptionalResourceForm,
     ResourceForm,
+    ValidatedResourceForm,
 )
-from test_app.models import LimitedResource, MultiResource, OptionalResource, Resource
+from test_app.models import (
+    LimitedResource,
+    MultiResource,
+    OptionalResource,
+    Resource,
+    ValidatedResource,
+)
 
 if TYPE_CHECKING:
+    from django.core.files import File
     from pytest_mock import MockerFixture
 
 
 def test_form_validation() -> None:
-    field_value = FieldValueFactory.build(object_key="key/file.txt")
+    field_value = FieldValueFactory.build(object_key="key/file.txt", file_size=15)
     form = ResourceForm(data={"blob": field_value.model_dump()})
 
     assert form.is_valid()
+    # The cleaned value describes the stored object, as a "clean_<field>" method would need
+    assert form.cleaned_data["blob"].name == "key/file.txt"
+    assert form.cleaned_data["blob"].size == 15
     # Validation has the side effect of populating the instance, which the model field assigns
     # the stored object's name to as-is
     assert form.instance.blob.name == "key/file.txt"
+
+
+def test_form_validation_content(stored_file_object: File[bytes]) -> None:
+    """The cleaned value's content is readable from storage, as a clean method may need."""
+    field_value = FieldValueFactory.build(
+        object_key=stored_file_object.name, file_size=stored_file_object.size
+    )
+    form = ResourceForm(data={"blob": field_value.model_dump()})
+
+    assert form.is_valid()
+    with form.cleaned_data["blob"].open() as blob_stream:
+        assert blob_stream.read() == b"test content"
 
 
 def test_form_validation_prefixed() -> None:
@@ -238,6 +266,32 @@ def test_form_edit_disabled() -> None:
     assert form.is_valid()
     assert form.cleaned_data["blob"] == instance.blob
     assert form.instance.blob.name == "key/file.txt"
+
+
+def test_form_validation_model_validators() -> None:
+    """The model field's validators run, as they do for any ModelForm."""
+    field_value = FieldValueFactory.build(field_model=ValidatedResource, object_key="key/file.txt")
+    form = ValidatedResourceForm(data={"blob": field_value.model_dump()})
+
+    assert form.is_valid()
+
+
+def test_form_validation_model_validators_invalid() -> None:
+    """A value refused by the model field's validators fails with their error."""
+    field_value = FieldValueFactory.build(field_model=ValidatedResource, object_key="key/file.pdf")
+    form = ValidatedResourceForm(data={"blob": field_value.model_dump()})
+
+    assert not form.is_valid()
+    assert field_error_codes(form, "blob") == ["invalid_extension"]
+
+
+def test_form_edit_clear_model_validators() -> None:
+    """Clearing an optional field never reaches the model field's validators."""
+    instance = ValidatedResourceFactory.build(blob="key/file.txt")
+    form = ValidatedResourceForm(data={"blob": "s3ff:clear"}, instance=instance)
+
+    assert form.is_valid()
+    assert form.cleaned_data["blob"] is False
 
 
 @pytest.mark.django_db

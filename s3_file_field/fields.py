@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from django.conf import settings
 from django.core import checks
-from django.db.models.fields.files import FileField
+from django.db.models.fields.files import FileDescriptor, FileField
 
 from ._multipart import MultipartManager, UnsupportedStorageError
 from ._registry import register_field
@@ -16,12 +16,29 @@ if TYPE_CHECKING:
 
     from django import forms
     from django.core.checks import CheckMessage
-    from django.core.files import File
     from django.db import models
 
 logger = logging.getLogger(__name__)
 
 _DEFAULT_MAX_LENGTH: Final = 2000
+
+
+class S3FileDescriptor(FileDescriptor):
+    """Descriptor for an S3FileField's attribute on a model instance."""
+
+    @override
+    def __set__(self, instance: models.Model, value: Any) -> None:
+        from .files import S3PlaceholderFile  # noqa: PLC0415
+
+        # The behavior of the superclass "FileDescriptor.__get__" provides that when a File
+        # object is assigned to the field, the content is considered uncommitted, and is saved.
+        # If a string is assigned to the field, it is considered to be the value in the database,
+        # and no save occurs, which is desirable here.
+        # However, we want to run validators on a file-like value, not a string, hence the need
+        # for S3PlaceholderFile.
+        if isinstance(value, S3PlaceholderFile):
+            value = value.name
+        super().__set__(instance, value)
 
 
 class S3FileField(FileField):
@@ -35,6 +52,8 @@ class S3FileField(FileField):
         "A file field which is supports direct uploads to S3 via the "
         "UI and fallsback to uploaded to <randomuuid>/filename."
     )
+
+    descriptor_class = S3FileDescriptor
 
     def __init__(self, *args: Any, max_size: int | None = None, **kwargs: Any) -> None:
         kwargs.setdefault("max_length", _DEFAULT_MAX_LENGTH)
@@ -134,21 +153,6 @@ class S3FileField(FileField):
         return super().formfield(
             form_class=form_class, choices_form_class=choices_form_class, widget=widget, **kwargs
         )
-
-    @override
-    def save_form_data(self, instance: models.Model, data: File[Any] | str | bool | None) -> None:
-        """Coerce a form field value and assign it to a model instance's field."""
-        from .forms import S3PlaceholderFile  # noqa: PLC0415
-
-        # The FileField's FileDescriptor behavior provides that when a File object is
-        # assigned to the field, the content is considered uncommitted, and is saved.
-        # If a string is assigned to the field, it is considered to be the value in the
-        # database, and no save occurs, which is desirable here.
-        # However, we don't want the S3FileInput or S3FormFileField to emit a string value,
-        # since that will break most of the default validation.
-        if isinstance(data, S3PlaceholderFile):
-            data = data.name
-        super().save_form_data(instance, data)
 
     @override
     def check(self, **kwargs: Any) -> list[CheckMessage]:
