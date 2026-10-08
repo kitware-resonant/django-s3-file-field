@@ -692,9 +692,9 @@ requires-dist = [
     { name = "django", specifier = ">=5.2" },
     { name = "django-minio-storage", marker = "extra == 'minio'", specifier = ">=0.5.9" },
     { name = "django-storages", extras = ["s3"], marker = "extra == 's3'", specifier = ">=1.14" },
-    { name = "djangorestframework" },
+    { name = "djangorestframework", specifier = ">=3.16" },
     { name = "minio", marker = "extra == 'minio'", specifier = ">=7.2.18" },
-    { name = "pydantic", specifier = "==2.13.5" },
+    { name = "pydantic", specifier = ">=2.11" },
     { name = "pytest", marker = "extra == 'pytest'" },
 ]
 provides-extras = ["minio", "pytest", "s3"]
