@@ -1,4 +1,5 @@
 import ky, { isKyError, type KyInstance } from 'ky';
+import pMap from 'p-map';
 
 import { S3FileFieldError, s3ErrorCode } from './error.js';
 
@@ -43,6 +44,10 @@ export interface S3FileFieldClientOptions {
 export default class S3FileFieldClient {
   protected readonly api: KyInstance;
 
+  // The number of parts uploaded at once: enough to hide each part's fixed latency, while leaving
+  // room under a browser's limit of 6 connections per host; also what AWS's browser SDK uses
+  protected readonly concurrency: number = 4;
+
   /**
    * Create an S3FileFieldClient instance.
    *
@@ -85,7 +90,7 @@ export default class S3FileFieldClient {
   }
 
   /**
-   * Uploads all the parts in a file directly to an object store in serial.
+   * Uploads all the parts in a file directly to an object store, several at once.
    *
    * @param file - The file to upload.
    * @param parts - The list of parts describing how to break up the file.
@@ -96,26 +101,37 @@ export default class S3FileFieldClient {
     parts: PresignedPart[],
     onProgress: S3FileFieldProgressCallback,
   ): Promise<CompletedPart[]> {
-    const completedParts: CompletedPart[] = [];
-    let fileOffset = 0;
-    for (const part of parts) {
-      const chunk = file.slice(fileOffset, fileOffset + part.size);
-      // biome-ignore lint/performance/noAwaitInLoops: parts are uploaded serially by design
-      const etag = await this.uploadPart(part, chunk);
-      completedParts.push({
-        // biome-ignore-start lint/style/useNamingConvention: API interface names
-        part_number: part.part_number,
-        etag,
-        // biome-ignore-end lint/style/useNamingConvention: API interface names
-      });
-      fileOffset += part.size;
-      onProgress({
-        uploaded: fileOffset,
-        total: file.size,
-        state: S3FileFieldProgressState.Uploading,
-      });
+    // Each part is the next of the file's content; slicing is lazy, so this reads nothing yet
+    let remaining: Blob = file;
+    const chunks = parts.map((part) => {
+      const chunk = remaining.slice(0, part.size);
+      remaining = remaining.slice(part.size);
+      return { part, chunk };
+    });
+
+    let uploaded = 0;
+    // When one part fails, the others in progress are abandoned
+    const controller = new AbortController();
+    try {
+      return await pMap(
+        chunks,
+        async ({ part, chunk }) => {
+          const etag = await this.uploadPart(part, chunk, controller.signal);
+          uploaded += part.size;
+          onProgress({ uploaded, total: file.size, state: S3FileFieldProgressState.Uploading });
+          return {
+            // biome-ignore-start lint/style/useNamingConvention: API interface names
+            part_number: part.part_number,
+            etag,
+            // biome-ignore-end lint/style/useNamingConvention: API interface names
+          };
+        },
+        { concurrency: this.concurrency },
+      );
+    } catch (error) {
+      controller.abort();
+      throw error;
     }
-    return completedParts;
   }
 
   /**
@@ -123,13 +139,19 @@ export default class S3FileFieldClient {
    *
    * @param part - The presigned part to upload.
    * @param chunk - The content of the part.
+   * @param signal - A signal to abandon the upload.
    */
-  protected async uploadPart(part: PresignedPart, chunk: Blob): Promise<string> {
+  protected async uploadPart(
+    part: PresignedPart,
+    chunk: Blob,
+    signal: AbortSignal,
+  ): Promise<string> {
     // A PUT which fails transiently is retried by ky's default policy
     const response = await ky.put(part.url, {
       body: chunk,
       // A large part may legitimately take minutes to upload
       timeout: false,
+      signal,
     });
     const etag = response.headers.get('ETag');
     if (etag === null) {
