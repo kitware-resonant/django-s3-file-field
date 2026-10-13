@@ -26,8 +26,10 @@ function apiErrorDetail(data: object): string | undefined {
 //     <Message>One or more of the specified parts could not be found.</Message>
 //     <RequestId>4442587FB7D0A2F9</RequestId>
 //   </Error>
-const s3ErrorCodePattern = /<Error>.*?<Code>([^<]*)<\/Code>/s;
-const s3ErrorMessagePattern = /<Error>.*?<Message>([^<]*)<\/Message>/s;
+// Anchor the patterns at the start, to avoid possible quadratic backtracking on
+// technically-untrusted input.
+const s3ErrorCodePattern = /^\s*(?:<\?xml[^>]*>\s*)?<Error>.*?<Code>([^<]*)<\/Code>/s;
+const s3ErrorMessagePattern = /^\s*(?:<\?xml[^>]*>\s*)?<Error>.*?<Message>([^<]*)<\/Message>/s;
 
 /** The code of an S3 error, if the body of a response describes one. */
 export function s3ErrorCode(body: string): string | undefined {
