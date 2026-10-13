@@ -16,9 +16,9 @@ jobs:
           # Tags are needed to compute the current version number
           fetch-depth: 0
       - name: Install uv
-        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
       - name: Install Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: ./javascript-client/.node-version
       - name: Build the Python distribution
@@ -41,7 +41,7 @@ jobs:
           # Tags are needed to compute the current version number
           fetch-depth: 0
       - name: Install uv
-        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
       - name: Build the Python distribution
         run: |
           uv build
@@ -63,7 +63,7 @@ jobs:
           # Tags are needed to compute the current version number
           fetch-depth: 0
       - name: Install Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: ./javascript-client/.node-version
       - name: Publish Javascript client to npm
