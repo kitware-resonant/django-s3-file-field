@@ -28,6 +28,10 @@ function formatBytes(bytes: number): string {
   return prettyBytes(bytes, { binary: true });
 }
 
+function stopPropagation(event: Event): void {
+  event.stopPropagation();
+}
+
 const uploadIcon = svg`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>`;
 const fileIcon = svg`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"/><path d="M14 3v5h5"/></svg>`;
 const removeIcon = svg`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>`;
@@ -39,10 +43,10 @@ const removeIcon = svg`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6
  * can be server-rendered by Django or driven by a frontend framework. The "value" is what is
  * submitted: after an upload, its signed FieldValue; on removing an existing file, the clear
  * value; otherwise, it is empty and nothing is submitted, which keeps any existing file. An
- * "input" event is fired when the user changes it, so a framework may bind it (as with v-model),
- * and an "error" event (which does not bubble) when an upload fails, with the error as its
- * "error". Unless that event is canceled, the error is then also reported as if uncaught, so it
- * reaches the console and any error monitoring.
+ * "input" event, then a "change" event, are fired when the user changes it (as by a native
+ * input), so a framework may bind it (as with v-model), and an "error" event (which does not
+ * bubble) when an upload fails, with the error as its "error". Unless that event is canceled, the
+ * error is then also reported as if uncaught, so it reaches the console and any error monitoring.
  *
  * The element inherits the page's font and text color, from which its borders and fills are
  * derived. Its accent color, error color and corner radius are read from the page's theme
@@ -549,8 +553,31 @@ export class S3FileInputElement extends LitElement {
   }
 
   /** Announce a change of the value by the user, as a native input does. */
-  private dispatchInput(): void {
+  private async dispatchValueChange(): Promise<void> {
+    // A listener may read the form's data or validity, which are synced by the update
+    await this.updateComplete;
+    // Every change here is committed, so both fire at once; as natively, only "input" is composed
     this.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+    this.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  /** Announce the failure of an upload. */
+  private async dispatchError(error: unknown): Promise<void> {
+    // A listener may read the form's validity, which is synced by the update
+    await this.updateComplete;
+    // As with a native element (as an image), the event does not bubble, so a listener for the
+    // page's own "error" events (as of an uncaught exception) on the window or document will
+    // not mistake it for one; a listener is attached to the element itself
+    const event = new ErrorEvent('error', {
+      error,
+      message: this.errorMessage,
+      cancelable: true,
+    });
+    if (this.dispatchEvent(event)) {
+      // By default, report the error as if it were uncaught, so it reaches the console and any
+      // error monitoring (as Sentry); a listener which handles it itself can prevent this
+      reportError(error);
+    }
   }
 
   /** Whether the field is disabled, by its own property or by the browser. */
@@ -609,8 +636,10 @@ export class S3FileInputElement extends LitElement {
   }
 
   private renderChoose(): TemplateResult {
+    // The picker's own "input" event is composed, so it would escape as the element's, before the
+    // value has changed; its "change" event is not, so it is handled here
     return html`<label class="choose" part="button">
-      <input id="picker" class="picker" type="file" @change=${this.handlePickerChange} />
+      <input id="picker" class="picker" type="file" @input=${stopPropagation} @change=${this.handlePickerChange} />
       ${uploadIcon}Choose file
     </label>`;
   }
@@ -783,7 +812,7 @@ export class S3FileInputElement extends LitElement {
     await this.upload(file);
   }
 
-  private handleRemove(): void {
+  private async handleRemove(): Promise<void> {
     this.errorMessage = '';
     if (this.fileState.kind === 'pending') {
       // Discard the pending upload, reverting to the existing file, if any. On a redisplay, the
@@ -797,12 +826,12 @@ export class S3FileInputElement extends LitElement {
       // Clear the kept file
       this.value = CLEAR_VALUE;
     }
-    this.dispatchInput();
+    await this.dispatchValueChange();
   }
 
-  private handleUndo(): void {
+  private async handleUndo(): Promise<void> {
     this.value = '';
-    this.dispatchInput();
+    await this.dispatchValueChange();
   }
 
   /** Cancel the upload in progress, if any, returning to the state before it. */
@@ -823,6 +852,7 @@ export class S3FileInputElement extends LitElement {
     this.uploadingFile = file;
     this.errorMessage = '';
     this.uploadController = new AbortController();
+    const { signal } = this.uploadController;
 
     let fieldValue: string;
     try {
@@ -834,39 +864,32 @@ export class S3FileInputElement extends LitElement {
         (progress) => {
           this.uploadProgress = progress;
         },
-        this.uploadController.signal,
+        signal,
       );
     } catch (error) {
+      this.endUpload();
       this.resetPicker();
-      if (this.uploadController.signal.aborted) {
+      if (signal.aborted) {
         // Canceled, which is not a failure
         return;
       }
       this.errorMessage =
         error instanceof S3FileFieldError ? error.message : 'Error uploading file.';
-      // As with a native element (as an image), the event does not bubble, so a listener for the
-      // page's own "error" events (as of an uncaught exception) on the window or document will
-      // not mistake it for one; a listener is attached to the element itself
-      const event = new ErrorEvent('error', {
-        error,
-        message: this.errorMessage,
-        cancelable: true,
-      });
-      if (this.dispatchEvent(event)) {
-        // By default, report the error as if it were uncaught, so it reaches the console and any
-        // error monitoring (as Sentry); a listener which handles it itself can prevent this
-        reportError(error);
-      }
+      await this.dispatchError(error);
       return;
-    } finally {
-      this.uploadingFile = undefined;
-      this.uploadProgress = undefined;
-      this.uploadController = null;
     }
+    this.endUpload();
 
     this.value = fieldValue;
     this.uploadedFileName = file.name;
-    this.dispatchInput();
+    await this.dispatchValueChange();
+  }
+
+  /** Leave the uploading state, before announcing its outcome. */
+  private endUpload(): void {
+    this.uploadingFile = undefined;
+    this.uploadProgress = undefined;
+    this.uploadController = null;
   }
 
   /**
