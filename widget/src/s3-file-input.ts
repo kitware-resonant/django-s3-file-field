@@ -48,6 +48,9 @@ const removeIcon = svg`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6
  * bubble) when an upload fails, with the error as its "error". Unless that event is canceled, the
  * error is then also reported as if uncaught, so it reaches the console and any error monitoring.
  *
+ * The element has the constraint validation API of a native input (as "validity" and
+ * "checkValidity"), along with its "form" and "labels".
+ *
  * The element inherits the page's font and text color, from which its borders and fills are
  * derived. Its accent color, error color and corner radius are read from the page's theme
  * (DaisyUI's or Vuetify's variables), or may be set with the "--s3-file-input-*" properties.
@@ -332,6 +335,19 @@ export class S3FileInputElement extends LitElement {
   accessor disabled = false;
 
   /**
+   * The name under which the value is submitted, when within a form.
+   *
+   * As natively, the attribute is the source of this, as the browser submits by it.
+   */
+  get name(): string {
+    return this.getAttribute('name') ?? '';
+  }
+
+  set name(name: string) {
+    this.setAttribute('name', name);
+  }
+
+  /**
    * Whether a file is required, so the element is invalid without one.
    *
    * Unlike a native file input, an existing file satisfies this (until it is removed), so Django
@@ -404,7 +420,7 @@ export class S3FileInputElement extends LitElement {
   private existingFileKnown = false;
 
   /** The associated form, whose submission is guarded while uploading. */
-  private form: HTMLFormElement | null = null;
+  private guardedForm: HTMLFormElement | null = null;
 
   /** The upload in progress, to cancel it. */
   private uploadController: AbortController | null = null;
@@ -508,10 +524,45 @@ export class S3FileInputElement extends LitElement {
     this.restoreFocus &&= !this.renderRoot.querySelector(':focus:not(:disabled)');
   }
 
+  // The form association and constraint validation API of a native input, from the internals
+
+  /** The form the element is associated with, if any. */
+  get form(): HTMLFormElement | null {
+    return this.internals.form;
+  }
+
+  /** The labels associated with the element. */
+  get labels(): NodeList {
+    return this.internals.labels;
+  }
+
+  /** Whether the element is a candidate for constraint validation. */
+  get willValidate(): boolean {
+    return this.internals.willValidate;
+  }
+
+  /** The validity of the element's value. */
+  get validity(): ValidityState {
+    return this.internals.validity;
+  }
+
+  /** The message describing the problem with the element's validity, if any. */
+  get validationMessage(): string {
+    return this.internals.validationMessage;
+  }
+
+  checkValidity(): boolean {
+    return this.internals.checkValidity();
+  }
+
+  reportValidity(): boolean {
+    return this.internals.reportValidity();
+  }
+
   formAssociatedCallback(form: HTMLFormElement | null): void {
-    this.form?.removeEventListener('submit', this.handleFormSubmit);
-    this.form = form;
-    this.form?.addEventListener('submit', this.handleFormSubmit);
+    this.guardedForm?.removeEventListener('submit', this.handleFormSubmit);
+    this.guardedForm = form;
+    this.guardedForm?.addEventListener('submit', this.handleFormSubmit);
   }
 
   async formDisabledCallback(disabled: boolean): Promise<void> {

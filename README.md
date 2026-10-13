@@ -348,7 +348,9 @@ properties:
 
 When placed within a `<form>`, an `<s3-file-input>` submits its value under its `name` and reports
 validity like a native input, so a missing `required` file or an upload in progress blocks form
-submission.
+submission. The element has the constraint validation API of a native input (`validity`,
+`validationMessage`, `checkValidity()`, and `reportValidity()`), along with its `form` and `labels`
+properties.
 
 To submit the element's value to a RESTful API, read the `value` property of the element.
 The element fires `input` and `change` events when the `value` property is changed by user input,
