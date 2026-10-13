@@ -353,6 +353,11 @@ submission.
 To submit the element's value to a RESTful API, read the `value` property of the element.
 The element will fire an `input` event when the `value` property is changed by user input.
 
+When an upload fails, the element fires an `error` event, whose `error` property is the
+`S3FileFieldError` (from the JavaScript client library) describing the failure. As with a native
+element, the event does not bubble. Unless the event is canceled, the error is then also reported
+as if it were uncaught, so it reaches the browser console and any error monitoring (e.g. Sentry).
+
 ##### Vue.js examples
 The element may be bound with Vue.js's `v-model`, or placed in a form, whose data then includes
 its value.

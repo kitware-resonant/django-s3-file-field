@@ -1,6 +1,6 @@
 // biome-ignore-all lint/suspicious/noUnnecessaryConditions: reactive properties are externally assigned by Lit, invisibly to type inference
 
-import type { S3FileFieldProgress } from 'django-s3-file-field';
+import { S3FileFieldError, type S3FileFieldProgress } from 'django-s3-file-field';
 import { css, html, LitElement, nothing, type PropertyValues, svg, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
@@ -39,7 +39,10 @@ const removeIcon = svg`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6
  * can be server-rendered by Django or driven by a frontend framework. The "value" is what is
  * submitted: after an upload, its signed FieldValue; on removing an existing file, the clear
  * value; otherwise, it is empty and nothing is submitted, which keeps any existing file. An
- * "input" event is fired when the user changes it, so a framework may bind it (as with v-model).
+ * "input" event is fired when the user changes it, so a framework may bind it (as with v-model),
+ * and an "error" event (which does not bubble) when an upload fails, with the error as its
+ * "error". Unless that event is canceled, the error is then also reported as if uncaught, so it
+ * reaches the console and any error monitoring.
  *
  * The element inherits the page's font and text color, from which its borders and fills are
  * derived. Its accent color, error color and corner radius are read from the page's theme
@@ -801,9 +804,23 @@ export class S3FileInputElement extends LitElement {
           this.uploadProgress = progress;
         },
       );
-    } catch {
+    } catch (error) {
       this.resetPicker();
-      this.errorMessage = 'Error uploading file.';
+      this.errorMessage =
+        error instanceof S3FileFieldError ? error.message : 'Error uploading file.';
+      // As with a native element (as an image), the event does not bubble, so a listener for the
+      // page's own "error" events (as of an uncaught exception) on the window or document will
+      // not mistake it for one; a listener is attached to the element itself
+      const event = new ErrorEvent('error', {
+        error,
+        message: this.errorMessage,
+        cancelable: true,
+      });
+      if (this.dispatchEvent(event)) {
+        // By default, report the error as if it were uncaught, so it reaches the console and any
+        // error monitoring (as Sentry); a listener which handles it itself can prevent this
+        reportError(error);
+      }
       return;
     } finally {
       this.uploadingFile = undefined;

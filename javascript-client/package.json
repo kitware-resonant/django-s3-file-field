@@ -25,6 +25,9 @@
     "test:type": "tsc --noEmit",
     "watch": "tsc --watch"
   },
+  "dependencies": {
+    "ky": "^2.2.0"
+  },
   "devDependencies": {
     "@biomejs/biome": "^2.4.1",
     "@resonant/biome-config": "^0.4.0",

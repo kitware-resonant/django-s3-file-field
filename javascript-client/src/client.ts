@@ -1,3 +1,7 @@
+import ky, { isKyError, type KyInstance } from 'ky';
+
+import { S3FileFieldError, s3ErrorCode } from './error.js';
+
 import type {
   CompletedPart,
   CompletionResponse,
@@ -6,6 +10,7 @@ import type {
   PresignedPart,
 } from './types.js';
 
+export { S3FileFieldError } from './error.js';
 export type * from './types.js';
 
 export enum S3FileFieldProgressState {
@@ -36,9 +41,7 @@ export interface S3FileFieldClientOptions {
 }
 
 export default class S3FileFieldClient {
-  protected readonly baseUrl: string;
-
-  protected readonly apiConfig: RequestInit;
+  protected readonly api: KyInstance;
 
   /**
    * Create an S3FileFieldClient instance.
@@ -49,47 +52,14 @@ export default class S3FileFieldClient {
    *                              `headers` for authentication, or `credentials`.
    */
   constructor({ baseUrl, apiConfig = {} }: S3FileFieldClientOptions) {
-    // Add a trailing slash
-    // biome-ignore lint/performance/useTopLevelRegex: constructor is called infrequently
-    this.baseUrl = baseUrl.replace(/\/?$/, '/');
-    this.apiConfig = apiConfig;
-  }
-
-  /**
-   * Sends a request, throwing an error if it fails or if its response is unsuccessful.
-   *
-   * The error's cause is the error thrown by `fetch` (as for a network failure) or else the
-   * unsuccessful response.
-   */
-  protected async request(input: string, init: RequestInit): Promise<Response> {
-    let response: Response;
-    try {
-      response = await fetch(input, init);
-    } catch (error) {
-      throw new Error('Request failed.', { cause: error });
-    }
-    if (!response.ok) {
-      throw new Error(`Request failed with HTTP ${response.status}.`, { cause: response });
-    }
-    return response;
-  }
-
-  /**
-   * Sends a JSON request to the Django API, returning its JSON response.
-   *
-   * @param path - The path of the endpoint, relative to the base URL.
-   * @param body - The request body, to be serialized as JSON.
-   */
-  protected async postApi<T>(path: string, body: unknown): Promise<T> {
-    const headers = new Headers(this.apiConfig.headers);
-    headers.set('Content-Type', 'application/json');
-    const response = await this.request(this.baseUrl + path, {
-      ...this.apiConfig,
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body),
+    this.api = ky.create({
+      ...apiConfig,
+      // Add a trailing slash, so that endpoint paths extend the base URL's path
+      // biome-ignore lint/performance/useTopLevelRegex: constructor is called infrequently
+      baseUrl: baseUrl.replace(/\/?$/, '/'),
+      // These requests are safe to repeat after a transient failure
+      retry: { methods: ['post'], retryOnTimeout: true },
     });
-    return (await response.json()) as T;
   }
 
   /**
@@ -99,15 +69,19 @@ export default class S3FileFieldClient {
    * @param fieldId - The Django field identifier.
    */
   protected initiateUpload(file: File, fieldId: string): Promise<InitiationResponse> {
-    return this.postApi<InitiationResponse>('initiate/', {
-      // biome-ignore-start lint/style/useNamingConvention: API interface names
-      field: fieldId,
-      file_name: file.name,
-      file_size: file.size,
-      // An unknown type is ''
-      content_type: file.type || 'application/octet-stream',
-      // biome-ignore-end lint/style/useNamingConvention: API interface names
-    });
+    return this.api
+      .post('initiate/', {
+        json: {
+          // biome-ignore-start lint/style/useNamingConvention: API interface names
+          field: fieldId,
+          file_name: file.name,
+          file_size: file.size,
+          // An unknown type is ''
+          content_type: file.type || 'application/octet-stream',
+          // biome-ignore-end lint/style/useNamingConvention: API interface names
+        },
+      })
+      .json<InitiationResponse>();
   }
 
   /**
@@ -151,11 +125,20 @@ export default class S3FileFieldClient {
    * @param chunk - The content of the part.
    */
   protected async uploadPart(part: PresignedPart, chunk: Blob): Promise<string> {
-    const response = await this.request(part.url, { method: 'PUT', body: chunk });
+    // A PUT which fails transiently is retried by ky's default policy
+    const response = await ky.put(part.url, {
+      body: chunk,
+      // A large part may legitimately take minutes to upload
+      timeout: false,
+    });
     const etag = response.headers.get('ETag');
     if (etag === null) {
       // The object store's CORS configuration must expose this header
-      throw new Error('ETag header missing from response.', { cause: response });
+      throw new S3FileFieldError(
+        S3FileFieldProgressState.Uploading,
+        'ETag header missing from response.',
+        { status: response.status, cause: response },
+      );
     }
     return etag;
   }
@@ -172,20 +155,46 @@ export default class S3FileFieldClient {
     initiation: InitiationResponse,
     parts: CompletedPart[],
   ): Promise<void> {
-    const completion = await this.postApi<CompletionResponse>('complete/', {
-      // biome-ignore-start lint/style/useNamingConvention: API interface names
-      upload_token: initiation.upload_token,
-      parts,
-      // biome-ignore-end lint/style/useNamingConvention: API interface names
-    });
+    const completion = await this.api
+      .post('complete/', {
+        json: {
+          // biome-ignore-start lint/style/useNamingConvention: API interface names
+          upload_token: initiation.upload_token,
+          parts,
+          // biome-ignore-end lint/style/useNamingConvention: API interface names
+        },
+      })
+      .json<CompletionResponse>();
 
     // Send the CompleteMultipartUpload operation to S3
-    await this.request(completion.url, {
-      method: 'POST',
+    await ky.post(completion.url, {
       // The AWS CompleteMultipartUpload docs specify no Content-Type, and S3 misinterprets the
       // body under some types. A string body would be sent as "text/plain", but a Blob without a
       // type is sent with no header.
       body: new Blob([completion.body]),
+      // Completing is safe to repeat, so retry it as ky would a PUT
+      retry: { methods: ['post'] },
+      // S3 responds with 200 as soon as it begins assembling the object, which may take
+      // minutes, during which it sends whitespace; the result arrives only at the end
+      timeout: false,
+      hooks: {
+        afterResponse: [
+          // The result can be an error, despite the 200. Give it the status it would have had if
+          // reported in the header (500 for an internal error, which S3 asks to be retried; 400
+          // for the rest, which are permanent), so ky handles it as it does any other error.
+          async ({ response }) => {
+            const body = await response.text();
+            const code = s3ErrorCode(body);
+            return code === undefined
+              ? undefined
+              : new Response(body, {
+                  status: code === 'InternalError' ? 500 : 400,
+                  statusText: code,
+                  headers: response.headers,
+                });
+          },
+        ],
+      },
     });
   }
 
@@ -197,11 +206,15 @@ export default class S3FileFieldClient {
    * @param uploadToken - The signed token identifying the upload.
    */
   protected async finalize(uploadToken: string): Promise<string> {
-    const finalization = await this.postApi<FinalizationResponse>('finalize/', {
-      // biome-ignore-start lint/style/useNamingConvention: API interface names
-      upload_token: uploadToken,
-      // biome-ignore-end lint/style/useNamingConvention: API interface names
-    });
+    const finalization = await this.api
+      .post('finalize/', {
+        json: {
+          // biome-ignore-start lint/style/useNamingConvention: API interface names
+          upload_token: uploadToken,
+          // biome-ignore-end lint/style/useNamingConvention: API interface names
+        },
+      })
+      .json<FinalizationResponse>();
     return finalization.field_value;
   }
 
@@ -219,15 +232,29 @@ export default class S3FileFieldClient {
       /* no-op */
     },
   ): Promise<string> {
-    onProgress({ state: S3FileFieldProgressState.Initiating });
-    const initiation = await this.initiateUpload(file, fieldId);
-    onProgress({ state: S3FileFieldProgressState.Uploading, uploaded: 0, total: file.size });
-    const completedParts = await this.uploadParts(file, initiation.parts, onProgress);
-    onProgress({ state: S3FileFieldProgressState.Completing });
-    await this.completeUpload(initiation, completedParts);
-    onProgress({ state: S3FileFieldProgressState.Finalizing });
-    const fieldValue = await this.finalize(initiation.upload_token);
-    onProgress({ state: S3FileFieldProgressState.Done });
-    return fieldValue;
+    // The last reported stage is the one which fails
+    let stage = S3FileFieldProgressState.Initiating;
+    const reportProgress: S3FileFieldProgressCallback = (progress) => {
+      stage = progress.state;
+      onProgress(progress);
+    };
+    try {
+      reportProgress({ state: S3FileFieldProgressState.Initiating });
+      const initiation = await this.initiateUpload(file, fieldId);
+      reportProgress({ state: S3FileFieldProgressState.Uploading, uploaded: 0, total: file.size });
+      const completedParts = await this.uploadParts(file, initiation.parts, reportProgress);
+      reportProgress({ state: S3FileFieldProgressState.Completing });
+      await this.completeUpload(initiation, completedParts);
+      reportProgress({ state: S3FileFieldProgressState.Finalizing });
+      const fieldValue = await this.finalize(initiation.upload_token);
+      reportProgress({ state: S3FileFieldProgressState.Done });
+      return fieldValue;
+    } catch (error) {
+      // Other errors (as from a bug, or an abort) are not failures of the upload itself
+      if (isKyError(error)) {
+        throw S3FileFieldError.fromKyError(error, stage);
+      }
+      throw error;
+    }
   }
 }

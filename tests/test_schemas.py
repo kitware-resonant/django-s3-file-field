@@ -35,7 +35,9 @@ def test_initiation_request_file_size_within_max_size() -> None:
 
 
 def test_initiation_request_file_size_exceeds_max_size() -> None:
-    with pytest.raises(ValidationError, match=r"file size exceeds the maximum of 10 bytes"):
+    with pytest.raises(
+        ValidationError, match=r"File is too large; the maximum is 10 bytes\."
+    ) as excinfo:
         InitiationRequest.model_validate(
             {
                 "field": "test_app.LimitedResource.blob",
@@ -44,6 +46,7 @@ def test_initiation_request_file_size_exceeds_max_size() -> None:
                 "content_type": "image/jpeg",
             }
         )
+    assert excinfo.value.errors()[0]["type"] == "file_too_large"
 
 
 def test_completion_request_deserialization() -> None:
