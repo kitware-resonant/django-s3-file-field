@@ -3,7 +3,9 @@ from __future__ import annotations
 from typing import Annotated, Self
 
 from django.core.signing import TimestampSigner
+from django.template.defaultfilters import filesizeformat
 from pydantic import BaseModel, Field, StringConstraints, field_validator, model_validator
+from pydantic_core import PydanticCustomError
 
 from ._pydantic_utils import (
     ETag,
@@ -23,9 +25,15 @@ class InitiationRequest(BaseModel, frozen=True, extra="forbid"):
     # This needs access to multiple fields
     @model_validator(mode="after")
     def max_file_size(self) -> Self:
-        if self.file_size > self.field.effective_max_size:
-            raise ValueError(
-                f"file size exceeds the maximum of {self.field.effective_max_size} bytes"
+        max_size = self.field.effective_max_size
+        if self.file_size > max_size:
+            # A custom error carries its message verbatim (a ValueError's would be prefixed with
+            # "Value error, "), and a type which a client can match
+            raise PydanticCustomError(
+                "file_too_large",
+                "File is too large; the maximum is {max_size}.",
+                # The size is formatted for HTML, with a non-breaking space
+                {"max_size": filesizeformat(max_size).replace("\xa0", " ")},
             )
         return self
 
