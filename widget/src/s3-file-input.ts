@@ -251,8 +251,9 @@ export class S3FileInputElement extends LitElement {
       height: 1.125em;
     }
 
-    /* Filled like the "Choose file" segment, so it reads as an action rather than status */
-    .undo {
+    /* Filled like the "Choose file" segment, so they read as actions rather than status */
+    .undo,
+    .cancel {
       padding: 0.35em 0.75em;
       font-weight: 600;
       background: var(--_fill);
@@ -263,7 +264,8 @@ export class S3FileInputElement extends LitElement {
       background: var(--_fill);
     }
 
-    .undo:hover {
+    .undo:hover,
+    .cancel:hover {
       background: color-mix(in oklab, currentColor 10%, transparent);
     }
 
@@ -382,9 +384,9 @@ export class S3FileInputElement extends LitElement {
   @query('.field :is(input, button):not(:disabled)')
   accessor firstControl!: HTMLElement | null;
 
-  /** The status line, which is always rendered; assigned by the decorator. */
-  @query('.status')
-  accessor status!: HTMLElement | null;
+  /** The button canceling an upload, which is only rendered during one; assigned by the decorator. */
+  @query('.cancel')
+  accessor cancelButton!: HTMLElement | null;
 
   private readonly internals = this.attachInternals();
 
@@ -399,6 +401,12 @@ export class S3FileInputElement extends LitElement {
 
   /** The associated form, whose submission is guarded while uploading. */
   private form: HTMLFormElement | null = null;
+
+  /** The upload in progress, to cancel it. */
+  private uploadController: AbortController | null = null;
+
+  /** The anchor of the validity last set, which the browser does not report back. */
+  private validityAnchor: HTMLElement | undefined;
 
   /** Whether focus was within the element before an update, and is to be restored after it. */
   private restoreFocus = false;
@@ -430,6 +438,12 @@ export class S3FileInputElement extends LitElement {
     }
   }
 
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    // The upload would otherwise finish into nothing
+    this.cancelUpload();
+  }
+
   override willUpdate(changedProperties: PropertyValues<this>): void {
     this.restoreFocus ||= this.matches(':focus-within');
     if (changedProperties.has('existingUrl')) {
@@ -452,18 +466,27 @@ export class S3FileInputElement extends LitElement {
   }
 
   private syncValidity(fileState: FileState): void {
+    let flags: ValidityStateFlags = {};
+    let message = '';
+    let anchor: HTMLElement | undefined;
     // The browser shows a validity message only on a focusable anchor
     if (this.uploading) {
-      // No control is rendered while uploading, so the status (which is focusable by script for
-      // this alone) anchors the message instead
-      const anchor = this.status ?? undefined;
-      this.internals.setValidity({ customError: true }, 'Upload in progress.', anchor);
+      // The Cancel button is the control which can resolve this
+      flags = { customError: true };
+      message = 'Upload in progress.';
+      anchor = this.cancelButton ?? undefined;
     } else if (this.required && (fileState.kind === 'none' || fileState.kind === 'cleared')) {
-      const anchor = this.picker ?? undefined;
-      this.internals.setValidity({ valueMissing: true }, 'Please select a file.', anchor);
-    } else {
-      this.internals.setValidity({});
+      flags = { valueMissing: true };
+      message = 'Please select a file.';
+      anchor = this.picker ?? undefined;
     }
+    // Setting the validity again, even unchanged, makes the browser hide and re-show its message;
+    // as every progress update is an update, that would keep the message hidden during an upload
+    if (message === this.internals.validationMessage && anchor === this.validityAnchor) {
+      return;
+    }
+    this.validityAnchor = anchor;
+    this.internals.setValidity(flags, message, anchor);
   }
 
   /**
@@ -503,11 +526,9 @@ export class S3FileInputElement extends LitElement {
   }
 
   formResetCallback(): void {
-    if (this.uploading) {
-      // The upload would otherwise land after the reset, resurrecting a value the user believed
-      // to be discarded; instead, it is kept, and may be removed once it completes
-      return;
-    }
+    // The upload would otherwise land after the reset, resurrecting a value the user believed
+    // to be discarded
+    this.cancelUpload();
     this.resetPicker();
     this.restorableState = this.initial;
     this.errorMessage = '';
@@ -579,10 +600,10 @@ export class S3FileInputElement extends LitElement {
         ${canPick && !this.dragging ? this.renderChoose() : this.renderLeadIcon()}
         <div class="text">
           <div class="primary">${this.renderPrimary(fileState)}</div>
-          <div class="status" role="status" tabindex="-1">${this.renderStatus(fileState)}</div>
+          <div class="status" role="status">${this.renderStatus(fileState)}</div>
         </div>
-        ${this.renderTrailing(fileState)}
-        ${this.uploading ? html`<progress part="progress" aria-label="Upload progress" value=${this.uploadFraction ?? nothing}></progress>` : null}
+        ${this.uploading ? this.renderProgress() : null}
+        ${this.renderAction(fileState)}
       </div>
     `;
   }
@@ -660,15 +681,19 @@ export class S3FileInputElement extends LitElement {
       : null;
   }
 
-  private renderTrailing(fileState: FileState): TemplateResult | null {
+  /** The percentage and the bar, while uploading. */
+  private renderProgress(): TemplateResult {
+    const fraction = this.uploadFraction;
+    return html`${fraction === undefined ? null : html`<span class="percent">${Math.round(fraction * 100)}%</span>`}<progress part="progress" aria-label="Upload progress" value=${fraction ?? nothing}></progress>`;
+  }
+
+  /** The button for the action available in the current state, if any. */
+  private renderAction(fileState: FileState): TemplateResult | null {
     if (this.isDisabled) {
       return null;
     }
     if (this.uploading) {
-      const fraction = this.uploadFraction;
-      return fraction === undefined
-        ? null
-        : html`<span class="percent">${Math.round(fraction * 100)}%</span>`;
+      return html`<button type="button" class="cancel" part="cancel" @click=${this.cancelUpload}>Cancel</button>`;
     }
     switch (fileState.kind) {
       case 'pending':
@@ -780,6 +805,11 @@ export class S3FileInputElement extends LitElement {
     this.dispatchInput();
   }
 
+  /** Cancel the upload in progress, if any, returning to the state before it. */
+  private cancelUpload(): void {
+    this.uploadController?.abort();
+  }
+
   private readonly handleFormSubmit = (event: SubmitEvent): void => {
     // The element's validity blocks submission of most forms, but a "novalidate" form (as in
     // the Django admin) ignores validity, so block that here too
@@ -792,6 +822,7 @@ export class S3FileInputElement extends LitElement {
   private async upload(file: File): Promise<void> {
     this.uploadingFile = file;
     this.errorMessage = '';
+    this.uploadController = new AbortController();
 
     let fieldValue: string;
     try {
@@ -803,9 +834,14 @@ export class S3FileInputElement extends LitElement {
         (progress) => {
           this.uploadProgress = progress;
         },
+        this.uploadController.signal,
       );
     } catch (error) {
       this.resetPicker();
+      if (this.uploadController.signal.aborted) {
+        // Canceled, which is not a failure
+        return;
+      }
       this.errorMessage =
         error instanceof S3FileFieldError ? error.message : 'Error uploading file.';
       // As with a native element (as an image), the event does not bubble, so a listener for the
@@ -825,6 +861,7 @@ export class S3FileInputElement extends LitElement {
     } finally {
       this.uploadingFile = undefined;
       this.uploadProgress = undefined;
+      this.uploadController = null;
     }
 
     this.value = fieldValue;

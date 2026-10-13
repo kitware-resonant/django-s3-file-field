@@ -72,8 +72,13 @@ export default class S3FileFieldClient {
    *
    * @param file - The file to upload.
    * @param fieldId - The Django field identifier.
+   * @param signal - A signal to cancel the upload.
    */
-  protected initiateUpload(file: File, fieldId: string): Promise<InitiationResponse> {
+  protected initiateUpload(
+    file: File,
+    fieldId: string,
+    signal: AbortSignal | undefined,
+  ): Promise<InitiationResponse> {
     return this.api
       .post('initiate/', {
         json: {
@@ -85,6 +90,7 @@ export default class S3FileFieldClient {
           content_type: file.type || 'application/octet-stream',
           // biome-ignore-end lint/style/useNamingConvention: API interface names
         },
+        signal,
       })
       .json<InitiationResponse>();
   }
@@ -95,11 +101,13 @@ export default class S3FileFieldClient {
    * @param file - The file to upload.
    * @param parts - The list of parts describing how to break up the file.
    * @param onProgress - A callback for upload progress, called as each part completes.
+   * @param signal - A signal to cancel the upload.
    */
   protected async uploadParts(
     file: File,
     parts: PresignedPart[],
     onProgress: S3FileFieldProgressCallback,
+    signal: AbortSignal | undefined,
   ): Promise<CompletedPart[]> {
     // Each part is the next of the file's content; slicing is lazy, so this reads nothing yet
     let remaining: Blob = file;
@@ -110,13 +118,15 @@ export default class S3FileFieldClient {
     });
 
     let uploaded = 0;
-    // When one part fails, the others in progress are abandoned
+    // When one part fails (or the upload is canceled), the others in progress are abandoned
     const controller = new AbortController();
+    const partSignal =
+      signal === undefined ? controller.signal : AbortSignal.any([signal, controller.signal]);
     try {
       return await pMap(
         chunks,
         async ({ part, chunk }) => {
-          const etag = await this.uploadPart(part, chunk, controller.signal);
+          const etag = await this.uploadPart(part, chunk, partSignal);
           uploaded += part.size;
           onProgress({ uploaded, total: file.size, state: S3FileFieldProgressState.Uploading });
           return {
@@ -126,7 +136,7 @@ export default class S3FileFieldClient {
             // biome-ignore-end lint/style/useNamingConvention: API interface names
           };
         },
-        { concurrency: this.concurrency },
+        { concurrency: this.concurrency, signal: partSignal },
       );
     } catch (error) {
       controller.abort();
@@ -172,10 +182,12 @@ export default class S3FileFieldClient {
    *
    * @param initiation - The initiation response describing the upload.
    * @param parts - The parts that were uploaded.
+   * @param signal - A signal to cancel the upload.
    */
   protected async completeUpload(
     initiation: InitiationResponse,
     parts: CompletedPart[],
+    signal: AbortSignal | undefined,
   ): Promise<void> {
     const completion = await this.api
       .post('complete/', {
@@ -185,6 +197,7 @@ export default class S3FileFieldClient {
           parts,
           // biome-ignore-end lint/style/useNamingConvention: API interface names
         },
+        signal,
       })
       .json<CompletionResponse>();
 
@@ -199,6 +212,7 @@ export default class S3FileFieldClient {
       // S3 responds with 200 as soon as it begins assembling the object, which may take
       // minutes, during which it sends whitespace; the result arrives only at the end
       timeout: false,
+      signal,
       hooks: {
         afterResponse: [
           // The result can be an error, despite the 200. Give it the status it would have had if
@@ -226,8 +240,9 @@ export default class S3FileFieldClient {
    * This will only succeed if the object is already present in the object store.
    *
    * @param uploadToken - The signed token identifying the upload.
+   * @param signal - A signal to cancel the upload.
    */
-  protected async finalize(uploadToken: string): Promise<string> {
+  protected async finalize(uploadToken: string, signal: AbortSignal | undefined): Promise<string> {
     const finalization = await this.api
       .post('finalize/', {
         json: {
@@ -235,6 +250,7 @@ export default class S3FileFieldClient {
           upload_token: uploadToken,
           // biome-ignore-end lint/style/useNamingConvention: API interface names
         },
+        signal,
       })
       .json<FinalizationResponse>();
     return finalization.field_value;
@@ -246,6 +262,8 @@ export default class S3FileFieldClient {
    * @param file - The file to upload.
    * @param fieldId - The Django field identifier.
    * @param [onProgress] - A callback for upload progress.
+   * @param [signal] - A signal to cancel the upload, which then rejects with the signal's reason
+   *                   (an "AbortError", by default) rather than an `S3FileFieldError`.
    */
   public async uploadFile(
     file: File,
@@ -253,6 +271,7 @@ export default class S3FileFieldClient {
     onProgress: S3FileFieldProgressCallback = () => {
       /* no-op */
     },
+    signal?: AbortSignal,
   ): Promise<string> {
     // The last reported stage is the one which fails
     let stage = S3FileFieldProgressState.Initiating;
@@ -262,13 +281,13 @@ export default class S3FileFieldClient {
     };
     try {
       reportProgress({ state: S3FileFieldProgressState.Initiating });
-      const initiation = await this.initiateUpload(file, fieldId);
+      const initiation = await this.initiateUpload(file, fieldId, signal);
       reportProgress({ state: S3FileFieldProgressState.Uploading, uploaded: 0, total: file.size });
-      const completedParts = await this.uploadParts(file, initiation.parts, reportProgress);
+      const completedParts = await this.uploadParts(file, initiation.parts, reportProgress, signal);
       reportProgress({ state: S3FileFieldProgressState.Completing });
-      await this.completeUpload(initiation, completedParts);
+      await this.completeUpload(initiation, completedParts, signal);
       reportProgress({ state: S3FileFieldProgressState.Finalizing });
-      const fieldValue = await this.finalize(initiation.upload_token);
+      const fieldValue = await this.finalize(initiation.upload_token, signal);
       reportProgress({ state: S3FileFieldProgressState.Done });
       return fieldValue;
     } catch (error) {

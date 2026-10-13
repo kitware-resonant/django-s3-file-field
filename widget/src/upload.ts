@@ -29,6 +29,7 @@ export async function uploadFile(
   file: File,
   form: HTMLFormElement | null,
   onProgress: S3FileFieldProgressCallback,
+  signal: AbortSignal,
 ): Promise<string> {
   const csrfToken = await getCsrfToken(form);
   const client = new S3FileFieldClient({
@@ -43,5 +44,5 @@ export async function uploadFile(
       headers: csrfToken === undefined ? {} : { 'X-CSRFToken': csrfToken },
     },
   });
-  return client.uploadFile(file, fieldId, onProgress);
+  return client.uploadFile(file, fieldId, onProgress, signal);
 }
