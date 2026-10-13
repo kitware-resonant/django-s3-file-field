@@ -61,15 +61,14 @@ class UploadTooLargeError(Exception):
 class MultipartManager(ABC):
     """A facade providing management of S3 multipart uploads to multiple Storages."""
 
-    # Clients upload parts serially, so each part costs a fixed latency regardless of its size:
-    # a CORS preflight, the request's final round trip, and the store's processing, roughly 0.1
-    # to 0.3 s in total. Meanwhile, progress reporting and any retrying work in whole parts, so
-    # smaller parts give finer feedback and less to repeat. At 16 MB (assuming 0.2 s per part),
-    # the fixed cost is under 4% of a 25 Mbps uplink and 13% of 100 Mbps, and costs a gigabit
-    # link about 13 s per GB, while a 10 Mbps uplink still completes a part every 13 s. AWS's own
-    # SDKs use 5 to 8 MB parts, but upload several in parallel, which hides the fixed cost; 8 MB
-    # would suit clients which upload parts in parallel.
-    baseline_part_size: ClassVar[int] = mb(16)
+    # Each part costs a fixed latency regardless of its size (a CORS preflight, the request's
+    # final round trip, and the store's processing: roughly 0.1 to 0.3 s), while progress
+    # reporting and any retrying work in whole parts, so smaller parts give finer feedback and
+    # less to repeat. The JavaScript client uploads several parts at once (4 by default), which
+    # hides the fixed latency, so parts may be small; 8 MB is also what AWS's SDKs use. A client
+    # uploading parts serially (as the Python client) pays the latency per part: at 8 MB, about
+    # 3% of a 25 Mbps uplink and 23% of 100 Mbps, assuming 0.2 s per part.
+    baseline_part_size: ClassVar[int] = mb(8)
     max_object_size: ClassVar[int]
     # S3 multipart limits, also enforced by MinIO:
     # https://docs.aws.amazon.com/AmazonS3/latest/userguide/qfacts.html
