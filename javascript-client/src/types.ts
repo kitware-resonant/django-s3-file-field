@@ -30,3 +30,13 @@ export interface FinalizationResponse {
   field_value: string;
   // biome-ignore-end lint/style/useNamingConvention: API interface names
 }
+
+export interface ValidationError {
+  type: string;
+  loc: (string | number)[];
+  msg: string;
+}
+
+export interface ErrorResponse {
+  detail: string | ValidationError[];
+}

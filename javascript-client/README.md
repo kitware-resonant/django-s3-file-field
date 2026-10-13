@@ -16,7 +16,11 @@ yarn add django-s3-file-field
 
 ## Usage
 ```typescript
-import S3FileFieldClient, { type S3FileFieldProgress, S3FileFieldProgressState } from 'django-s3-file-field';
+import S3FileFieldClient, {
+  type S3FileFieldProgress,
+  S3FileFieldError,
+  S3FileFieldProgressState,
+} from 'django-s3-file-field';
 
 function onUploadProgress (progress: S3FileFieldProgress) {
   if (progress.state == S3FileFieldProgressState.Uploading) {
@@ -36,11 +40,20 @@ const s3ffClient = new S3FileFieldClient({
 // This might be run in an event handler
 const file = document.getElementById('my-file-input').files[0];
 
-const fieldValue = await s3ffClient.uploadFile(
-  file,
-  'core.File.blob', // The "<app>.<model>.<field>" to upload to,
-  onUploadProgress, // This argument is optional
-);
+let fieldValue;
+try {
+  fieldValue = await s3ffClient.uploadFile(
+    file,
+    'core.File.blob', // The "<app>.<model>.<field>" to upload to,
+    onUploadProgress, // This argument is optional
+  );
+} catch (error) {
+  if (error instanceof S3FileFieldError) {
+    // The message is suitable for display; the error also describes the failure in detail
+    showMessage(error.message);
+  }
+  throw error;
+}
 
 // The field value is submitted in place of the file content, as in this REST API request
 fetch(

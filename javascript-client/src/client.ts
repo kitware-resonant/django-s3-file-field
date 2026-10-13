@@ -1,4 +1,6 @@
-import ky, { type KyInstance } from 'ky';
+import ky, { isKyError, type KyInstance } from 'ky';
+
+import { S3FileFieldError, s3ErrorCode } from './error.js';
 
 import type {
   CompletedPart,
@@ -8,6 +10,7 @@ import type {
   PresignedPart,
 } from './types.js';
 
+export { S3FileFieldError } from './error.js';
 export type * from './types.js';
 
 export enum S3FileFieldProgressState {
@@ -131,7 +134,11 @@ export default class S3FileFieldClient {
     const etag = response.headers.get('ETag');
     if (etag === null) {
       // The object store's CORS configuration must expose this header
-      throw new Error('ETag header missing from response.', { cause: response });
+      throw new S3FileFieldError(
+        S3FileFieldProgressState.Uploading,
+        'ETag header missing from response.',
+        { status: response.status, cause: response },
+      );
     }
     return etag;
   }
@@ -160,23 +167,35 @@ export default class S3FileFieldClient {
       .json<CompletionResponse>();
 
     // Send the CompleteMultipartUpload operation to S3
-    const result = await ky
-      .post(completion.url, {
-        // The AWS CompleteMultipartUpload docs specify no Content-Type, and S3 misinterprets the
-        // body under some types. A string body would be sent as "text/plain", but a Blob without a
-        // type is sent with no header.
-        body: new Blob([completion.body]),
-        // Completing is safe to repeat, so retry it as ky would a PUT
-        retry: { methods: ['post'] },
-        // S3 responds with 200 as soon as it begins assembling the object, which may take
-        // minutes, during which it sends whitespace; the result arrives only at the end
-        timeout: false,
-      })
-      .text();
-    // The result can be an error, despite the 200
-    if (result.includes('<Error>')) {
-      throw new Error('CompleteMultipartUpload failed.', { cause: result });
-    }
+    await ky.post(completion.url, {
+      // The AWS CompleteMultipartUpload docs specify no Content-Type, and S3 misinterprets the
+      // body under some types. A string body would be sent as "text/plain", but a Blob without a
+      // type is sent with no header.
+      body: new Blob([completion.body]),
+      // Completing is safe to repeat, so retry it as ky would a PUT
+      retry: { methods: ['post'] },
+      // S3 responds with 200 as soon as it begins assembling the object, which may take
+      // minutes, during which it sends whitespace; the result arrives only at the end
+      timeout: false,
+      hooks: {
+        afterResponse: [
+          // The result can be an error, despite the 200. Give it the status it would have had if
+          // reported in the header (500 for an internal error, which S3 asks to be retried; 400
+          // for the rest, which are permanent), so ky handles it as it does any other error.
+          async ({ response }) => {
+            const body = await response.text();
+            const code = s3ErrorCode(body);
+            return code === undefined
+              ? undefined
+              : new Response(body, {
+                  status: code === 'InternalError' ? 500 : 400,
+                  statusText: code,
+                  headers: response.headers,
+                });
+          },
+        ],
+      },
+    });
   }
 
   /**
@@ -213,15 +232,29 @@ export default class S3FileFieldClient {
       /* no-op */
     },
   ): Promise<string> {
-    onProgress({ state: S3FileFieldProgressState.Initiating });
-    const initiation = await this.initiateUpload(file, fieldId);
-    onProgress({ state: S3FileFieldProgressState.Uploading, uploaded: 0, total: file.size });
-    const completedParts = await this.uploadParts(file, initiation.parts, onProgress);
-    onProgress({ state: S3FileFieldProgressState.Completing });
-    await this.completeUpload(initiation, completedParts);
-    onProgress({ state: S3FileFieldProgressState.Finalizing });
-    const fieldValue = await this.finalize(initiation.upload_token);
-    onProgress({ state: S3FileFieldProgressState.Done });
-    return fieldValue;
+    // The last reported stage is the one which fails
+    let stage = S3FileFieldProgressState.Initiating;
+    const reportProgress: S3FileFieldProgressCallback = (progress) => {
+      stage = progress.state;
+      onProgress(progress);
+    };
+    try {
+      reportProgress({ state: S3FileFieldProgressState.Initiating });
+      const initiation = await this.initiateUpload(file, fieldId);
+      reportProgress({ state: S3FileFieldProgressState.Uploading, uploaded: 0, total: file.size });
+      const completedParts = await this.uploadParts(file, initiation.parts, reportProgress);
+      reportProgress({ state: S3FileFieldProgressState.Completing });
+      await this.completeUpload(initiation, completedParts);
+      reportProgress({ state: S3FileFieldProgressState.Finalizing });
+      const fieldValue = await this.finalize(initiation.upload_token);
+      reportProgress({ state: S3FileFieldProgressState.Done });
+      return fieldValue;
+    } catch (error) {
+      // Other errors (as from a bug, or an abort) are not failures of the upload itself
+      if (isKyError(error)) {
+        throw S3FileFieldError.fromKyError(error, stage);
+      }
+      throw error;
+    }
   }
 }
