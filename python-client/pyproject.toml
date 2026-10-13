@@ -19,20 +19,23 @@ keywords = [
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Environment :: Web Environment",
-  "Framework :: Django :: 4",
-  "Framework :: Django :: 4.2",
   "Framework :: Django :: 5",
-  "Framework :: Django :: 5.1",
   "Framework :: Django :: 5.2",
+  "Framework :: Django :: 6",
+  "Framework :: Django :: 6.0",
+  "Framework :: Django :: 6.1",
   "Framework :: Django",
   "Intended Audience :: Developers",
   "Operating System :: OS Independent",
+  "Programming Language :: Python",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
-  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
 ]
 dependencies = [
+  # Consider niquests, httpx2, or aiohttp
   "requests",
   # Python 3.15 natively supports TypedDict "closed=True" (PEP 728)
   "typing-extensions>=4.13; python_version < '3.15'",
