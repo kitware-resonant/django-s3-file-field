@@ -84,6 +84,16 @@ dev = [
   "watchdog==6.0.0",
   "werkzeug==3.1.9",
 ]
+# Alternative Django versions for the test matrix; mutually conflicting, see [tool.uv]
+django52 = [
+  "django==5.2.*",
+]
+django60 = [
+  "django==6.0.*",
+]
+django61 = [
+  "django==6.1.*",
+]
 lint = [
   "ruff==0.16.10",
 ]
@@ -142,6 +152,18 @@ build_dir = "s3_file_field/static/s3_file_field"
 
 [tool.hatch.version]
 source = "vcs"
+
+[tool.uv]
+# At most one of these groups (each requiring a different Django version) may be installed
+# into an environment; this allows "uv.lock" to hold a distinct resolution for each
+conflicts = [
+  [
+    { group = "dev" },
+    { group = "django52" },
+    { group = "django60" },
+    { group = "django61" },
+  ],
+]
 
 [tool.uv.workspace]
 members = ["python-client"]
