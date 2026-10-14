@@ -207,7 +207,7 @@ export default class S3FileFieldClient {
       // body under some types. A string body would be sent as "text/plain", but a Blob without a
       // type is sent with no header.
       body: new Blob([completion.body]),
-      // Completing is safe to repeat, so retry it as ky would a PUT
+      // Retry completing as ky would a PUT; the hook below handles the one way a repeat can differ
       retry: { methods: ['post'] },
       // S3 responds with 200 as soon as it begins assembling the object, which may take
       // minutes, during which it sends whitespace; the result arrives only at the end
@@ -215,19 +215,28 @@ export default class S3FileFieldClient {
       signal,
       hooks: {
         afterResponse: [
-          // The result can be an error, despite the 200. Give it the status it would have had if
-          // reported in the header (500 for an internal error, which S3 asks to be retried; 400
-          // for the rest, which are permanent), so ky handles it as it does any other error.
-          async ({ response }) => {
+          // The result can be an error, despite the 200
+          async ({ response, retryCount }) => {
             const body = await response.text();
             const code = s3ErrorCode(body);
-            return code === undefined
-              ? undefined
-              : new Response(body, {
-                  status: code === 'InternalError' ? 500 : 400,
-                  statusText: code,
-                  headers: response.headers,
-                });
+            if (code === undefined) {
+              // Normal success
+              return undefined;
+            }
+            if (code === 'NoSuchUpload' && retryCount > 0) {
+              // Completing is not repeatable: when an attempt succeeds but its response is lost,
+              // the retry finds the upload gone. Finalization checks that the object exists, so
+              // let it decide, by treating this as success.
+              return new Response(body, { status: 200, headers: response.headers });
+            }
+            // Give the error the status it would have had if reported in the header (500 for an
+            // internal error, which S3 asks to be retried; 400 for the rest, which are permanent),
+            // so ky potentially retries it.
+            return new Response(body, {
+              status: code === 'InternalError' ? 500 : 400,
+              statusText: code,
+              headers: response.headers,
+            });
           },
         ],
       },
