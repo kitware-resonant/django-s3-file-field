@@ -29,14 +29,14 @@ def test_form_redisplay_create() -> None:
     form = MultiResourceForm(data={"optional_blob": field_value_str})
 
     assert not form.is_valid()
-    # A pending upload is not yet validated, so its storage key (not a URL) is rendered to name it
+    # A pending upload is not yet validated, so it's named (from its storage key), but not linked
     assert rendered_attrs(form["optional_blob"]) == {
         "name": "optional_blob",
         "id": "id_optional_blob",
         "base-url": "/api/s3ff_test/",
         "field-id": "test_app.MultiResource.optional_blob",
         "value": field_value_str,
-        "existing-url": "key/file.txt",
+        "pending-name": "file.txt",
     }
 
 
@@ -93,6 +93,29 @@ def test_form_redisplay_edit() -> None:
     }
 
 
+def test_form_redisplay_edit_replace() -> None:
+    """A replacement upload is redisplayed when validation fails elsewhere on an edit form."""
+    instance = MultiResourceFactory.build(blob="", optional_blob="old_key/old_file.txt")
+    field_value = FieldValueFactory.build(
+        field_model=MultiResource, field_name="optional_blob", object_key="key/file.txt"
+    )
+    field_value_str = cast("str", field_value.model_dump())
+    # "blob" is missing, so the form is invalid
+    form = MultiResourceForm(data={"optional_blob": field_value_str}, instance=instance)
+
+    assert not form.is_valid()
+    # The existing file's info is rendered alongside, as it's kept if the pending upload is removed
+    assert rendered_attrs(form["optional_blob"]) == {
+        "name": "optional_blob",
+        "id": "id_optional_blob",
+        "base-url": "/api/s3ff_test/",
+        "field-id": "test_app.MultiResource.optional_blob",
+        "value": field_value_str,
+        "pending-name": "file.txt",
+        "existing-url": Fuzzy(r"^https?://.*/old_key/old_file\.txt"),
+    }
+
+
 def test_form_redisplay_edit_clear() -> None:
     """A clear of an existing file survives when validation fails elsewhere on an edit form."""
     instance = MultiResourceFactory.build(blob="", optional_blob="key/file.txt")
@@ -100,13 +123,14 @@ def test_form_redisplay_edit_clear() -> None:
     form = MultiResourceForm(data={"optional_blob": "s3ff:clear"}, instance=instance)
 
     assert not form.is_valid()
-    # The cleared file's info is no longer available
+    # The cleared file's info is rendered alongside, as it's kept if the clear is undone
     assert rendered_attrs(form["optional_blob"]) == {
         "name": "optional_blob",
         "id": "id_optional_blob",
         "base-url": "/api/s3ff_test/",
         "field-id": "test_app.MultiResource.optional_blob",
         "value": "s3ff:clear",
+        "existing-url": Fuzzy(r"^https?://.*/key/file\.txt"),
     }
 
 
@@ -124,25 +148,25 @@ def test_form_redisplay_edit_clear_required() -> None:
         "field-id": "test_app.Resource.blob",
         "required": None,
         "value": "s3ff:clear",
+        "existing-url": Fuzzy(r"^https?://.*/key/file\.txt"),
         "aria-invalid": "true",
         "aria-describedby": "id_blob_error",
     }
 
 
 def test_form_redisplay_edit_invalid() -> None:
-    """An unparseable pending value eclipses an existing file's info on redisplay."""
+    """An unparseable pending value is redisplayed, unnamed, alongside the existing file's info."""
     instance = OptionalResourceFactory.build(blob="key/file.txt")
     form = OptionalResourceForm(data={"blob": "invalid:field_value"}, instance=instance)
 
     assert not form.is_valid()
-    # The pending value alone determines the represented file, so the existing file's info
-    # is not rendered
     assert rendered_attrs(form["blob"]) == {
         "name": "blob",
         "id": "id_blob",
         "base-url": "/api/s3ff_test/",
         "field-id": "test_app.OptionalResource.blob",
         "value": "invalid:field_value",
+        "existing-url": Fuzzy(r"^https?://.*/key/file\.txt"),
         "aria-invalid": "true",
         "aria-describedby": "id_blob_error",
     }

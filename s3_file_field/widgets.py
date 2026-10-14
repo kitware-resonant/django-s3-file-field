@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import dataclasses
 import functools
 import posixpath
 from typing import TYPE_CHECKING, Any, Literal, override
 
-from django.db.models.fields.files import FieldFile
 from django.forms import Script, Widget
 from django.urls import get_script_prefix, get_urlconf, reverse
 from pydantic import ValidationError as PydanticValidationError
@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from django.core.files.uploadedfile import UploadedFile
+    from django.db.models.fields.files import FieldFile
     from django.utils.datastructures import MultiValueDict
 
 
@@ -41,6 +42,19 @@ def get_base_url() -> str:
 CLEAR_VALUE = "s3ff:clear"
 
 
+@dataclasses.dataclass(frozen=True, slots=True)
+class RedisplayValue:
+    """
+    The value to redisplay for a bound form, when a submission changes the existing file.
+
+    "S3FormFileField.bound_data" produces this, so that the widget can render both the submitted
+    change (a pending FieldValue string, or False for a clear) and the existing file it applies to.
+    """
+
+    data: str | Literal[False]
+    initial: FieldFile | None
+
+
 class S3FileInput(Widget):
     """Widget rendering an S3FormFileField as a "s3-file-input" custom element."""
 
@@ -58,7 +72,7 @@ class S3FileInput(Widget):
     def get_context(
         self,
         name: str,
-        value: FieldFile | str | Literal[False] | None,
+        value: FieldFile | RedisplayValue | None,
         attrs: dict[str, Any] | None,
     ) -> dict[str, Any]:
         """Return the template context for rendering this widget, resolved at render time."""
@@ -69,38 +83,40 @@ class S3FileInput(Widget):
         # (during app startup), as it requires URLconf resolution
         attrs["base-url"] = get_base_url()
 
-        # "existing-url" is best-effort display information, which the widget names the file by
-        if isinstance(value, str) and value:
-            # A pending FieldValue shouldn't provide a URL (the upload is not yet validated, so it
-            # shouldn't be served), but its storage key still names it
-            try:
-                parsed = FieldValue.model_validate(value)
-            except PydanticValidationError:
-                # The value is still rendered, but will be rejected if resubmitted
-                pass
-            else:
-                attrs["existing-url"] = parsed.object_key
-        elif isinstance(value, FieldFile) and value:
+        # "existing-url" and "pending-name" are best-effort display information
+        if isinstance(value, RedisplayValue):
+            # A submitted change is redisplayed, along with the existing file it applies to
+            existing = value.initial
+            if isinstance(value.data, str):
+                # A pending FieldValue shouldn't provide a URL (the upload is not yet validated, so
+                # it shouldn't be served), but its storage key still names it
+                try:
+                    parsed = FieldValue.model_validate(value.data)
+                except PydanticValidationError:
+                    # The value is still rendered, but will be rejected if resubmitted
+                    pass
+                else:
+                    attrs["pending-name"] = posixpath.basename(parsed.object_key)
+        else:
+            # Otherwise, only the existing file (if any) is displayed
+            existing = value
+        if existing:
             # A saved FieldFile provides its URL, but only if it's not falsey (as it is when
             # editing an empty optional field)
-            attrs["existing-url"] = value.url
-        # A cleared existing file (on redisplay) has no URL available, and needn't show any
+            attrs["existing-url"] = existing.url
 
         return super().get_context(name, value, attrs)
 
     @override
-    def format_value(self, value: FieldFile | str | Literal[False] | None) -> str | None:
+    def format_value(self, value: FieldFile | RedisplayValue | None) -> str | None:
         """
         Return the value as it should be provided to the widget template.
 
         The "value" is rendered as it's to be resubmitted, which mirrors "value_from_datadict".
         """
-        if value is False:
-            # A clear of an existing file (on redisplay)
-            return CLEAR_VALUE
-        if isinstance(value, str) and value:
-            # A pending FieldValue (on redisplay)
-            return value
+        if isinstance(value, RedisplayValue):
+            # A clear of an existing file, or a pending FieldValue (on redisplay)
+            return CLEAR_VALUE if value.data is False else value.data
         # An initial FieldFile is conveyed via "existing-url" instead (see "get_context"), as
         # keeping it is expressed by submitting nothing; an empty value is equivalent, so it's not
         # rendered either
