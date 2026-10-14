@@ -39,3 +39,8 @@ api_client.post(
     },
 )
 ```
+
+### Errors
+A failed upload raises an `S3FileFieldError`, whose message is suitable for display. Its `status`
+and `detail` attributes describe the failure, and its `__cause__` is the underlying
+`requests` exception, when there is one.

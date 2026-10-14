@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, BinaryIO, ClassVar
 
 import requests
 
+from ._errors import S3FileFieldError
+
 if TYPE_CHECKING:
     from ._types import (
         CompletedPart,
@@ -26,7 +28,7 @@ class _File:
     @classmethod
     def from_stream(cls, stream: BinaryIO, name: str, content_type: str) -> _File:
         if not stream.seekable():
-            raise RuntimeError("File stream is not seekable.")
+            raise ValueError("The file stream must be seekable.")
 
         stream.seek(0, io.SEEK_END)
         size = stream.tell()
@@ -63,7 +65,9 @@ class S3FileFieldClient:
         resp = requests.put(presigned_part["url"], data=part_bytes, timeout=self.request_timeout)
         resp.raise_for_status()
 
-        etag = resp.headers["ETag"]
+        etag = resp.headers.get("ETag")
+        if etag is None:
+            raise S3FileFieldError("ETag header missing from response.", status=resp.status_code)
 
         return {
             "part_number": presigned_part["part_number"],
@@ -116,8 +120,20 @@ class S3FileFieldClient:
     def upload_file(
         self, *, file_stream: BinaryIO, file_name: str, file_content_type: str, field_id: str
     ) -> str:
+        """
+        Upload a file, returning the value to submit for the field.
+
+        :param file_stream: The file's content, open in binary mode and seekable.
+        :param file_name: The file's name.
+        :param file_content_type: The file's MIME type.
+        :param field_id: The field to upload to, as ``"<app>.<model>.<field>"``.
+        :raises S3FileFieldError: If the upload fails, with the underlying exception as its cause.
+        """
         file = _File.from_stream(file_stream, file_name, file_content_type)
-        initiation = self._initiate_upload(file, field_id)
-        completed_parts = self._upload_parts(file, initiation["parts"])
-        self._complete_upload(initiation, completed_parts)
-        return self._finalize(initiation["upload_token"])
+        try:
+            initiation = self._initiate_upload(file, field_id)
+            completed_parts = self._upload_parts(file, initiation["parts"])
+            self._complete_upload(initiation, completed_parts)
+            return self._finalize(initiation["upload_token"])
+        except requests.RequestException as error:
+            raise S3FileFieldError.from_request_exception(error) from error
