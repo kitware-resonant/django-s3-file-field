@@ -12,26 +12,26 @@ export type FileState =
   | { kind: 'pending'; fieldValue: string; name: string }
   /** The existing file is cleared, by submitting the clear value. */
   | { kind: 'cleared' }
-  /** The existing file is kept, by submitting nothing; its URL (and so its name) may be unknown. */
+  /** The existing file is kept, by submitting nothing. */
   | { kind: 'kept'; url: string; name: string }
   /** No file, so nothing is submitted. */
   | { kind: 'none' };
 
 export interface FileStateInputs {
   value: string;
-  existingFileKnown: boolean;
   existingUrl: string;
+  pendingName: string;
   uploadedFileName: string;
 }
 
 /**
- * The final path component of a URL or storage key, as the file's name for display.
+ * The final path component of a URL, as the file's name for display.
  *
  * Any query or fragment is dropped, and percent-encoding is decoded.
  */
 const QUERY_OR_FRAGMENT = /[?#]/;
-function basename(urlOrKey: string): string {
-  const path = urlOrKey.split(QUERY_OR_FRAGMENT, 1)[0] ?? '';
+function basename(url: string): string {
+  const path = url.split(QUERY_OR_FRAGMENT, 1)[0] ?? '';
   const name = path.split('/').pop() ?? '';
   try {
     return decodeURIComponent(name);
@@ -40,6 +40,12 @@ function basename(urlOrKey: string): string {
   }
 }
 
+/**
+ * Derive the file state from the element's properties.
+ *
+ * An existing (already saved) file is known of exactly when its URL is given; it is then kept
+ * unless the value says otherwise, and the user can't make it unknown.
+ */
 export function deriveFileState(inputs: FileStateInputs): FileState {
   if (inputs.value === CLEAR_VALUE) {
     return { kind: 'cleared' };
@@ -48,11 +54,12 @@ export function deriveFileState(inputs: FileStateInputs): FileState {
     return {
       kind: 'pending',
       fieldValue: inputs.value,
-      // A server-rendered pending value is named by its storage key, given as the "URL"
-      name: inputs.uploadedFileName || basename(inputs.existingUrl),
+      // A file uploaded here is named locally; a server-rendered pending value is named by the
+      // server, if it could
+      name: inputs.uploadedFileName || inputs.pendingName,
     };
   }
-  if (inputs.existingFileKnown) {
+  if (inputs.existingUrl) {
     return { kind: 'kept', url: inputs.existingUrl, name: basename(inputs.existingUrl) };
   }
   return { kind: 'none' };
@@ -68,23 +75,4 @@ export function formValueFor(fileState: FileState): string | null {
     default:
       return null;
   }
-}
-
-/**
- * Whether the server-rendered properties represent an existing (already saved) file.
- *
- * The server doesn't state this directly, but it follows from how each case is rendered:
- * - a kept existing file has its URL rendered, with no value;
- * - a pending upload has its value rendered, with that upload's own storage key as the "URL" (in
- *   place of any existing file's, which is then unknown);
- * - a clear has the clear value rendered alone, and only an existing file can be cleared.
- */
-export function hasExistingFile(inputs: { value: string; existingUrl: string }): boolean {
-  if (inputs.value === CLEAR_VALUE) {
-    return true;
-  }
-  if (inputs.value) {
-    return false;
-  }
-  return Boolean(inputs.existingUrl);
 }

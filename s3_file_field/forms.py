@@ -7,7 +7,7 @@ from django.db.models.fields.files import FieldFile
 from django.forms import FileField, Widget
 
 from .files import S3PlaceholderFile
-from .widgets import S3FileInput
+from .widgets import RedisplayValue, S3FileInput
 
 if TYPE_CHECKING:
     from django.core.files import File
@@ -43,22 +43,30 @@ class S3FormFileField(FileField):
         return attrs
 
     @override
-    def bound_data[InitialT: FieldFile | None](
-        self, data: str | Literal[False] | UploadedFile[Any] | None, initial: InitialT
-    ) -> str | Literal[False] | InitialT:
-        """Return the value to redisplay for this field when rendering a bound form."""
+    def bound_data(
+        self, data: str | Literal[False] | UploadedFile[Any] | None, initial: FieldFile | None
+    ) -> RedisplayValue | FieldFile | None:
+        """
+        Return the value to redisplay for this field when rendering a bound form.
+
+        "data" is what "S3FileInput.value_from_datadict" extracted from the submission, and
+        "initial" is the existing value: a FieldFile from a ModelForm's instance, or None.
+        """
         if self.disabled:
             # A disabled field ignores submitted data when cleaning, so ignore it here too
             return initial
         if isinstance(data, str) and data:
             # A pending signed FieldValue string is redisplayed (as the widget's "value"), so
-            # a completed upload survives a validation error elsewhere on the form.
-            return data
+            # a completed upload survives a validation error elsewhere on the form. The existing
+            # value is redisplayed alongside, as it's what the pending upload would replace, and is
+            # kept if that's discarded.
+            return RedisplayValue(data, initial)
         if data is False and initial:
             # A clear of an existing value is redisplayed (as the widget's clear value), so it
-            # also survives a validation error elsewhere on the form. Without an existing value,
-            # a clear is equivalent to a keep.
-            return False
+            # also survives a validation error elsewhere on the form. The existing value is
+            # redisplayed alongside, as it's what's cleared, and is kept if that's undone. Without
+            # an existing value, a clear is equivalent to a keep.
+            return RedisplayValue(data, initial)
         # Otherwise (a keep), redisplay the initial value.
         return initial
 

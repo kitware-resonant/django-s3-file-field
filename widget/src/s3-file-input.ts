@@ -1,17 +1,11 @@
 // biome-ignore-all lint/suspicious/noUnnecessaryConditions: reactive properties are externally assigned by Lit, invisibly to type inference
 
 import { S3FileFieldError, type S3FileFieldProgress } from 'django-s3-file-field';
-import { css, html, LitElement, nothing, type PropertyValues, svg, type TemplateResult } from 'lit';
+import { css, html, LitElement, nothing, svg, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import prettyBytes from 'pretty-bytes';
-import {
-  CLEAR_VALUE,
-  deriveFileState,
-  type FileState,
-  formValueFor,
-  hasExistingFile,
-} from './state.js';
+import { CLEAR_VALUE, deriveFileState, type FileState, formValueFor } from './state.js';
 import { uploadFile } from './upload.js';
 
 /**
@@ -317,9 +311,9 @@ export class S3FileInputElement extends LitElement {
    * The value to submit: empty to keep any existing file, the clear value to remove it, or a
    * pending upload's signed FieldValue.
    *
-   * This may be server-rendered (on form redisplay) or set by the user; "existingUrl"
-   * describes the represented file, for display. An empty value is always a string
-   * (never null or undefined), which frameworks may rely on.
+   * This may be server-rendered (on form redisplay) or set by the user; "existingUrl" and
+   * "pendingName" describe the represented files, for display. An empty value is always a
+   * string (never null or undefined), which frameworks may rely on.
    */
   @property()
   accessor value = '';
@@ -359,12 +353,21 @@ export class S3FileInputElement extends LitElement {
   /**
    * The URL of the existing (saved) file; best-effort, display-only.
    *
-   * The file is linked to, and named by the final component of the URL's path. On a redisplay
-   * of a pending upload, Django gives that upload's storage key instead, which only names it,
-   * as an unvalidated upload is never linked to.
+   * The file is linked to, and named by the final component of the URL's path. It is kept
+   * unless the value replaces or clears it, so it is shown again if that is undone.
    */
   @property({ attribute: 'existing-url' })
   accessor existingUrl = '';
+
+  /**
+   * The name of a pending upload given as the value, which wasn't uploaded here (as on a form
+   * redisplay); best-effort, display-only.
+   *
+   * An unvalidated upload is never linked to, so this is only a name. A file uploaded here is
+   * named by itself instead.
+   */
+  @property({ attribute: 'pending-name' })
+  accessor pendingName = '';
 
   /**
    * Whether the browser considers the field disabled, for any reason (including an ancestor
@@ -413,12 +416,6 @@ export class S3FileInputElement extends LitElement {
   /** The server-rendered state, captured on connection, to which a form reset returns. */
   private initial: RestorableState = { value: '', uploadedFileName: '' };
 
-  /**
-   * Whether an existing (already saved) file is known of, from the server-rendered properties;
-   * it is then kept or cleared, and the user can't make it unknown.
-   */
-  private existingFileKnown = false;
-
   /** The associated form, whose submission is guarded while uploading. */
   private guardedForm: HTMLFormElement | null = null;
 
@@ -451,10 +448,6 @@ export class S3FileInputElement extends LitElement {
       // Capture the state as server-rendered, before the user can change it; a later
       // reconnection (as when the element is moved) must not recapture it
       this.initial = this.restorableState;
-      this.existingFileKnown = hasExistingFile({
-        ...this.initial,
-        existingUrl: this.existingUrl ?? '',
-      });
     }
   }
 
@@ -464,16 +457,8 @@ export class S3FileInputElement extends LitElement {
     this.cancelUpload();
   }
 
-  override willUpdate(changedProperties: PropertyValues<this>): void {
+  override willUpdate(): void {
     this.restoreFocus ||= this.matches(':focus-within');
-    if (changedProperties.has('existingUrl')) {
-      // The URL may be set after connection (as by an app, once it has fetched the resource),
-      // so what it represents is re-evaluated whenever it changes
-      this.existingFileKnown = hasExistingFile({
-        value: this.value ?? '',
-        existingUrl: this.existingUrl ?? '',
-      });
-    }
   }
 
   override updated(): void {
@@ -649,8 +634,8 @@ export class S3FileInputElement extends LitElement {
   private get fileState(): FileState {
     return deriveFileState({
       ...this.restorableState,
-      existingFileKnown: this.existingFileKnown,
       existingUrl: this.existingUrl ?? '',
+      pendingName: this.pendingName ?? '',
     });
   }
 
@@ -717,10 +702,7 @@ export class S3FileInputElement extends LitElement {
         return html`<span title=${name}>${name}</span>`;
       }
       case 'kept':
-        // The URL is unknown after a server-rendered clear is undone, so there's no name to show
-        return fileState.url
-          ? html`<a href=${fileState.url} title=${fileState.name}>${fileState.name}</a>`
-          : null;
+        return html`<a href=${fileState.url} title=${fileState.name}>${fileState.name}</a>`;
       case 'cleared':
         return null;
       default:
@@ -866,11 +848,7 @@ export class S3FileInputElement extends LitElement {
   private async handleRemove(): Promise<void> {
     this.errorMessage = '';
     if (this.fileState.kind === 'pending') {
-      // Discard the pending upload, reverting to the existing file, if any. On a redisplay, the
-      // server renders only the pending file's info, so an existing file then goes unmentioned,
-      // although it is kept.
-      // TODO: Render the existing file's info alongside a pending value; currently,
-      // "S3FormFileField.bound_data" returns only the pending data.
+      // Discard the pending upload, reverting to the existing file, if any
       this.value = '';
       this.uploadedFileName = '';
     } else {
