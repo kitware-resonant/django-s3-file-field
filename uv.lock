@@ -6,6 +6,12 @@ resolution-markers = [
     "python_full_version == '3.14.*'",
     "python_full_version < '3.14'",
 ]
+conflicts = [[
+    { package = "django-s3-file-field", group = "dev" },
+    { package = "django-s3-file-field", group = "django52" },
+    { package = "django-s3-file-field", group = "django60" },
+    { package = "django-s3-file-field", group = "django61" },
+]]
 
 [manifest]
 members = [
@@ -237,7 +243,7 @@ name = "cffi"
 version = "2.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pycparser", marker = "implementation_name != 'PyPy'" },
+    { name = "pycparser", marker = "implementation_name != 'PyPy' or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django52') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/9e/ef/008a1939e372c06329a3fce4279c02f328488f3526744906eeec3da7ad5f/cffi-2.1.1.tar.gz", hash = "sha256:dd31f52ea1086513bb9df30f8fcee9b8918323ae067a3d5b78bc826a000712be", size = 530807, upload-time = "2026-08-03T21:21:18.939Z" }
 wheels = [
@@ -567,12 +573,55 @@ wheels = [
 
 [[package]]
 name = "django"
+version = "5.2.18"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.15'",
+    "python_full_version == '3.14.*'",
+    "python_full_version < '3.14'",
+]
+dependencies = [
+    { name = "asgiref", marker = "extra == 'group-20-django-s3-file-field-django52' or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
+    { name = "sqlparse", marker = "extra == 'group-20-django-s3-file-field-django52' or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
+    { name = "tzdata", marker = "(sys_platform == 'win32' and extra == 'group-20-django-s3-file-field-django52') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django52') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/85/fe/79e692b430c7721bf4b812c328bfe687e73e3f28f56611a6a18a97e887cc/django-5.2.18.tar.gz", hash = "sha256:461c5dd06d2ea16bd5ca37d3f46e4def1d6b0fe7588c6f4e2119517bb0af8b2d", size = 10910238, upload-time = "2026-10-06T13:01:09.371Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d6/01/6568ec52b26548ca1b83d33249f7274db3bf74698f42c0da42ec9db1a24a/django-5.2.18-py3-none-any.whl", hash = "sha256:92ed81d500be6408ecd704d7bd1366c534f30427bffcc63c5fefb129561aec7c", size = 8316071, upload-time = "2026-10-06T13:01:04.413Z" },
+]
+
+[[package]]
+name = "django"
+version = "6.0.9"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.15'",
+    "python_full_version == '3.14.*'",
+    "python_full_version < '3.14'",
+]
+dependencies = [
+    { name = "asgiref", marker = "extra == 'group-20-django-s3-file-field-django60' or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django52') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-dev' and extra != 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
+    { name = "sqlparse", marker = "extra == 'group-20-django-s3-file-field-django60' or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django52') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-dev' and extra != 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
+    { name = "tzdata", marker = "(sys_platform == 'win32' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django52') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61')" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/13/1f/e4c69ec67bedee10428875a44b8b4554d0448a264b50298bfa63d2162708/django-6.0.9.tar.gz", hash = "sha256:8ce037c971f421cfb47d38c097ca233a8f6dd42d9e9501a37e02dd7d08c5cb3f", size = 10955325, upload-time = "2026-10-06T12:57:57.479Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/01/3f/f0378bc671b528caf61b143ba91c1057204a7e863d9a309d62a64203f9c4/django-6.0.9-py3-none-any.whl", hash = "sha256:5c6473d05bbea9c43359cc36701b5deec3c925f5311963786e1346544c1a68c0", size = 8377504, upload-time = "2026-10-06T12:57:52.649Z" },
+]
+
+[[package]]
+name = "django"
 version = "6.1.2"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.15'",
+    "python_full_version == '3.14.*'",
+    "python_full_version < '3.14'",
+]
 dependencies = [
-    { name = "asgiref" },
-    { name = "sqlparse" },
-    { name = "tzdata", marker = "sys_platform == 'win32'" },
+    { name = "asgiref", marker = "extra == 'group-20-django-s3-file-field-dev' or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61') or (extra != 'group-20-django-s3-file-field-django52' and extra != 'group-20-django-s3-file-field-django60')" },
+    { name = "sqlparse", marker = "extra == 'group-20-django-s3-file-field-dev' or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61') or (extra != 'group-20-django-s3-file-field-django52' and extra != 'group-20-django-s3-file-field-django60')" },
+    { name = "tzdata", marker = "(sys_platform == 'win32' and extra == 'group-20-django-s3-file-field-dev') or (sys_platform == 'win32' and extra != 'group-20-django-s3-file-field-django52' and extra != 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django52') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/89/24/20d187a22ac821288b53c53b8f696019dcb0c7b4f973f052ade19392c74d/django-6.1.2.tar.gz", hash = "sha256:a1e92451ccb8b514e91bbb3b6d186d20b4030558f116b5d9de6535455ff210b7", size = 11251425, upload-time = "2026-10-06T12:53:29.622Z" }
 wheels = [
@@ -585,7 +634,7 @@ version = "1.21.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "asgiref" },
-    { name = "django" },
+    { name = "django", version = "6.1.2", source = { registry = "https://pypi.org/simple" } },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/79/ef/ab407c1a2f14e13c75a6419a2d124954aa0364f62580ad95a3d31dc6c73d/django_browser_reload-1.21.0.tar.gz", hash = "sha256:3335ad3d107eb657f623d1a8e680dfbcab8a83ae1f94df1895e069dddf5604ba", size = 15800, upload-time = "2025-09-22T17:00:35.199Z" }
 wheels = [
@@ -597,7 +646,7 @@ name = "django-debug-toolbar"
 version = "8.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "django" },
+    { name = "django", version = "6.1.2", source = { registry = "https://pypi.org/simple" } },
     { name = "sqlparse" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/4f/3d/aa093a841f32837311538e7952f5548b1a9c605a5aba5395163fbc54ac59/django_debug_toolbar-8.0.0.tar.gz", hash = "sha256:cae32d3e441e608f39f3f1ca6b3f028c38d5d04d74c98d8ab96d46022dee3163", size = 1239141, upload-time = "2026-09-01T18:27:56.934Z" }
@@ -610,7 +659,7 @@ name = "django-extensions"
 version = "4.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "django" },
+    { name = "django", version = "6.1.2", source = { registry = "https://pypi.org/simple" } },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/6d/b3/ed0f54ed706ec0b54fd251cc0364a249c6cd6c6ec97f04dc34be5e929eac/django_extensions-4.1.tar.gz", hash = "sha256:7b70a4d28e9b840f44694e3f7feb54f55d495f8b3fa6c5c0e5e12bcb2aa3cdeb", size = 283078, upload-time = "2025-04-11T01:15:39.617Z" }
 wheels = [
@@ -622,7 +671,9 @@ name = "django-minio-storage"
 version = "0.5.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "django" },
+    { name = "django", version = "5.2.18", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-20-django-s3-file-field-django52' or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
+    { name = "django", version = "6.0.9", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-20-django-s3-file-field-django60' or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django52') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-dev' and extra != 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
+    { name = "django", version = "6.1.2", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-20-django-s3-file-field-dev' or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61') or (extra != 'group-20-django-s3-file-field-django52' and extra != 'group-20-django-s3-file-field-django60')" },
     { name = "minio" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/21/c3/451548ed0bc26f3b50784c1b6696c14fc83cf12a94990c0b3f4c355c7716/django_minio_storage-0.5.9.tar.gz", hash = "sha256:86f823690ed18049b2dae6450498caf86215f3d44f85e0264094968ee1ad7af4", size = 118486, upload-time = "2025-11-24T18:33:57.702Z" }
@@ -634,7 +685,9 @@ wheels = [
 name = "django-s3-file-field"
 source = { editable = "." }
 dependencies = [
-    { name = "django" },
+    { name = "django", version = "5.2.18", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-20-django-s3-file-field-django52' or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
+    { name = "django", version = "6.0.9", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-20-django-s3-file-field-django60' or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django52') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-dev' and extra != 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
+    { name = "django", version = "6.1.2", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-20-django-s3-file-field-dev' or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61') or (extra != 'group-20-django-s3-file-field-django52' and extra != 'group-20-django-s3-file-field-django60')" },
     { name = "djangorestframework" },
     { name = "pydantic" },
 ]
@@ -654,7 +707,7 @@ s3 = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "django" },
+    { name = "django", version = "6.1.2", source = { registry = "https://pypi.org/simple" } },
     { name = "django-browser-reload" },
     { name = "django-debug-toolbar" },
     { name = "django-extensions" },
@@ -664,6 +717,15 @@ dev = [
     { name = "tox-uv" },
     { name = "watchdog" },
     { name = "werkzeug" },
+]
+django52 = [
+    { name = "django", version = "5.2.18", source = { registry = "https://pypi.org/simple" } },
+]
+django60 = [
+    { name = "django", version = "6.0.9", source = { registry = "https://pypi.org/simple" } },
+]
+django61 = [
+    { name = "django", version = "6.1.2", source = { registry = "https://pypi.org/simple" } },
 ]
 lint = [
     { name = "ruff" },
@@ -712,6 +774,9 @@ dev = [
     { name = "watchdog", specifier = "==6.0.0" },
     { name = "werkzeug", specifier = "==3.1.9" },
 ]
+django52 = [{ name = "django", specifier = "==5.2.*" }]
+django60 = [{ name = "django", specifier = "==6.0.*" }]
+django61 = [{ name = "django", specifier = "==6.1.*" }]
 lint = [{ name = "ruff", specifier = "==0.16.10" }]
 test = [
     { name = "django-stubs-ext", specifier = "==6.1.2" },
@@ -736,7 +801,7 @@ name = "django-s3-file-field-client"
 source = { editable = "python-client" }
 dependencies = [
     { name = "requests" },
-    { name = "typing-extensions", marker = "python_full_version < '3.15'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.15' or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django52') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
 ]
 
 [package.metadata]
@@ -750,7 +815,9 @@ name = "django-storages"
 version = "1.14.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "django" },
+    { name = "django", version = "5.2.18", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-20-django-s3-file-field-django52' or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
+    { name = "django", version = "6.0.9", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-20-django-s3-file-field-django60' or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django52') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-dev' and extra != 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
+    { name = "django", version = "6.1.2", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-20-django-s3-file-field-dev' or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61') or (extra != 'group-20-django-s3-file-field-django52' and extra != 'group-20-django-s3-file-field-django60')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ff/d6/2e50e378fff0408d558f36c4acffc090f9a641fd6e084af9e54d45307efa/django_storages-1.14.6.tar.gz", hash = "sha256:7a25ce8f4214f69ac9c7ce87e2603887f7ae99326c316bc8d2d75375e09341c9", size = 87587, upload-time = "2025-04-02T02:34:55.103Z" }
 wheels = [
@@ -767,7 +834,9 @@ name = "django-stubs"
 version = "6.1.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "django" },
+    { name = "django", version = "5.2.18", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-20-django-s3-file-field-django52' or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
+    { name = "django", version = "6.0.9", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-20-django-s3-file-field-django60' or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django52') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-dev' and extra != 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
+    { name = "django", version = "6.1.2", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-20-django-s3-file-field-dev' or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61') or (extra != 'group-20-django-s3-file-field-django52' and extra != 'group-20-django-s3-file-field-django60')" },
     { name = "django-stubs-ext" },
     { name = "types-pyyaml" },
     { name = "typing-extensions" },
@@ -787,7 +856,9 @@ name = "django-stubs-ext"
 version = "6.1.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "django" },
+    { name = "django", version = "5.2.18", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-20-django-s3-file-field-django52' or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
+    { name = "django", version = "6.0.9", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-20-django-s3-file-field-django60' or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django52') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-dev' and extra != 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
+    { name = "django", version = "6.1.2", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-20-django-s3-file-field-dev' or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61') or (extra != 'group-20-django-s3-file-field-django52' and extra != 'group-20-django-s3-file-field-django60')" },
     { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d9/62/de532d58736d671b9ac0c0467909a9429758ae579d636e868ce74519566b/django_stubs_ext-6.1.2.tar.gz", hash = "sha256:2142da7fffbbe897ccecf9b4c97e09ea1a2e9291760b0a824b4c402b375ce6f9", size = 7221, upload-time = "2026-10-05T06:46:43.717Z" }
@@ -800,7 +871,9 @@ name = "djangorestframework"
 version = "3.18.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "django" },
+    { name = "django", version = "5.2.18", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-20-django-s3-file-field-django52' or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
+    { name = "django", version = "6.0.9", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-20-django-s3-file-field-django60' or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django52') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-dev' and extra != 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
+    { name = "django", version = "6.1.2", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-20-django-s3-file-field-dev' or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61') or (extra != 'group-20-django-s3-file-field-django52' and extra != 'group-20-django-s3-file-field-django60')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/8d/b2/1cee76b188301f7d03169ca77fab2b3d3ec5d01b3469189f944af2d7f11a/djangorestframework-3.18.3.tar.gz", hash = "sha256:446a9b352e7eff630421ab3f2328bd2401b109a9470afa4a31189994911ed030", size = 923563, upload-time = "2026-10-06T21:33:51.521Z" }
 wheels = [
@@ -847,7 +920,7 @@ name = "faker"
 version = "40.40.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "tzdata", marker = "sys_platform == 'win32'" },
+    { name = "tzdata", marker = "sys_platform == 'win32' or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django52') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/43/43/7f5870d05331cb1649704040f51332d37f2468ed857de1e226482e2948b0/faker-40.40.0.tar.gz", hash = "sha256:803ee7f920679e7367c3f7b7f97752f5a9780aa5566c71723fbe57d591beafe1", size = 2029985, upload-time = "2026-09-29T00:56:19.983Z" }
 wheels = [
@@ -1195,7 +1268,7 @@ version = "2.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ast-serialize" },
-    { name = "librt", marker = "platform_python_implementation != 'PyPy'" },
+    { name = "librt", marker = "platform_python_implementation != 'PyPy' or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django52') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
     { name = "mypy-extensions" },
     { name = "pathspec" },
     { name = "typing-extensions" },
@@ -1567,7 +1640,7 @@ name = "pytest"
 version = "9.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django52') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-dev' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django60') or (extra == 'group-20-django-s3-file-field-django52' and extra == 'group-20-django-s3-file-field-django61') or (extra == 'group-20-django-s3-file-field-django60' and extra == 'group-20-django-s3-file-field-django61')" },
     { name = "iniconfig" },
     { name = "packaging" },
     { name = "pluggy" },
