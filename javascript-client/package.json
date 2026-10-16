@@ -7,7 +7,7 @@
   "author": "Kitware, Inc. <kitware@kitware.com>",
   "type": "module",
   "exports": "./dist/client.js",
-  "module": "./dist/client.js",
+  "main": "./dist/client.js",
   "types": "./dist/client.d.ts",
   "files": [
     "NOTICE",
