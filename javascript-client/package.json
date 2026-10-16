@@ -2,7 +2,10 @@
   "name": "django-s3-file-field",
   "version": "0.0.0",
   "description": "A Javascript client library for django-s3-file-field.",
-  "repository": "github:kitware-resonant/django-s3-file-field",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitware-resonant/django-s3-file-field.git"
+  },
   "license": "Apache-2.0",
   "author": "Kitware, Inc. <kitware@kitware.com>",
   "type": "module",
