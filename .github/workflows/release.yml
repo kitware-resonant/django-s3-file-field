@@ -58,17 +58,20 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          # Tags are needed to compute the current version number
-          fetch-depth: 0
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: ./javascript-client/.node-version
+      - name: Set package version from release tag
+        env:
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        # The "#v" bash syntax strips the leading "v" from the tag name.
+        run: |
+          npm version --no-git-tag-version "${TAG_NAME#v}"
       - name: Publish Javascript client to npm
         working-directory: ./javascript-client
         run: |
           npm ci
-          npm version --no-git-tag-version $(git describe --tags --match '*[0-9]*' --abbrev=0 | sed 's/^v//')
           npm publish --access public

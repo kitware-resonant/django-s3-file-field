@@ -14,17 +14,17 @@
   },
   "dependencies": {
     "django-s3-file-field": "file:../javascript-client",
-    "lit": "^3.3.3",
-    "pretty-bytes": "^7.1.2"
+    "lit": "3.3.3",
+    "pretty-bytes": "7.2.0"
   },
   "devDependencies": {
-    "@babel/plugin-proposal-decorators": "^8.0.2",
-    "@biomejs/biome": "^2.5.11",
-    "@resonant/biome-config": "^0.4.0",
-    "@rolldown/plugin-babel": "^0.2.4",
-    "npm-run-all2": "^9.0.3",
-    "typescript": "^7.0.2",
-    "vite": "^8.2.2"
+    "@babel/plugin-proposal-decorators": "8.0.2",
+    "@biomejs/biome": "2.5.15",
+    "@resonant/biome-config": "0.4.0",
+    "@rolldown/plugin-babel": "0.2.4",
+    "npm-run-all2": "9.0.3",
+    "typescript": "7.0.2",
+    "vite": "8.3.4"
   },
   "devEngines": {
     "packageManager": {
