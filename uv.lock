@@ -619,15 +619,15 @@ wheels = [
 
 [[package]]
 name = "django-minio-storage"
-version = "0.5.9"
+version = "0.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django" },
     { name = "minio" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/21/c3/451548ed0bc26f3b50784c1b6696c14fc83cf12a94990c0b3f4c355c7716/django_minio_storage-0.5.9.tar.gz", hash = "sha256:86f823690ed18049b2dae6450498caf86215f3d44f85e0264094968ee1ad7af4", size = 118486, upload-time = "2025-11-24T18:33:57.702Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2a/e2/7c05d3a7cfe84b0904604a62ad1bc9d5ded26d435b3cfb7aec712a327c09/django_minio_storage-0.6.0.tar.gz", hash = "sha256:2587411862f14f8cfe3b20fb94b61704fb784c0e618d2f6bbc504c11874ca75c", size = 16274, upload-time = "2026-10-19T00:04:46.389Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c1/a4/3d4c7c54fdcd718554dd3f19e95db362f02c332f51dd8facdf6ca1a96154/django_minio_storage-0.5.9-py3-none-any.whl", hash = "sha256:c6045fb598f6f924aaecbe02de423c584b23912725ab4d03115bc37214bd93ef", size = 17970, upload-time = "2025-11-24T18:33:56.679Z" },
+    { url = "https://files.pythonhosted.org/packages/a7/60/87cc4f2b64d0fd0ad17d17334e2dda2d5f9bee8535d8be98f2974f1bbf5a/django_minio_storage-0.6.0-py3-none-any.whl", hash = "sha256:76b2b4c7f3f8d392c3828a5913059f7950712dfa17c027bb6973b924157a12e2", size = 18106, upload-time = "2026-10-19T00:04:45.124Z" },
 ]
 
 [[package]]
@@ -690,7 +690,7 @@ type = [
 requires-dist = [
     { name = "boto3", marker = "extra == 's3'" },
     { name = "django", specifier = ">=5.2" },
-    { name = "django-minio-storage", marker = "extra == 'minio'", specifier = ">=0.5.9" },
+    { name = "django-minio-storage", marker = "extra == 'minio'", specifier = ">=0.6.0" },
     { name = "django-storages", extras = ["s3"], marker = "extra == 's3'", specifier = ">=1.14" },
     { name = "djangorestframework", specifier = ">=3.16" },
     { name = "minio", marker = "extra == 'minio'", specifier = ">=7.2.18" },
@@ -1175,7 +1175,7 @@ wheels = [
 
 [[package]]
 name = "minio"
-version = "7.2.18"
+version = "7.2.20"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "argon2-cffi" },
@@ -1184,9 +1184,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/71/99/1ad8733fa3f2fa82726e470f8c321e17f9321083b234ab45ad6b59d80d9f/minio-7.2.18.tar.gz", hash = "sha256:173402a5716099159c5659f9de75be204ebe248557b9f1cc9cf45aa70e9d3024", size = 135544, upload-time = "2025-09-29T17:00:28.238Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/40/df/6dfc6540f96a74125a11653cce717603fd5b7d0001a8e847b3e54e72d238/minio-7.2.20.tar.gz", hash = "sha256:95898b7a023fbbfde375985aa77e2cd6a0762268db79cf886f002a9ea8e68598", size = 136113, upload-time = "2025-11-27T00:37:15.569Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7d/ae/f32695da4f93de50dd7075100dab8cf689a9d96270f58ce6f940fd044a3e/minio-7.2.18-py3-none-any.whl", hash = "sha256:f23a6edbff8d0bc4b5c1a61b2628a01c5a3342aefc613ff9c276012e6321108f", size = 93120, upload-time = "2025-09-29T17:00:26.86Z" },
+    { url = "https://files.pythonhosted.org/packages/3e/9a/b697530a882588a84db616580f2ba5d1d515c815e11c30d219145afeec87/minio-7.2.20-py3-none-any.whl", hash = "sha256:eb33dd2fb80e04c3726a76b13241c6be3c4c46f8d81e1d58e757786f6501897e", size = 93751, upload-time = "2025-11-27T00:37:13.993Z" },
 ]
 
 [[package]]

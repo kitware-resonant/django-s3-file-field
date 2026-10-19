@@ -59,8 +59,8 @@ s3 = [
   "boto3",
 ]
 minio = [
-  # 0.5.9 pins "minio<7.2.19", which excludes the breaking API changes in minio 7.2.19
-  "django-minio-storage>=0.5.9",
+  # 0.6.0 has correct dependency metadata to allow compatible versions of "minio"
+  "django-minio-storage>=0.6.0",
   # 7.2.18 is the first version to ship with inline type annotations
   "minio>=7.2.18",
 ]
