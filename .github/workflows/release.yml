@@ -4,7 +4,7 @@ on:
     types: [published]
 jobs:
   publish:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     environment: release
     permissions:
       contents: read
@@ -29,7 +29,7 @@ jobs:
           uv publish --trusted-publishing=always
 
   publish-python-client:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     environment: release
     permissions:
       contents: read
@@ -52,7 +52,7 @@ jobs:
         working-directory: python-client
 
   publish-javascript-client:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     environment: release
     permissions:
       contents: read
