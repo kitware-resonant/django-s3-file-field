@@ -61,7 +61,7 @@ export default class S3FileFieldClient {
       ...apiConfig,
       // Add a trailing slash, so that endpoint paths extend the base URL's path
       // biome-ignore lint/performance/useTopLevelRegex: constructor is called infrequently
-      baseUrl: baseUrl.replace(/\/?$/, '/'),
+      baseUrl: baseUrl.replace(/\/?$/u, '/'),
       // These requests are safe to repeat after a transient failure
       retry: { methods: ['post'], retryOnTimeout: true },
     });
@@ -151,6 +151,7 @@ export default class S3FileFieldClient {
    * @param chunk - The content of the part.
    * @param signal - A signal to abandon the upload.
    */
+  // biome-ignore lint/style/useThisInClassMethods: a method is part of the class design
   protected async uploadPart(
     part: PresignedPart,
     chunk: Blob,

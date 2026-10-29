@@ -1,9 +1,11 @@
 # django-s3-file-field-client
+
 [![npm](https://img.shields.io/npm/v/django-s3-file-field)](https://www.npmjs.com/package/django-s3-file-field)
 
 A Javascript (with TypeScript support) client library for django-s3-file-field.
 
 ## Installation
+
 ```bash
 npm install django-s3-file-field
 ```
@@ -15,6 +17,7 @@ yarn add django-s3-file-field
 ```
 
 ## Usage
+
 ```typescript
 import S3FileFieldClient, {
   type S3FileFieldProgress,

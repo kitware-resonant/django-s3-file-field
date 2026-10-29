@@ -1,4 +1,5 @@
 # django-s3-file-field
+
 [![PyPI](https://img.shields.io/pypi/v/django-s3-file-field)](https://pypi.org/project/django-s3-file-field/)
 
 django-s3-file-field is a Django library for uploading files directly to
@@ -6,6 +7,7 @@ django-s3-file-field is a Django library for uploading files directly to
 (browsers, CLIs, etc.), using signed upload URLs issued by Django.
 
 ## Benefits
+
 Uploading a file through Django is expensive. Django must receive the entire file before the view
 even runs, buffering it in memory or on disk. With the default (synchronous, pre-fork) workers of
 WSGI servers such as [Gunicorn](https://gunicorn.org/design/), each worker handles one request at a
@@ -22,6 +24,7 @@ authorize and finalize each upload, regardless of the file's size. After an uplo
 file is referenced by the model instance as usual.
 
 ## Scope
+
 The principal API of django-s3-file-field is the `S3FileField`, which is a subclass of
 [Django's `FileField`](https://docs.djangoproject.com/en/stable/ref/models/fields/#filefield).
 django-s3-file-field does not affect any operations other than uploading from external HTTP
@@ -29,16 +32,19 @@ clients; for all other file operations (downloading, uploading from the Python A
 [Django's file management documentation](https://docs.djangoproject.com/en/stable/topics/files/).
 
 ## Installation
+
 django-s3-file-field must be used with a compatible storage backend, one of:
-* `S3Storage` in [django-storages](https://django-storages.readthedocs.io/),
+- `S3Storage` in [django-storages](https://django-storages.readthedocs.io/),
   for [AWS S3](https://aws.amazon.com/s3/)
-  * This must be explicitly configured (the defaults are insufficient) to use
+  - This must be explicitly configured (the defaults are insufficient) to use
     [Signature Version 4](https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-authenticating-requests.html):
+
     ```python
     # settings.py
     AWS_S3_SIGNATURE_VERSION = "s3v4"
     ```
-* `MinioStorage` or `MinioMediaStorage` in [django-minio-storage](https://django-minio-storage.readthedocs.io/),
+
+- `MinioStorage` or `MinioMediaStorage` in [django-minio-storage](https://django-minio-storage.readthedocs.io/),
   for [MinIO](https://min.io/)
 
 After the storage backend is installed and configured, install django-s3-file-field, using the
@@ -73,11 +79,12 @@ urlpatterns = [
 ```
 
 ## Usage
+
 django-s3-file-field supports both the creation and modification (by overwrite) of
 model instances with an `S3FileField`, in either of two usage patterns:
-* server-rendered views (including the Django admin), via Django's forms API, where Django
+- server-rendered views (including the Django admin), via Django's forms API, where Django
   renders the upload widget and processes its submission;
-* RESTful APIs, via Django REST framework's serializer API, where the client uploads and submits
+- RESTful APIs, via Django REST framework's serializer API, where the client uploads and submits
   the result itself.
 
 The model definition is common to both usage patterns.
@@ -87,6 +94,7 @@ its font and colors from the surrounding page, and is explicitly compatible with
 the [DaisyUI](https://daisyui.com/) and [Vuetify](https://vuetifyjs.com/) CSS frameworks.
 
 ### Models
+
 For all usage, define an `S3FileField` on a Django model, instead of a `FileField`:
 ```python
 from django.db import models
@@ -98,6 +106,7 @@ class Resource(models.Model):
 ```
 
 #### Limiting file size
+
 A maximum file size (in bytes) may be set on each `S3FileField`:
 ```python
 from django.db import models
@@ -118,6 +127,7 @@ When neither is set, the limit is the storage backend's own maximum upload size
 (5 TB on AWS S3).
 
 #### Model validators
+
 [Validators](https://docs.djangoproject.com/en/stable/ref/validators/) may be set on an
 `S3FileField`. As with any model field, they run when a model instance is validated with
 [`full_clean()`](https://docs.djangoproject.com/en/stable/ref/models/instances/#django.db.models.Model.full_clean).
@@ -162,6 +172,7 @@ rejecting it only prevents a reference to the file from being saved; the uploade
 remains in the storage backend.
 
 ### Django forms
+
 In this usage pattern, everything is handled by the form layer, as with a Django `FileField`: the
 form renders the upload widget, which performs the upload in the browser; validates the submitted
 value; redisplays it when another field is invalid; keeps, replaces or clears an existing file on
@@ -205,6 +216,7 @@ class ResourceForm(Form):
 ```
 
 #### Form validation
+
 A `ModelForm` will run all validators declared on the model field.
 
 Additionally, [Form validation](https://docs.djangoproject.com/en/stable/ref/forms/validation/)
@@ -251,12 +263,14 @@ class ResourceForm(ModelForm):
 ```
 
 ### REST APIs
+
 In this usage pattern, the application declares its API with a Django REST framework serializer,
 using an `S3FileSerializerField` to provide an interface to an `S3FileField`. The application's
 client then uploads files with an `<s3-file-input>` element (in a browser) or client library (in
 JavaScript or Python), and submits the resulting values to the application's API.
 
 #### Django REST framework
+
 When defining a
 [Django REST framework `ModelSerializer`](https://www.django-rest-framework.org/api-guide/serializers/#modelserializer),
 the appropriate serializer field will be automatically used:
@@ -284,6 +298,7 @@ class ResourceSerializer(serializers.Serializer):
 ```
 
 ##### Serializer validation
+
 A `ModelSerializer` will run all validators declared on the model field.
 
 Additionally,
@@ -321,6 +336,7 @@ class ResourceSerializer(serializers.ModelSerializer):
 ```
 
 #### Browser clients: the `<s3-file-input>` element
+
 In a web browser, a file is uploaded with the `<s3-file-input>` element: a custom element which
 presents a file picker, uploads the chosen file to the storage backend, and provides the resulting
 value for the application to submit. It is the same element which the form layer renders as its
@@ -336,15 +352,15 @@ The element is loaded by including its assets (where `/static/` is
 It is configured with the following HTML attributes, which are also available as JavaScript
 properties:
 
-| Attribute | Property | Type | Meaning |
-|---|---|---|---|
-| `base-url` | `baseUrl` | `string` | The URL path at which django-s3-file-field's URLconf is included (e.g. `/api/s3-upload/`) |
-| `field-id` | `fieldId` | `string` | The identifier of the `S3FileField` to upload to, as `<app_label>.<Model>.<field>` |
-| `max-size` | `maxSize` | `number` | (optional) The maximum file size, checked before uploading; omit when none is configured |
-| `existing-url` | `existingUrl` | `string` | (optional) The URL of the existing file stored in this field (i.e. the output of the serializer) |
-| `disabled` | `disabled` | `boolean` | (optional) Whether the field is disabled; the field is also disabled by a disabled ancestor `<fieldset>` |
-| `name` | `name` | `string` | (optional) When within a form, the name of the submitted field |
-| `required` | `required` | `boolean` | (optional) When within a form, whether a file is required; keeping an existing file satisfies this |
+| Attribute      | Property      | Type      | Meaning                                                                                                  |
+| -------------- | ------------- | --------- | -------------------------------------------------------------------------------------------------------- |
+| `base-url`     | `baseUrl`     | `string`  | The URL path at which django-s3-file-field's URLconf is included (e.g. `/api/s3-upload/`)                |
+| `field-id`     | `fieldId`     | `string`  | The identifier of the `S3FileField` to upload to, as `<app_label>.<Model>.<field>`                       |
+| `max-size`     | `maxSize`     | `number`  | (optional) The maximum file size, checked before uploading; omit when none is configured                 |
+| `existing-url` | `existingUrl` | `string`  | (optional) The URL of the existing file stored in this field (i.e. the output of the serializer)         |
+| `disabled`     | `disabled`    | `boolean` | (optional) Whether the field is disabled; the field is also disabled by a disabled ancestor `<fieldset>` |
+| `name`         | `name`        | `string`  | (optional) When within a form, the name of the submitted field                                           |
+| `required`     | `required`    | `boolean` | (optional) When within a form, whether a file is required; keeping an existing file satisfies this       |
 
 When placed within a `<form>`, an `<s3-file-input>` submits its value under its `name` and reports
 validity like a native input, so a missing `required` file or an upload in progress blocks form
@@ -362,6 +378,7 @@ element, the event does not bubble. Unless the event is canceled, the error is t
 as if it were uncaught, so it reaches the browser console and any error monitoring (e.g. Sentry).
 
 ##### Vue.js examples
+
 The element may be bound with Vue.js's `v-model`, or placed in a form, whose data then includes
 its value.
 
@@ -436,15 +453,18 @@ async function save(event) {
 ```
 
 #### JavaScript client library
+
 A frontend which doesn't use the `<s3-file-input>` element (as when the file comes from somewhere
 other than a file input, or the UI is entirely custom) may upload directly with the
 [JavaScript / TypeScript client library](javascript-client/README.md).
 
 #### Python client library
+
 Scripts and other non-browser clients may upload with the
 [Python client library](python-client/README.md).
 
 ### pytest
+
 When installed, django-s3-file-field makes a
 [pytest fixture](https://docs.pytest.org/en/latest/explanation/fixtures.html) automatically
 available for use.
