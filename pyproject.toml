@@ -79,17 +79,17 @@ dev = [
   "django-extensions==4.1",
   "django-stubs-ext==6.1.2",
   "ipython==9.17.1",
-  "tox==4.65.6",
+  "tox==4.67.1",
   "tox-uv==1.37.0",
   "watchdog==6.0.0",
   "werkzeug==3.1.9",
 ]
 lint = [
-  "ruff==0.17.1",
+  "ruff==0.17.2",
 ]
 type = [
   "mypy==2.4.0",
-  "boto3-stubs[s3]==1.43.114",
+  "boto3-stubs[s3]==1.43.118",
   "django-stubs[compatible-mypy]==6.1.2",
   "djangorestframework-stubs==3.18.1",
   "types-factory-boy==0.4.1",
@@ -101,7 +101,7 @@ test = [
   "pytest==9.1.1",
   "pytest-cov==7.1.0",
   "pytest-django==4.14.0",
-  "pytest-mock==3.16.0",
+  "pytest-mock==3.17.0",
   "requests==2.34.2",
 ]
 
