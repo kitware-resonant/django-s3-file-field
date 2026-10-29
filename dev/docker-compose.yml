@@ -4,10 +4,12 @@ services:
     environment:
       AWS_ACCESS_KEY_ID: seaweedAccessKey
       AWS_SECRET_ACCESS_KEY: seaweedSecretKey
+      WEED_ADMIN_USER: seaweedAdmin
+      WEED_ADMIN_PASSWORD: seaweedAdminPassword
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8333/healthz"]
       start_period: 30s
       start_interval: 2s
     ports:
       - 8333:8333
-      - 23646:23646
+      - 12535:12535
