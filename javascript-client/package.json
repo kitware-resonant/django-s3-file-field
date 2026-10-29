@@ -21,10 +21,10 @@
     "build": "npm-run-all build:clean build:compile",
     "build:clean": "rimraf ./dist",
     "build:compile": "tsc",
-    "format": "biome check --write",
+    "format": "biome check --write --error-on-warnings",
     "prepack": "npm-run-all build",
     "test": "npm-run-all test:*",
-    "test:lint": "biome ci",
+    "test:lint": "biome ci --error-on-warnings",
     "test:type": "tsc --noEmit",
     "watch": "tsc --watch"
   },
