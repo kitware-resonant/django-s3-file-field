@@ -28,17 +28,18 @@ function apiErrorDetail(data: object): string | undefined {
 //   </Error>
 // Anchor the patterns at the start, to avoid possible quadratic backtracking on
 // technically-untrusted input.
-const s3ErrorCodePattern = /^\s*(?:<\?xml[^>]*>\s*)?<Error>.*?<Code>([^<]*)<\/Code>/s;
-const s3ErrorMessagePattern = /^\s*(?:<\?xml[^>]*>\s*)?<Error>.*?<Message>([^<]*)<\/Message>/s;
+const s3ErrorCodePattern = /^\s*(?:<\?xml[^>]*>\s*)?<Error>.*?<Code>(?<code>[^<]*)<\/Code>/su;
+const s3ErrorMessagePattern =
+  /^\s*(?:<\?xml[^>]*>\s*)?<Error>.*?<Message>(?<message>[^<]*)<\/Message>/su;
 
 /** The code of an S3 error, if the body of a response describes one. */
 export function s3ErrorCode(body: string): string | undefined {
-  return s3ErrorCodePattern.exec(body)?.[1];
+  return s3ErrorCodePattern.exec(body)?.groups?.code;
 }
 
 /** The message of an S3 error, if the body of a response describes one. */
 export function s3ErrorMessage(body: string): string | undefined {
-  return s3ErrorMessagePattern.exec(body)?.[1];
+  return s3ErrorMessagePattern.exec(body)?.groups?.message;
 }
 
 /**

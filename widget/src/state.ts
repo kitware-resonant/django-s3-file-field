@@ -29,7 +29,7 @@ export interface FileStateInputs {
  *
  * Any query or fragment is dropped, and percent-encoding is decoded.
  */
-const QUERY_OR_FRAGMENT = /[?#]/;
+const QUERY_OR_FRAGMENT = /[?#]/u;
 function basename(url: string): string {
   const path = url.split(QUERY_OR_FRAGMENT, 1)[0] ?? '';
   const name = path.split('/').pop() ?? '';

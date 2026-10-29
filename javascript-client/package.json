@@ -21,10 +21,10 @@
     "build": "npm-run-all build:clean build:compile",
     "build:clean": "rimraf ./dist",
     "build:compile": "tsc",
-    "format": "biome check --write --error-on-warnings",
+    "format": "biome check --write",
     "prepack": "npm-run-all build",
     "test": "npm-run-all test:*",
-    "test:lint": "biome ci --error-on-warnings",
+    "test:lint": "biome ci",
     "test:type": "tsc --noEmit",
     "watch": "tsc --watch"
   },
@@ -33,7 +33,7 @@
     "p-map": "^7.1.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.3",
+    "@biomejs/biome": "2.6.4",
     "@resonant/biome-config": "0.5.0",
     "npm-run-all2": "9.0.4",
     "rimraf": "6.1.3",

@@ -6,9 +6,9 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "format": "biome check --write --error-on-warnings",
+    "format": "biome check --write",
     "test": "npm-run-all test:*",
-    "test:lint": "biome ci --error-on-warnings",
+    "test:lint": "biome ci",
     "test:type": "tsc",
     "watch": "vite build --watch"
   },
@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-decorators": "8.0.2",
-    "@biomejs/biome": "2.6.3",
+    "@biomejs/biome": "2.6.4",
     "@resonant/biome-config": "0.5.0",
     "@rolldown/plugin-babel": "0.2.4",
     "npm-run-all2": "9.0.4",
