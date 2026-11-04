@@ -89,3 +89,7 @@ class S3FileFieldError(Exception):
         if isinstance(error, requests.ConnectionError):
             return cls("Upload failed with a network error.")
         return cls("Upload failed.")
+
+
+class S3CompletionError(S3FileFieldError):
+    """The failure of an upload while S3 was completing it."""

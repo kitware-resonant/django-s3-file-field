@@ -6,8 +6,14 @@ from typing import TYPE_CHECKING, BinaryIO, Self
 
 import requests
 from retryable_requests import DEFAULT_RETRY_STRATEGY, RetryableSession
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_random_exponential,
+)
 
-from ._errors import S3FileFieldError
+from ._errors import S3CompletionError, S3FileFieldError, s3_error_code, s3_error_message
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -26,8 +32,8 @@ if TYPE_CHECKING:
 _API_RETRIES = DEFAULT_RETRY_STRATEGY.new(
     allowed_methods=set(DEFAULT_RETRY_STRATEGY.allowed_methods or set()) | {"POST"}
 )
-# Completing is safe to repeat; uploading a part is a PUT, which the default policy already
-# retries, since it overwrites
+# Completing is repeated deliberately (see _send_s3_completion); uploading a part is a PUT, which
+# the default policy already retries, since it overwrites
 _S3_RETRIES = DEFAULT_RETRY_STRATEGY.new(
     allowed_methods=set(DEFAULT_RETRY_STRATEGY.allowed_methods or set()) | {"POST"}
 )
@@ -138,10 +144,31 @@ class S3FileFieldClient:
         resp.raise_for_status()
         completion: CompletionResponse = resp.json()
 
-        # S3 may take minutes to respond. Send no Content-Type, as S3 misinterprets the body under
-        # some types.
-        complete_resp = self._s3.post(completion["url"], data=completion["body"].encode())
-        complete_resp.raise_for_status()
+        self._send_s3_completion(completion)
+
+    @retry(
+        retry=retry_if_exception_type(S3CompletionError),
+        # Same retry schedule as Boto3's standard mode:
+        # https://docs.aws.amazon.com/boto3/latest/guide/retries.html#standard-retry-mode
+        stop=stop_after_attempt(3),
+        wait=wait_random_exponential(multiplier=2, max=20),
+        reraise=True,
+    )
+    def _send_s3_completion(self, completion: CompletionResponse) -> None:
+        # Send no Content-Type, as S3 misinterprets the body under some types.
+        response = self._s3.post(completion["url"], data=completion["body"].encode())
+        response.raise_for_status()
+        # S3 may begin its response with 200, then report an error in the body.
+        if error_code := s3_error_code(response.text):
+            if error_code == "NoSuchUpload":
+                # When an attempt succeeds but its response is lost, the repeat finds the upload
+                # gone. In this case, provisionally assume success and continue. Finalization
+                # verifies that the object exists, so let it definitively determine success.
+                return
+            raise S3CompletionError(
+                s3_error_message(response.text) or f"Upload failed with {error_code}.",
+                status=response.status_code,
+            )
 
     def _finalize(self, upload_token: str) -> str:
         resp = self._api.post(
