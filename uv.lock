@@ -738,12 +738,14 @@ name = "django-s3-file-field-client"
 source = { editable = "python-client" }
 dependencies = [
     { name = "requests" },
+    { name = "retryable-requests" },
     { name = "typing-extensions", marker = "python_full_version < '3.15'" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "requests" },
+    { name = "retryable-requests", specifier = ">=1.0" },
     { name = "typing-extensions", marker = "python_full_version < '3.15'", specifier = ">=4.13" },
 ]
 
@@ -1655,6 +1657,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ac/c3/e2a2b89f2d3e2179abd6d00ebd70bff6273f37fb3e0cc209f48b39d00cbf/requests-2.34.2.tar.gz", hash = "sha256:f288924cae4e29463698d6d60bc6a4da69c89185ad1e0bcc4104f584e960b9ed", size = 142856, upload-time = "2026-05-14T19:25:27.735Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl", hash = "sha256:2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0", size = 73075, upload-time = "2026-05-14T19:25:26.443Z" },
+]
+
+[[package]]
+name = "retryable-requests"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+    { name = "typing-extensions", marker = "python_full_version < '3.15'" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/2d/2b/960e17276c9cbc83d334a11de0db1b373875cf108a37c5826f1d0fbe03c2/retryable_requests-1.0.0.tar.gz", hash = "sha256:28677a144d606c29907372da256f9bfae37a935fcad557a675307c34165f5d83", size = 14613, upload-time = "2026-11-04T07:12:47.293Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e0/98/84c0bff815793281605ca2134a0b28d710c3f3488d26e2b7d5e40314e9ce/retryable_requests-1.0.0-py3-none-any.whl", hash = "sha256:c4a28ac9c73831d7a3d33f3d1609f99b6e23cafcf42d47e51629860a60a790fd", size = 13478, upload-time = "2026-11-04T07:12:46.336Z" },
 ]
 
 [[package]]

@@ -2,13 +2,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import io
-from typing import TYPE_CHECKING, BinaryIO, ClassVar
+from typing import TYPE_CHECKING, BinaryIO, Self
 
 import requests
+from retryable_requests import DEFAULT_RETRY_STRATEGY, RetryableSession
 
 from ._errors import S3FileFieldError
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+    from types import TracebackType
+
     from ._types import (
         CompletedPart,
         CompletionResponse,
@@ -16,6 +20,20 @@ if TYPE_CHECKING:
         InitiationResponse,
         PresignedPart,
     )
+
+# The API's requests are safe to repeat: initiation creates an upload which a lifecycle rule aborts
+# if abandoned, and the others are pure functions of their input
+_API_RETRIES = DEFAULT_RETRY_STRATEGY.new(
+    allowed_methods=set(DEFAULT_RETRY_STRATEGY.allowed_methods or set()) | {"POST"}
+)
+# Completing is safe to repeat; uploading a part is a PUT, which the default policy already
+# retries, since it overwrites
+_S3_RETRIES = DEFAULT_RETRY_STRATEGY.new(
+    allowed_methods=set(DEFAULT_RETRY_STRATEGY.allowed_methods or set()) | {"POST"}
+)
+# S3 responds to a part once it has received it, and sends whitespace while assembling a
+# completion, so this long a silence means a stalled server
+_S3_TIMEOUT = (3.05, 60)
 
 
 @dataclass
@@ -38,31 +56,54 @@ class _File:
 
 
 class S3FileFieldClient:
-    request_timeout: ClassVar[int] = 5
-    base_url: str
-    api_session: requests.Session
+    """A client for uploading files to a Django application's ``S3FileField``."""
 
-    def __init__(self, base_url: str, api_session: requests.Session | None = None) -> None:
-        self.base_url = base_url.rstrip("/")
-        self.api_session = requests.Session() if api_session is None else api_session
+    def __init__(self, base_url: str, *, headers: Mapping[str, str] | None = None) -> None:
+        """
+        Create a client.
+
+        :param base_url: The URL of the upload API, where ``s3_file_field.urls`` is mounted.
+        :param headers: Headers for the API's requests, such as ``Authorization``.
+        """
+        self._api = RetryableSession(base_url=base_url, retry_strategy=_API_RETRIES)
+        if headers is not None:
+            self._api.headers.update(headers)
+        # The object store's requests are authorized by their presigned URLs, so the API's
+        # headers must not be sent to it
+        self._s3 = RetryableSession(retry_strategy=_S3_RETRIES, timeout=_S3_TIMEOUT)
+
+    def close(self) -> None:
+        """Close the client's connections."""
+        self._api.close()
+        self._s3.close()
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
+        self.close()
 
     def _initiate_upload(self, file: _File, field_id: str) -> InitiationResponse:
-        resp = self.api_session.post(
-            f"{self.base_url}/initiate/",
+        resp = self._api.post(
+            "initiate/",
             json={
                 "field": field_id,
                 "file_name": file.name,
                 "file_size": file.size,
                 "content_type": file.content_type,
             },
-            timeout=self.request_timeout,
         )
         resp.raise_for_status()
         initiation: InitiationResponse = resp.json()
         return initiation
 
     def _upload_part(self, part_bytes: bytes, presigned_part: PresignedPart) -> CompletedPart:
-        resp = requests.put(presigned_part["url"], data=part_bytes, timeout=self.request_timeout)
+        resp = self._s3.put(presigned_part["url"], data=part_bytes)
         resp.raise_for_status()
 
         etag = resp.headers.get("ETag")
@@ -85,33 +126,29 @@ class S3FileFieldClient:
     def _complete_upload(
         self, initiation: InitiationResponse, completed_parts: list[CompletedPart]
     ) -> None:
-        resp = self.api_session.post(
-            f"{self.base_url}/complete/",
+        resp = self._api.post(
+            "complete/",
             json={
                 "upload_token": initiation["upload_token"],
                 # Mypy doesn't yet implement PEP 728 Mapping assignability for closed TypedDicts
                 # (python/mypy#18176); once it does, this ignore will be flagged as unused
                 "parts": completed_parts,  # type: ignore[dict-item]
             },
-            timeout=self.request_timeout,
         )
         resp.raise_for_status()
         completion: CompletionResponse = resp.json()
 
-        complete_resp = requests.post(
-            completion["url"],
-            data=completion["body"],
-            timeout=self.request_timeout,
-        )
+        # S3 may take minutes to respond. Send no Content-Type, as S3 misinterprets the body under
+        # some types.
+        complete_resp = self._s3.post(completion["url"], data=completion["body"].encode())
         complete_resp.raise_for_status()
 
     def _finalize(self, upload_token: str) -> str:
-        resp = self.api_session.post(
-            f"{self.base_url}/finalize/",
+        resp = self._api.post(
+            "finalize/",
             json={
                 "upload_token": upload_token,
             },
-            timeout=self.request_timeout,
         )
         resp.raise_for_status()
         finalization: FinalizationResponse = resp.json()
