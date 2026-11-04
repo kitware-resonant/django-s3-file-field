@@ -93,6 +93,8 @@ type = [
   "django-stubs[compatible-mypy]==6.1.2",
   "djangorestframework-stubs==3.18.1",
   "types-factory-boy==0.4.1",
+  # We type check the client, so its dependencies must be installed
+  "django-s3-file-field-client",
 ]
 test = [
   "django-stubs-ext==6.1.2",
@@ -145,6 +147,9 @@ source = "vcs"
 
 [tool.uv.workspace]
 members = ["python-client"]
+
+[tool.uv.sources]
+django-s3-file-field-client = { workspace = true }
 
 [tool.ruff]
 line-length = 100

@@ -680,6 +680,7 @@ test = [
 ]
 type = [
     { name = "boto3-stubs", extra = ["s3"] },
+    { name = "django-s3-file-field-client" },
     { name = "django-stubs", extra = ["compatible-mypy"] },
     { name = "djangorestframework-stubs" },
     { name = "mypy" },
@@ -725,6 +726,7 @@ test = [
 ]
 type = [
     { name = "boto3-stubs", extras = ["s3"], specifier = "==1.43.122" },
+    { name = "django-s3-file-field-client", editable = "python-client" },
     { name = "django-stubs", extras = ["compatible-mypy"], specifier = "==6.1.2" },
     { name = "djangorestframework-stubs", specifier = "==3.18.1" },
     { name = "mypy", specifier = "==2.4.1" },
