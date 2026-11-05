@@ -65,15 +65,10 @@ class S3FileFieldError(Exception):
 
     status: int | None
     """The HTTP status of the response, if one was received."""
-    detail: str | None
-    """The server's explanation of the failure, if it gave one."""
 
-    def __init__(
-        self, message: str, *, status: int | None = None, detail: str | None = None
-    ) -> None:
+    def __init__(self, message: str, *, status: int | None = None) -> None:
         super().__init__(message)
         self.status = status
-        self.detail = detail
 
     @classmethod
     def from_request_exception(cls, error: requests.RequestException) -> Self:
@@ -83,7 +78,7 @@ class S3FileFieldError(Exception):
             status = response.status_code
             # The API explains an error in JSON; S3 in XML
             detail = api_error_detail(response) or s3_error_message(response.text)
-            return cls(detail or f"Upload failed with HTTP {status}.", status=status, detail=detail)
+            return cls(detail or f"Upload failed with HTTP {status}.", status=status)
         if isinstance(error, requests.Timeout):
             return cls("Upload timed out.")
         if isinstance(error, requests.ConnectionError):
