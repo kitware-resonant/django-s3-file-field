@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 import io
-from typing import TYPE_CHECKING, BinaryIO, Self
+from typing import TYPE_CHECKING, BinaryIO, ClassVar, Self
 
 import requests
 from retryable_requests import DEFAULT_RETRY_STRATEGY, RetryableSession
+from streamable import star, stream
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -64,6 +66,12 @@ class _File:
 class S3FileFieldClient:
     """A client for uploading files to a Django application's ``S3FileField``."""
 
+    # Boto3's default is 10. Empirically, concurrency=10 gave a speedup over concurrency=1 of 4.5x
+    # via an internet connection to S3 and 8.6x from EC2 in S3's region. Via the internet
+    # connection, concurrency=20 saturated the link enough that connections stalled past the
+    # timeout and the upload failed.
+    _concurrency: ClassVar[int] = 10
+
     def __init__(self, base_url: str, *, headers: Mapping[str, str] | None = None) -> None:
         """
         Create a client.
@@ -76,7 +84,11 @@ class S3FileFieldClient:
             self._api.headers.update(headers)
         # The object store's requests are authorized by their presigned URLs, so the API's
         # headers must not be sent to it
-        self._s3 = RetryableSession(retry_strategy=_S3_RETRIES, timeout=_S3_TIMEOUT)
+        self._s3 = RetryableSession(
+            retry_strategy=_S3_RETRIES,
+            timeout=_S3_TIMEOUT,
+            pool_maxsize=self._concurrency,
+        )
 
     def close(self) -> None:
         """Close the client's connections."""
@@ -124,10 +136,22 @@ class S3FileFieldClient:
     def _upload_parts(
         self, file: _File, presigned_parts: list[PresignedPart]
     ) -> list[CompletedPart]:
-        return [
-            self._upload_part(file.stream.read(presigned_part["size"]), presigned_part)
-            for presigned_part in presigned_parts
-        ]
+        def read_part(presigned_part: PresignedPart) -> tuple[bytes, PresignedPart]:
+            part_bytes = file.stream.read(presigned_part["size"])
+            if len(part_bytes) != presigned_part["size"]:
+                raise S3FileFieldError("The file is shorter than its size.")
+            return part_bytes, presigned_part
+
+        # Use an explicit executor, to avoid https://github.com/ebonnal/streamable/issues/149
+        with ThreadPoolExecutor(
+            max_workers=self._concurrency, thread_name_prefix="s3_file_field_client"
+        ) as executor:
+            completed_parts = (
+                stream(presigned_parts)
+                .map(read_part)
+                .map(star(self._upload_part), concurrency=executor, as_completed=True)
+            )
+            return sorted(completed_parts, key=lambda part: part["part_number"])
 
     def _complete_upload(
         self, initiation: InitiationResponse, completed_parts: list[CompletedPart]
