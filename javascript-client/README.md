@@ -52,7 +52,7 @@ try {
   );
 } catch (error) {
   if (error instanceof S3FileFieldError) {
-    // The message is suitable for display; the error also describes the failure in detail
+    // The message is suitable for display; the error also carries the failure's stage and status
     showMessage(error.message);
   }
   throw error;

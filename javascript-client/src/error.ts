@@ -58,18 +58,14 @@ export class S3FileFieldError extends Error {
   /** The HTTP status of the response, if one was received. */
   readonly status: number | undefined;
 
-  /** The server's explanation of the failure, if it gave one. */
-  readonly detail: string | undefined;
-
   constructor(
     stage: S3FileFieldProgressState,
     message: string,
-    { status, detail, cause }: { status?: number; detail?: string; cause?: unknown } = {},
+    { status, cause }: { status?: number; cause?: unknown } = {},
   ) {
     super(message, { cause });
     this.stage = stage;
     this.status = status;
-    this.detail = detail;
   }
 
   /** Describe the failure of a request made by ky. */
@@ -86,7 +82,6 @@ export class S3FileFieldError extends Error {
       }
       return new S3FileFieldError(stage, detail ?? `Upload failed with HTTP ${status}.`, {
         status,
-        detail,
         cause: error,
       });
     }
