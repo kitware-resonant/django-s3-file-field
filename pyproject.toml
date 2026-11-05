@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "django-s3-file-field"
-description = "A Django library for uploading files directly to AWS S3 or MinIO Storage from HTTP clients."
+description = "A Django FileField whose uploads go straight from the client to AWS S3 or MinIO, never through the Django server."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "Apache-2.0"

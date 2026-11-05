@@ -2,9 +2,10 @@
 
 [![PyPI](https://img.shields.io/pypi/v/django-s3-file-field)](https://pypi.org/project/django-s3-file-field/)
 
-django-s3-file-field is a Django library for uploading files directly to
-[AWS S3](https://aws.amazon.com/s3/) or [MinIO](https://min.io/) object storage from HTTP clients
-(browsers, CLIs, etc.), using signed upload URLs issued by Django.
+_Django signs, the browser sends. Skip the bucket brigade._
+
+A Django `FileField` whose uploads go straight from the client to
+[AWS S3](https://aws.amazon.com/s3/) or [MinIO](https://min.io/), never through the Django server.
 
 ## Benefits
 
