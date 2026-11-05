@@ -42,5 +42,5 @@ requests.post(
 
 ### Errors
 A failed upload raises an `S3FileFieldError`, whose message is suitable for display. Its `status`
-and `detail` attributes describe the failure, and its `__cause__` is the underlying
+is the HTTP status of the response, if one was received, and its `__cause__` is the underlying
 `requests` exception, when there is one.
