@@ -739,6 +739,7 @@ source = { editable = "python-client" }
 dependencies = [
     { name = "requests" },
     { name = "retryable-requests" },
+    { name = "streamable" },
     { name = "tenacity" },
     { name = "typing-extensions", marker = "python_full_version < '3.15'" },
 ]
@@ -747,6 +748,7 @@ dependencies = [
 requires-dist = [
     { name = "requests" },
     { name = "retryable-requests", specifier = ">=1.0" },
+    { name = "streamable", specifier = ">=2.0" },
     { name = "tenacity" },
     { name = "typing-extensions", marker = "python_full_version < '3.15'", specifier = ">=4.13" },
 ]
@@ -1742,6 +1744,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/28/e3/55dcc2cfbc3ca9c29519eb6884dd1415ecb53b0e934862d3559ddcb7e20b/stack_data-0.6.3.tar.gz", hash = "sha256:836a778de4fec4dcd1dcd89ed8abff8a221f58308462e1c4aa2a3cf30148f0b9", size = 44707, upload-time = "2023-09-30T13:58:05.479Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f1/7b/ce1eafaf1a76852e2ec9b22edecf1daa58175c090266e9f6c64afcd81d91/stack_data-0.6.3-py3-none-any.whl", hash = "sha256:d5558e0c25a4cb0853cddad3d77da9891a08cb85dd9f9f91b9f8cd66e511e695", size = 24521, upload-time = "2023-09-30T13:58:03.53Z" },
+]
+
+[[package]]
+name = "streamable"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/79/b9/4501aea43e27db134ae31f78aa8019baccf23e49318c8a535e1588b25c43/streamable-2.0.0.tar.gz", hash = "sha256:0a88e956e3d3b72b4f5169b332f38be9f6dd7da4502123ec23bd96ff6e2bece2", size = 56273, upload-time = "2026-02-22T19:50:23.567Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fa/55/f801598be756607b718a01333edaa16f0ec42ec8887e2599ec4ed8d07adc/streamable-2.0.0-py3-none-any.whl", hash = "sha256:3b68cd6a600480345df87105a34ea5e8b46b84c102130c06919fd6a129e263c1", size = 44388, upload-time = "2026-02-22T19:50:22.506Z" },
 ]
 
 [[package]]
