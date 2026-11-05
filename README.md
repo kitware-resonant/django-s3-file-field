@@ -93,6 +93,8 @@ The same browser-side upload widget provides a GUI for either usage pattern. The
 its font and colors from the surrounding page, and is explicitly compatible with the themes of both
 the [DaisyUI](https://daisyui.com/) and [Vuetify](https://vuetifyjs.com/) CSS frameworks.
 
+<img width="464" alt="The upload widget: a file is chosen, uploads with a progress bar, and is reported as uploaded" src="https://raw.githubusercontent.com/kitware-resonant/django-s3-file-field/master/docs/s3-file-input.gif">
+
 ### Models
 
 For all usage, define an `S3FileField` on a Django model, instead of a `FileField`:
