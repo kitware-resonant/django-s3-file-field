@@ -308,6 +308,29 @@ export class S3FileInputElement extends LitElement {
   accessor maxSize: number | undefined;
 
   /**
+   * Whether to send cookies with cross-origin requests to the upload API.
+   *
+   * Cookies are always sent with same-origin requests. Enable this when the page is on a
+   * different origin from the Django server and authenticates with a session, which also
+   * requires the server to allow credentialed CORS requests from the page's origin. Leave it
+   * off when authenticating with "authorization" or anonymously, as a credentialed request
+   * fails with a wildcard CORS origin or without an explicit credentials allowance.
+   */
+  @property({ attribute: 'cross-origin-cookies', type: Boolean })
+  accessor crossOriginCookies = false;
+
+  /**
+   * The value of an "Authorization" header to send with requests to the upload API.
+   *
+   * This is the full header value, including the scheme (e.g. "Bearer <token>"), as issued
+   * for the frontend's other API requests. When set, CSRF protection is not involved, as
+   * Django REST framework enforces it only for session authentication. The value is read at
+   * the start of each upload, so update it when a token is refreshed.
+   */
+  @property({ attribute: false })
+  accessor authorization: string | undefined;
+
+  /**
    * The value to submit: empty to keep any existing file, the clear value to remove it, or a
    * pending upload's signed FieldValue.
    *
@@ -890,6 +913,8 @@ export class S3FileInputElement extends LitElement {
         this.fieldId,
         file,
         this.internals.form,
+        this.crossOriginCookies,
+        this.authorization,
         (progress) => {
           this.uploadProgress = progress;
         },
