@@ -29,6 +29,8 @@ A Django `FileField` whose uploads send file content straight from the client to
   signed, expiring tokens and bound to the field it was initiated for.
 - **Themed to match.** The widget inherits the page's font and colors, and follows
   [DaisyUI](https://daisyui.com/) and [Vuetify](https://vuetifyjs.com/) themes out of the box.
+- **Accessible.** The widget labels its controls and exposes its status changes to assistive
+  technology, via ARIA roles and labels.
 
 ## How it works
 
@@ -81,8 +83,10 @@ django-s3-file-field must be used with a compatible storage backend, one of:
 - `MinioStorage` or `MinioMediaStorage` in [django-minio-storage](https://django-minio-storage.readthedocs.io/),
   for [MinIO](https://min.io/)
 
-Other S3-compatible services (e.g. Cloudflare R2, Backblaze B2, or DigitalOcean Spaces) may work
-through `S3Storage`'s endpoint settings, but only AWS S3 and MinIO are tested.
+Other S3-compatible services, such as Cloudflare R2, Backblaze B2, or DigitalOcean Spaces, may
+work when
+[configured as django-storages documents](https://django-storages.readthedocs.io/en/latest/backends/s3_compatible/index.html),
+but only AWS S3 and MinIO are tested.
 
 After the storage backend is installed and configured, install django-s3-file-field, using the
 corresponding extra:
@@ -166,17 +170,15 @@ were started but never completed, which AWS S3 otherwise stores and bills indefi
 
 ## Usage
 
-django-s3-file-field supports both the creation and modification (by overwrite) of
+django-s3-file-field supports both the creation and editing (replacing the referenced file) of
 model instances with an `S3FileField`, in either of two usage patterns:
 - server-rendered views (including the Django admin), via Django's forms API, where Django
   renders the upload widget and processes its submission;
 - RESTful APIs, via Django REST framework's serializer API, where the client uploads and submits
   the result itself.
 
-The model definition is common to both usage patterns.
-
-The same browser-side upload widget provides a GUI for either usage pattern, and adapts to the
-page's styling (see [Theming the widget](#theming-the-widget)).
+The model definition is common to both usage patterns. The same browser-side upload widget (the
+[`<s3-file-input>` element](#the-s3-file-input-element)) provides a GUI for either usage pattern.
 
 ### Models
 
@@ -262,11 +264,15 @@ remains in the storage backend.
 
 ### Django forms
 
-In this usage pattern, everything is handled by the form layer, as with a Django `FileField`: the
-form renders the upload widget, which performs the upload in the browser; validates the submitted
-value; redisplays it when another field is invalid; keeps, replaces, or clears an existing file on
-edit; and assigns the result to the model instance. The `<s3-file-input>` element (described under
-REST APIs) is never manipulated directly.
+In this usage pattern, everything is handled by the form layer, as with a Django `FileField`. The
+form:
+- renders the upload widget, which performs the upload in the browser;
+- validates the submitted value;
+- redisplays it when another field is invalid;
+- keeps, replaces, or clears an existing file on edit;
+- assigns the result to the model instance.
+
+The [`<s3-file-input>` element](#the-s3-file-input-element) is never manipulated directly.
 
 When defining a
 [Django `ModelForm`](https://docs.djangoproject.com/en/stable/topics/forms/modelforms/),
@@ -313,7 +319,7 @@ A `ModelForm` will run all validators declared on the model field.
 
 Additionally, [Form validation](https://docs.djangoproject.com/en/stable/ref/forms/validation/)
 is supported. This provides access to the form's other fields (within `clean()`) and the
-`instance` (for a `ModelForm`), which a model validator can't see.
+`instance` (for a `ModelForm`), which a [model validator](#model-validators) can't see.
 
 Note that if the field is optional (the model sets `blank=True`), the `clean_<field>` method may
 also receive `None` or `False` values, indicating empty (no file at all) or cleared (existing file
@@ -358,8 +364,9 @@ class ResourceForm(ModelForm):
 
 In this usage pattern, the application declares its API with a Django REST framework serializer,
 using an `S3FileSerializerField` to provide an interface to an `S3FileField`. The application's
-client then uploads files with an `<s3-file-input>` element (in a browser) or client library (in
-JavaScript or Python), and submits the resulting values to the application's API.
+client then uploads files with the [`<s3-file-input>` element](#the-s3-file-input-element) (in a
+browser) or a [client library](#client-libraries) (in JavaScript or Python), and submits the
+resulting values to the application's API.
 
 #### Django REST framework
 
@@ -400,7 +407,7 @@ Additionally,
 [serializer validation](https://www.django-rest-framework.org/api-guide/serializers/#validation)
 is supported. This provides access to the request (within `self.context`), the serializer's other
 fields (within `validate()`), and the `instance` (for a `ModelSerializer`, when updating), which a
-model validator can't see.
+[model validator](#model-validators) can't see.
 
 Note that if the field is optional (the model sets `blank=True`), the `validate_<field>` method may
 also receive a `None` value, indicating a cleared (existing file about to be removed) state. In all
@@ -431,12 +438,12 @@ class ResourceSerializer(serializers.ModelSerializer):
         fields = ["blob"]
 ```
 
-#### Browser clients: the `<s3-file-input>` element
+#### The `<s3-file-input>` element
 
 In a web browser, a file is uploaded with the `<s3-file-input>` element: a custom element which
 presents a file picker, uploads the chosen file to the storage backend, and provides the resulting
 value for the application to submit. It is the same element which the form layer renders as its
-widget.
+widget, so this section is only relevant to the REST APIs usage pattern.
 
 The element is loaded by including its assets (where `/static/` is
 [Django's `STATIC_URL`](https://docs.djangoproject.com/en/stable/ref/settings/#std-setting-STATIC_URL)):
@@ -469,11 +476,35 @@ The element fires `input` and `change` events when the `value` property is chang
 as a native input does.
 
 When an upload fails, the element fires an `error` event, whose `error` property is the
-`S3FileFieldError` (from the JavaScript client library) describing the failure. As with a native
-element, the event does not bubble. Unless the event is canceled, the error is then also reported
-as if it were uncaught, so it reaches the browser console and any error monitoring (e.g. Sentry).
+`S3FileFieldError` (from the [JavaScript client library](javascript-client/README.md)) describing
+the failure. As with a native element, the event does not bubble. Unless the event is canceled with
+`preventDefault()`, the error is then also reported as if it were uncaught, so it reaches the
+browser console and any error monitoring (e.g. Sentry).
 
-##### Vue.js examples
+##### Plain HTML and JavaScript
+
+Read the element's `value` when submitting:
+```html
+<s3-file-input
+  id="blob"
+  base-url="/api/s3-upload/"
+  field-id="myapp.Resource.blob"
+></s3-file-input>
+<button id="save">Save</button>
+
+<script type="module">
+  document.getElementById("save").addEventListener("click", async () => {
+    await fetch("/api/resources/", {
+      method: "POST",
+      // Add any authentication or CSRF headers which the API requires
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ blob: document.getElementById("blob").value }),
+    });
+  });
+</script>
+```
+
+##### Vue.js
 
 The element may be bound with Vue.js's `v-model`, or placed in a form, whose data then includes
 its value.
@@ -550,13 +581,21 @@ async function save(event) {
 </template>
 ```
 
-#### JavaScript client library
+#### Client libraries
+
+Where the `<s3-file-input>` element can't be used, a client library performs the upload instead, in
+JavaScript or Python. Each uploads a file and returns the value to submit for the field.
+
+Note that the client library isn't involved in clearing an optional field's existing file: submit
+`null` for the field to the application's REST API.
+
+##### JavaScript client library
 
 A frontend which doesn't use the `<s3-file-input>` element (as when the file comes from somewhere
-other than a file input, or the UI is entirely custom) may upload directly with the
+other than a file input), or a Node.js program, may upload directly with the
 [JavaScript / TypeScript client library](javascript-client/README.md).
 
-#### Python client library
+##### Python client library
 
 Scripts and other non-browser clients may upload with the
 [Python client library](python-client/README.md).
@@ -583,15 +622,19 @@ s3-file-input {
 }
 ```
 
-### pytest
+### Testing
 
-When installed, django-s3-file-field makes a
-[pytest fixture](https://docs.pytest.org/en/latest/explanation/fixtures.html) automatically
-available for use.
+Testing an application which uses django-s3-file-field requires a supported storage backend, as
+in production. Tests which work with the model directly need nothing further, as with any
+`FileField`. A test which submits to a `ModelForm` or `ModelSerializer`, though, whether directly
+or through a view, needs the field value which an upload would have produced. When pytest is
+installed, django-s3-file-field automatically provides a
+[pytest fixture](https://docs.pytest.org/en/latest/explanation/fixtures.html) to produce one
+without an upload.
 
-The `s3ff_field_value_factory` fixture transforms a stored `File` object into a valid input value
-for Django `ModelForm` or Django REST framework `ModelSerializer` subclasses. Since a field value
-is bound to the `S3FileField` it is uploaded to, the target model field must be passed too:
+The `s3ff_field_value_factory` fixture transforms a `File` already in the storage into such a
+value. Since a field value is bound to the `S3FileField` it is uploaded to, the target model field
+must be passed too:
 ```python
 from django.core.files.storage import default_storage
 from rest_framework.test import APIClient
