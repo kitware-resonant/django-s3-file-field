@@ -82,6 +82,18 @@ object back to a model in the database.
   that same `S3FileField`, so a `FieldValue` cannot be replayed against a different
   field) and substitutes a placeholder file (`S3PlaceholderFile`), which is saved by
   Django as a simple string reference to the S3 key, without needing to access S3.
+  The submitted value has three forms, which the form widget and serializer field both
+  translate to Django's conventions, so clients see only the opaque `FieldValue`:
+  - a `FieldValue` string sets the file;
+  - an empty string, or an omitted field, leaves the file unchanged (the element's
+    `value` is empty when there is nothing to submit, and the element omits itself from
+    its form's data, so both arise naturally);
+  - `CLEAR_VALUE` (`"s3ff:clear"`, what the element submits to clear) or JSON `null`
+    (DRF's convention, usable by a REST client) clears the file.
+
+  In the other direction, a DRF serializer represents the field as the stored file's URL
+  (or `null`), as DRF's `FileField` does. The clients don't yet offer a clear operation,
+  so a REST client clears a file by submitting `null` itself.
 - **Storage backends are pluggable.** `MultipartManager` is the S3-layer facade;
   `S3MultipartManager` (`django-storages`) and `MinioMultipartManager`
   (`django-minio-storage`) implement the storage-specific presigning. It is selected at
