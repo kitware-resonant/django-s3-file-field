@@ -26,7 +26,7 @@ jobs:
           uv build
       - name: Publish the Python distributions to PyPI
         run: |
-          uv publish --trusted-publishing=always
+          uv publish --trusted-publishing=always dist/django_s3_file_field-*
 
   publish-python-client:
     runs-on: ubuntu-26.04
@@ -43,13 +43,12 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       - name: Build the Python distribution
+        # As a uv workspace member, this is built into the "dist" directory of the workspace root
         run: |
-          uv build
-        working-directory: python-client
+          uv build --package django-s3-file-field-client
       - name: Publish the Python distributions to PyPI
         run: |
-          uv publish --trusted-publishing=always
-        working-directory: python-client
+          uv publish --trusted-publishing=always dist/django_s3_file_field_client-*
 
   publish-javascript-client:
     runs-on: ubuntu-26.04
@@ -65,6 +64,7 @@ jobs:
         with:
           node-version-file: ./javascript-client/.node-version
       - name: Set package version from release tag
+        working-directory: ./javascript-client
         env:
           TAG_NAME: ${{ github.event.release.tag_name }}
         # The "#v" bash syntax strips the leading "v" from the tag name.
