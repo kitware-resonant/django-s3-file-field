@@ -453,17 +453,19 @@ The element is loaded by including its assets (where `/static/` is
 ```
 
 It is configured with the following HTML attributes, which are also available as JavaScript
-properties:
+properties (except where noted):
 
-| Attribute      | Property      | Type      | Meaning                                                                                                  |
-| -------------- | ------------- | --------- | -------------------------------------------------------------------------------------------------------- |
-| `base-url`     | `baseUrl`     | `string`  | The URL path at which django-s3-file-field's URLconf is included (e.g. `/api/s3-upload/`)                |
-| `field-id`     | `fieldId`     | `string`  | The identifier of the `S3FileField` to upload to, as `<app_label>.<Model>.<field>`                       |
-| `max-size`     | `maxSize`     | `number`  | (optional) The maximum file size, checked before uploading; omit when none is configured                 |
-| `existing-url` | `existingUrl` | `string`  | (optional) The URL of the existing file stored in this field (i.e. the output of the serializer)         |
-| `disabled`     | `disabled`    | `boolean` | (optional) Whether the field is disabled; the field is also disabled by a disabled ancestor `<fieldset>` |
-| `name`         | `name`        | `string`  | (optional) When within a form, the name of the submitted field                                           |
-| `required`     | `required`    | `boolean` | (optional) When within a form, whether a file is required; keeping an existing file satisfies this       |
+| Attribute              | Property             | Type      | Meaning                                                                                                                          |
+| ---------------------- | -------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `base-url`             | `baseUrl`            | `string`  | The URL at which django-s3-file-field's URLconf is included (e.g. `/api/s3-upload/`, or a full URL on another origin)            |
+| `field-id`             | `fieldId`            | `string`  | The identifier of the `S3FileField` to upload to, as `<app_label>.<Model>.<field>`                                               |
+| `max-size`             | `maxSize`            | `number`  | (optional) The maximum file size, checked before uploading; omit when none is configured                                         |
+| `existing-url`         | `existingUrl`        | `string`  | (optional) The URL of the existing file stored in this field (i.e. the output of the serializer)                                 |
+| `disabled`             | `disabled`           | `boolean` | (optional) Whether the field is disabled; the field is also disabled by a disabled ancestor `<fieldset>`                         |
+| `name`                 | `name`               | `string`  | (optional) When within a form, the name of the submitted field                                                                   |
+| `required`             | `required`           | `boolean` | (optional) When within a form, whether a file is required; keeping an existing file satisfies this                               |
+| `cross-origin-cookies` | `crossOriginCookies` | `boolean` | (optional) Whether to send cookies to an upload API on a different origin; see [Authentication](#authentication)                 |
+|                        | `authorization`      | `string`  | (optional) The `Authorization` header value to send to the upload API, as a property only; see [Authentication](#authentication) |
 
 When placed within a `<form>`, an `<s3-file-input>` submits its value under its `name` and reports
 validity like a native input, so a missing `required` file or an upload in progress blocks form
@@ -480,6 +482,32 @@ When an upload fails, the element fires an `error` event, whose `error` property
 the failure. As with a native element, the event does not bubble. Unless the event is canceled with
 `preventDefault()`, the error is then also reported as if it were uncaught, so it reaches the
 browser console and any error monitoring (e.g. Sentry).
+
+##### Authentication
+
+The element authenticates its requests to the upload API (at `base-url`) the same way as the
+frontend's other requests to the Django application. If the frontend is hosted from a different
+origin than the server, the element likewise requires the application to allow CORS requests from
+the frontend's origin.
+
+With session authentication, the element sends the session cookie along with the CSRF token, which
+it reads from the `csrftoken` cookie (requiring a
+[secure context](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts)) or from a
+Django-rendered form's `{% csrf_token %}` tag. What else is needed depends on the frontend's origin:
+- On the Django application's own origin, this needs no configuration.
+- From a different origin on the
+  [same site](https://developer.mozilla.org/en-US/docs/Glossary/Site) (e.g. `app.example.com` and
+  `api.example.com`, or two ports on `localhost`), set `cross-origin-cookies` to send the session
+  cookie, and set
+  [`CSRF_COOKIE_DOMAIN`](https://docs.djangoproject.com/en/stable/ref/settings/#csrf-cookie-domain)
+  so that the frontend's origin can read the CSRF cookie.
+- From a different site, session authentication isn't supported; use token authentication instead.
+
+With token or OAuth2 authentication, set the `authorization` property to the full `Authorization`
+header value (e.g. `Bearer exampletoken`) which the frontend sends with its other API requests. This
+is a JavaScript property only, with no HTML attribute, so that a token never appears in the DOM.
+The element reads it as each upload starts, so update it when a token is refreshed. This works from
+any origin.
 
 ##### Plain HTML and JavaScript
 
@@ -513,19 +541,24 @@ Vue.js should be configured to
 [resolve `s3-file-input` as a custom element](https://vuejs.org/guide/extras/web-components.html#skipping-component-resolution),
 rather than as a component (via `compilerOptions.isCustomElement`).
 
+When [authenticating](#authentication) with a token, bind `authorization` with the
+[`.prop` modifier](https://vuejs.org/guide/extras/web-components.html#passing-dom-properties),
+as it is a JavaScript property.
+
 For example, creating the hypothetical `Resource`:
 ```vue
 <script setup>
 import { ref } from "vue";
 
+// The "Authorization" header value, from the frontend's OAuth2 login
+const authorization = ref("Bearer exampletoken");
 // The element's value
 const blob = ref("");
 
 async function save() {
   await fetch("/api/resources/", {
     method: "POST",
-    // Add any authentication or CSRF headers which the API requires
-    headers: { "Content-Type": "application/json" },
+    headers: { Authorization: authorization.value, "Content-Type": "application/json" },
     body: JSON.stringify({ blob: blob.value }),
   });
 }
@@ -536,6 +569,7 @@ async function save() {
     v-model="blob"
     base-url="/api/s3-upload/"
     field-id="myapp.Resource.blob"
+    :authorization.prop="authorization"
   ></s3-file-input>
   <button @click="save">Save</button>
 </template>
@@ -547,11 +581,16 @@ Or, updating an existing `Resource`:
 import { onMounted, ref } from "vue";
 
 const props = defineProps({ id: Number });
+// The "Authorization" header value, from the frontend's OAuth2 login
+const authorization = ref("Bearer exampletoken");
 // The API represents the file as its URL
 const resource = ref({ blob: "" });
 
 onMounted(async () => {
-  resource.value = await (await fetch(`/api/resources/${props.id}/`)).json();
+  const response = await fetch(`/api/resources/${props.id}/`, {
+    headers: { Authorization: authorization.value },
+  });
+  resource.value = await response.json();
 });
 
 async function save(event) {
@@ -560,8 +599,7 @@ async function save(event) {
   // which aligns with PATCH only submitting changed fields.
   await fetch(`/api/resources/${props.id}/`, {
     method: "PATCH",
-    // Add any authentication or CSRF headers which the API requires
-    headers: { "Content-Type": "application/json" },
+    headers: { Authorization: authorization.value, "Content-Type": "application/json" },
     body: JSON.stringify(Object.fromEntries(new FormData(event.target))),
   });
 }
@@ -575,6 +613,7 @@ async function save(event) {
       field-id="myapp.Resource.blob"
       required
       :existing-url="resource.blob"
+      :authorization.prop="authorization"
     ></s3-file-input>
     <button>Save</button>
   </form>
