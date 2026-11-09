@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, cast
 
-from django.core.signing import TimestampSigner
 from freezegun import freeze_time
 from pydantic import BaseModel, TypeAdapter, ValidationError
 import pytest
@@ -25,7 +24,7 @@ if TYPE_CHECKING:
 
 
 class ExampleSignedModel(SignedModel, frozen=True, extra="forbid"):
-    signer = TimestampSigner(salt="test.ExampleSignedModel")
+    salt = "test.ExampleSignedModel"
 
     name: str
     when: datetime
@@ -61,7 +60,7 @@ def test_signed_model_tampered() -> None:
 
 
 def test_signed_model_salt_mismatch(mocker: MockerFixture) -> None:
-    mocker.patch.object(ExampleSignedModel, "signer", TimestampSigner(salt="other-salt"))
+    mocker.patch.object(ExampleSignedModel, "salt", "other-salt")
     signed = ExampleSignedModelFactory.build().model_dump()
     mocker.stopall()
 

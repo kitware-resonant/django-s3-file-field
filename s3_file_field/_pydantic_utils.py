@@ -57,10 +57,16 @@ class SignedModel(BaseModel, frozen=True, extra="forbid"):
     is older than `max_age`; an already-constructed instance is passed through unchanged.
     """
 
-    # Abstract; each subclass must define its own signer, with a distinct salt, so a
-    # signed serialization of one model type can never validate as a different model type
-    signer: ClassVar[TimestampSigner]
+    # Abstract; each subclass must define its own distinct salt, so a signed serialization
+    # of one model type can never validate as a different model type
+    salt: ClassVar[str]
     max_age: ClassVar[timedelta] = timedelta(days=1)
+
+    @classmethod
+    def _signer(cls) -> TimestampSigner:
+        # A Signer "settings.SECRET_KEY", so this must not be constructed at import time;
+        # the pytest plugin is imported before settings are configured
+        return TimestampSigner(salt=cls.salt)
 
     @model_validator(mode="wrap")
     @classmethod
@@ -69,7 +75,7 @@ class SignedModel(BaseModel, frozen=True, extra="forbid"):
             return data
         if isinstance(data, str):
             try:
-                serialized_data = cls.signer.unsign_object(
+                serialized_data = cls._signer().unsign_object(
                     data, serializer=_PydanticSerializer, max_age=cls.max_age
                 )
             except BadSignature as e:
@@ -80,7 +86,7 @@ class SignedModel(BaseModel, frozen=True, extra="forbid"):
     @model_serializer(mode="wrap")
     def _serialize_model(self, handler: SerializerFunctionWrapHandler) -> str:
         serialized_data = handler(self)
-        return self.signer.sign_object(serialized_data, serializer=_PydanticSerializer)
+        return self._signer().sign_object(serialized_data, serializer=_PydanticSerializer)
 
 
 def _validate_s3_file_field_ref(value: Any) -> S3FileField:

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Annotated, Self
 
-from django.core.signing import TimestampSigner
 from django.template.defaultfilters import filesizeformat
 from pydantic import BaseModel, Field, StringConstraints, field_validator, model_validator
 from pydantic_core import PydanticCustomError
@@ -39,7 +38,7 @@ class InitiationRequest(BaseModel, frozen=True, extra="forbid"):
 
 
 class UploadToken(SignedModel, frozen=True, extra="forbid"):
-    signer = TimestampSigner(salt="s3_file_field.UploadToken")
+    salt = "s3_file_field.UploadToken"
 
     field: S3FileFieldRef
     upload_id: str
@@ -88,7 +87,7 @@ class CompletionResponse(BaseModel, frozen=True, extra="forbid"):
 
 
 class FieldValue(SignedModel, frozen=True, extra="forbid"):
-    signer = TimestampSigner(salt="s3_file_field.FieldValue")
+    salt = "s3_file_field.FieldValue"
 
     field: S3FileFieldRef
     # The server never mints empty object keys; an empty name would also be treated as an
