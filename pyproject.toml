@@ -91,7 +91,7 @@ type = [
   "mypy==2.4.1",
   "boto3-stubs[s3]==1.43.122",
   "django-stubs[compatible-mypy]==6.1.2",
-  "djangorestframework-stubs==3.18.1",
+  "djangorestframework-stubs==3.18.2",
   "types-factory-boy==0.4.1",
   # We type check the client, so its dependencies must be installed
   "django-s3-file-field-client",
