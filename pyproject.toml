@@ -81,7 +81,7 @@ dev = [
   "ipython==9.18.1",
   "tox==4.67.12",
   "tox-uv==1.37.5",
-  "watchdog==6.0.0",
+  "watchdog==7.1.0",
   "werkzeug==3.1.9",
 ]
 lint = [
