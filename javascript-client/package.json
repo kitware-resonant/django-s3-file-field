@@ -33,7 +33,7 @@
     "p-map": "^7.1.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.5",
+    "@biomejs/biome": "2.6.6",
     "@resonant/biome-config": "0.5.0",
     "npm-run-all2": "9.0.4",
     "rimraf": "6.1.4",
