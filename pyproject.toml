@@ -79,7 +79,7 @@ dev = [
   "django-extensions==4.1",
   "django-stubs-ext==6.1.2",
   "ipython==9.18.1",
-  "tox==4.67.12",
+  "tox==4.67.13",
   "tox-uv==1.37.5",
   "watchdog==6.0.0",
   "werkzeug==3.1.9",
