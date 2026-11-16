@@ -80,16 +80,16 @@ dev = [
   "django-stubs-ext==6.1.2",
   "ipython==9.18.1",
   "tox==4.67.13",
-  "tox-uv==1.37.5",
+  "tox-uv==1.37.7",
   "watchdog==6.0.0",
   "werkzeug==3.1.9",
 ]
 lint = [
-  "ruff==0.17.4",
+  "ruff==0.17.5",
 ]
 type = [
   "mypy==2.4.1",
-  "boto3-stubs[s3]==1.43.125",
+  "boto3-stubs[s3]==1.44.2",
   "django-stubs[compatible-mypy]==6.1.2",
   "djangorestframework-stubs==3.18.2",
   "types-factory-boy==0.4.1",
